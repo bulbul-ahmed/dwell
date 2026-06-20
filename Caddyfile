@@ -1,0 +1,14 @@
+dwell.bd {
+	tls internal
+	reverse_proxy localhost:3001
+}
+
+admin.dwell.bd {
+	tls internal
+	reverse_proxy localhost:3002
+}
+
+provider.dwell.bd {
+	tls internal
+	reverse_proxy localhost:3003
+}

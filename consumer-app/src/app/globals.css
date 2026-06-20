@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* === Exact copy from Dwell.dc.html <helmet> styles === */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; overflow-x: hidden; }
+body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background: #FFFFFF; }
+::selection { background: #DCE6F2; }
+
+/* iOS Safari fires `click` on non-native elements (div/span with onClick) only when the
+   element or an ancestor has cursor:pointer. Scoped to touch devices so desktop cursors
+   are unaffected. Fixes taps on the search box, dropdown rows, toggles, etc. */
+@media (pointer: coarse) {
+  body { cursor: pointer; }
+}
+
+@keyframes bvfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes bvpop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes bvrise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.prop-card:hover { transform: translateY(-4px); box-shadow: 0 22px 48px -28px rgba(18,38,66,.45); }
+.acct-link:hover { background: #F8FAFC; border-color: #D3D9E0 !important; }
+.notif-row:hover { background: #F8FAFC !important; }
+
+.detail-cta-btn { transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease; }
+.detail-cta-btn:hover { background: #F4F7FA !important; border-color: #B8C4CF !important; transform: translateY(-1px); box-shadow: 0 4px 12px -4px rgba(30,58,92,0.15); }
+.detail-cta-btn:active { transform: translateY(1px) scale(0.97); box-shadow: inset 0 2px 6px rgba(30,58,92,0.12); background: #E8EEF4 !important; border-color: #A0B0C0 !important; }
+
+@keyframes chat-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.chat-drawer-panel { animation: chat-slide-in 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
+
+/* ============================================================
+   RESPONSIVE LAYOUT SYSTEM
+   Breakpoints: tablet ≤1024px  |  mobile ≤768px
+   ============================================================ */
+
+/* ── Page containers ── */
+.pg      { max-width: 1240px; margin: 0 auto; padding: 34px 40px 70px; }
+.pg-lg   { max-width: 1320px; margin: 0 auto; padding: 26px 40px 60px; }
+.pg-sm   { max-width: 860px;  margin: 0 auto; padding: 34px 40px 70px; }
+.pg-xs   { max-width: 720px;  margin: 0 auto; padding: 34px 40px 70px; }
+.pg-md   { max-width: 1080px; margin: 0 auto; padding: 34px 40px 70px; }
+.pg-det  { max-width: 1180px; margin: 0 auto; padding: 22px 40px 70px; }
+.pg-prov { max-width: 1100px; margin: 0 auto; padding: 22px 40px 70px; }
+
+/* ── Grid helpers ── */
+.g3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.g3-22 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.g2    { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+.g4    { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+
+/* ── Structural grids ── */
+.g-hero            { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding-bottom: 4px; }
+.g-auth            { position: fixed; inset: 0; z-index: 70; display: grid; grid-template-columns: 1.04fr 0.96fr; }
+.g-messages        { display: grid; grid-template-columns: 320px 1fr; gap: 0; }
+.g-search          { display: grid; grid-template-columns: 248px 1fr 0.82fr; gap: 26px; align-items: start; }
+.g-detail          { display: grid; grid-template-columns: 1fr 380px; gap: 40px; align-items: start; }
+.g-account         { display: grid; grid-template-columns: 1fr 1.3fr; gap: 22px; align-items: start; }
+.g-insights-split  { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.g-search-bar      { display: grid; grid-template-columns: 1.3fr 0.8fr 0.75fr 0.95fr 0.9fr auto; gap: 4px; align-items: stretch; }
+.g-gallery         { display: grid; grid-template-columns: 1.7fr 1fr; gap: 12px; margin-bottom: 14px; }
+.g-list-wizard     { display: grid; grid-template-columns: 1fr 310px; gap: 32px; align-items: start; }
+
+/* ── Nav ── */
+.nav-inner       { max-width: 1240px; margin: 0 auto; padding: 0 40px; height: 72px; display: flex; align-items: center; justify-content: space-between; }
+.nav-main-links  { display: flex; align-items: center; gap: 26px; }
+.nav-hamburger   { display: none; width: 40px; height: 40px; border: 1px solid #E7EAEE; background: #fff; border-radius: 10px; cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+.nav-mobile-sheet { display: none; position: fixed; inset: 0; z-index: 50; background: rgba(21,36,59,0.45); }
+.nav-mobile-sheet.open { display: block; }
+.nav-mobile-panel { position: fixed; top: 0; left: 0; bottom: 0; width: 280px; background: #fff; z-index: 51; overflow-y: auto; padding: 24px 20px; display: flex; flex-direction: column; gap: 4px; transform: translateX(-100%); transition: transform 0.28s cubic-bezier(0.32,0.72,0,1); box-shadow: 6px 0 32px rgba(21,36,59,0.18); }
+.nav-mobile-panel.open { transform: translateX(0); }
+
+/* ── Visibility helpers ── */
+.hero-img-col        { position: relative; }
+.auth-right-panel    { position: relative; height: 100vh; overflow: hidden; background: #15243B; }
+.search-filter-aside { }
+.search-map-panel    { }
+.detail-sticky-aside { position: sticky; top: 88px; }
+.gallery-side        { display: grid; grid-template-rows: repeat(2, 1fr); gap: 12px; }
+/* Mobile-only bottom price/action bar on the listing detail page */
+.detail-mobile-bar   { display: none; }
+.detail-mobile-spacer { display: none; }
+.messages-thread-list { border-right: 1px solid #E7EAEE; display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.messages-chat       { display: flex; flex-direction: column; background: #FBFCFD; min-height: 0; height: 100%; }
+.messages-chat > div[style*="overflow"] { min-height: 0; }
+
+/* ── Messages fixed height ── */
+.g-messages-wrap { background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; overflow: hidden; height: 620px; box-shadow: 0 20px 44px -32px rgba(21,36,59,0.4); }
+
+/* ============================================================
+   TABLET  ≤1024px
+   ============================================================ */
+@media (max-width: 1024px) {
+  .pg, .pg-md, .pg-det, .pg-prov { padding: 28px 28px 60px; }
+  .pg-lg  { padding: 22px 24px 50px; }
+  .pg-sm  { padding: 28px 28px 60px; }
+  .pg-xs  { padding: 28px 28px 60px; }
+
+  .nav-inner { padding: 0 28px; }
+
+  .g4              { grid-template-columns: repeat(2, 1fr); }
+  .g-hero          { gap: 32px; }
+  .g-search        { grid-template-columns: 248px 1fr; }
+  .search-map-panel { display: none; }
+  .g-detail        { grid-template-columns: 1fr 310px; gap: 24px; }
+  .g-gallery       { grid-template-columns: 1fr; }
+  .gallery-side    { display: none; }
+  .g-account       { grid-template-columns: 1fr 1.2fr; }
+  .g-insights-split { gap: 16px; }
+  .g-search-bar    { grid-template-columns: 1.3fr 0.9fr 0.85fr 0.9fr auto; }
+  .g-list-wizard   { grid-template-columns: 1fr 280px; gap: 20px; }
+}
+
+/* ============================================================
+   MOBILE  ≤768px
+   ============================================================ */
+@media (max-width: 768px) {
+  .pg, .pg-md, .pg-det, .pg-prov { padding: 20px 16px 50px; }
+  .pg-lg  { padding: 16px 16px 40px; }
+  .pg-sm  { padding: 20px 16px 50px; }
+  .pg-xs  { padding: 20px 16px 50px; }
+
+  /* Nav */
+  .nav-inner      { padding: 0 16px; height: 60px; }
+  .nav-main-links { display: none; }
+  .nav-hamburger  { display: flex; }
+
+  /* Grids */
+  .g3, .g3-22 { grid-template-columns: 1fr; gap: 16px; }
+  .g2         { grid-template-columns: 1fr; gap: 12px; }
+  .g4         { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+  /* Hero */
+  .g-hero       { grid-template-columns: 1fr; gap: 0; }
+  .hero-img-col { display: none; }
+
+  /* Search bar */
+  .g-search-bar { grid-template-columns: 1fr 1fr; }
+  .search-bar-location { grid-column: 1 / -1; }
+  .search-bar-btn      { grid-column: 1 / -1; border-radius: 14px !important; min-height: 52px; justify-content: center; }
+
+  /* Auth */
+  .g-auth            { grid-template-columns: 1fr; }
+  .auth-right-panel  { display: none; }
+
+  /* Messages */
+  .g-messages-wrap { height: auto; }
+  .g-messages      { grid-template-columns: 1fr; }
+  .messages-thread-list { height: 280px; border-right: none; border-bottom: 1px solid #E7EAEE; }
+  .messages-chat   { min-height: 380px; }
+
+  /* Search */
+  .g-search         { grid-template-columns: 1fr; }
+  .search-filter-aside { display: none; }
+
+  /* Detail */
+  .g-detail         { grid-template-columns: 1fr; }
+  .detail-sticky-aside { position: static; top: auto; }
+  .g-gallery        { grid-template-columns: 1fr; }
+  .gallery-side     { display: none; }
+  /* Persistent quick-action bar; full cost + owner card still scroll inline above it */
+  .detail-mobile-bar {
+    display: flex; align-items: center; gap: 14px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom));
+    background: #fff; border-top: 1px solid #E7EAEE;
+    box-shadow: 0 -6px 22px rgba(21,36,59,0.10);
+  }
+  .detail-mobile-spacer { display: block; height: 76px; }
+
+  /* Account */
+  .g-account        { grid-template-columns: 1fr; }
+
+  /* Insights */
+  .g-insights-split { grid-template-columns: 1fr; }
+
+  /* List wizard */
+  .g-list-wizard    { grid-template-columns: 1fr; }
+  .list-preview-col { display: none; }
+}

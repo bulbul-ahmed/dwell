@@ -1,0 +1,29 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dwell-consumer",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3001,
+      "autoPort": false,
+      "cwd": "/Users/bulbulahmed/start/Dwell/consumer-app"
+    }
+  ,{
+      "name": "dwell-admin",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3002,
+      "autoPort": false,
+      "cwd": "/Users/bulbulahmed/start/Dwell/admin-app"
+    }
+  ,{
+      "name": "dwell-provider",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3003,
+      "autoPort": false,
+      "cwd": "/Users/bulbulahmed/start/Dwell/provider-app"
+    }
+  ]
+}

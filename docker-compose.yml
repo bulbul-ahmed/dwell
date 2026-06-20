@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dwell
+      POSTGRES_PASSWORD: dwell
+      POSTGRES_DB: dwell
+    ports:
+      - "5434:5432"
+    volumes:
+      - dwell_pgdata:/var/lib/postgresql/data
+
+volumes:
+  dwell_pgdata:

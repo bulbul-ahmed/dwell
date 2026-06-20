@@ -1,0 +1,1923 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background: #FFFFFF; }
+  ::selection { background: #DCE6F2; }
+  @keyframes bvfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes bvpop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes bvrise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  .prop-card:hover { transform: translateY(-4px); box-shadow: 0 22px 48px -28px rgba(18,38,66,.45); }
+  .acct-link:hover { background: #F8FAFC; border-color: #D3D9E0 !important; }
+  .notif-row:hover { background: #F8FAFC !important; }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #FFFFFF; font-family: 'Plus Jakarta Sans', sans-serif;">
+
+  <!-- ============ NAV ============ -->
+  <header style="position: sticky; top: 0; z-index: 40; background: rgba(255,255,255,0.86); backdrop-filter: blur(12px); border-bottom: 1px solid #E7EAEE;">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 0 40px; height: 72px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 40px;">
+        <div onClick="{{ goHome }}" style="display: flex; align-items: center; gap: 9px; cursor: pointer;">
+          <div style="width: 30px; height: 30px; border-radius: 9px; background: {{ accent }}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30,58,92,0.35);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4l9 7.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.5 10v9.5h13V10" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 25px; letter-spacing: 0.2px; color: #15243B;">Dwell</span>
+        </div>
+        <nav style="display: flex; align-items: center; gap: 26px;">
+          <span onClick="{{ goRent }}" style="font-size: 14.5px; font-weight: 500; color: #41495A; cursor: pointer;">Rent</span>
+          <span onClick="{{ goBuy }}" style="font-size: 14.5px; font-weight: 500; color: #41495A; cursor: pointer;">Buy</span>
+          <span onClick="{{ goSublet }}" style="font-size: 14.5px; font-weight: 500; color: #41495A; cursor: pointer;">Sublet</span>
+          <span onClick="{{ goStudent }}" style="font-size: 14.5px; font-weight: 500; color: #41495A; cursor: pointer;">Student</span>
+          <span onClick="{{ goInsights }}" style="font-size: 14.5px; font-weight: 500; color: {{ insightsNavFg }}; cursor: pointer;">Insights</span>
+        </nav>
+      </div>
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <button onClick="{{ goNotifs }}" title="Notifications" style="position: relative; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #E7EAEE; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" stroke="#41495A" stroke-width="1.7" stroke-linejoin="round"></path><path d="M10 20a2 2 0 004 0" stroke="#41495A" stroke-width="1.7" stroke-linecap="round"></path></svg>
+          <span style="position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: #C7553B; border: 1.5px solid #fff;"></span>
+        </button>
+        <button onClick="{{ goMessages }}" title="Messages" style="position: relative; width: 38px; height: 38px; border-radius: 50%; border: 1px solid #E7EAEE; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.4 8.4 0 01-9 8.4L4 21l1.1-3.6A8.4 8.4 0 1121 11.5z" stroke="#41495A" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+          <span style="position: absolute; top: 6px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: {{ accent }}; border: 1.5px solid #fff;"></span>
+        </button>
+        <button onClick="{{ goSaved }}" title="Saved" style="width: 38px; height: 38px; border-radius: 50%; border: 1px solid #E7EAEE; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; color: {{ savedNavColor }}; font-size: 17px;">{{ savedNavIcon }}</button>
+        <span onClick="{{ goList }}" style="font-size: 14.5px; font-weight: 600; color: #15243B; cursor: pointer;">List your property</span>
+        <div onClick="{{ goAccount }}" title="Account" style="display: flex; align-items: center; gap: 8px; border: 1px solid #D3D9E0; border-radius: 999px; padding: 5px 6px 5px 14px; cursor: pointer; background: #fff;">
+          <span style="font-size: 14px; font-weight: 600;">{{ accountName }}</span>
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: #15243B; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">{{ accountInitial }}</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ AUTH (SIGN IN / SIGN UP) ============ -->
+  <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="Sign in" style="position: fixed; inset: 0; z-index: 70; background: #FFFFFF; display: grid; grid-template-columns: 1.04fr 0.96fr; font-family: 'Plus Jakarta Sans', sans-serif; animation: bvfade .3s ease;">
+
+    <!-- ===== LEFT : FORM ===== -->
+    <div style="position: relative; height: 100vh; overflow-y: auto; display: flex; flex-direction: column;">
+      <!-- top bar -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 26px 40px 0;">
+        <div onClick="{{ goHome }}" style="display: flex; align-items: center; gap: 9px; cursor: pointer;">
+          <div style="width: 30px; height: 30px; border-radius: 9px; background: {{ accent }}; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(30,58,92,0.35);">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4l9 7.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.5 10v9.5h13V10" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <span style="font-size: 24px; letter-spacing: 0.2px; color: #15243B;">Dwell</span>
+        </div>
+        <div onClick="{{ goHome }}" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #6A7180; cursor: pointer;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to home
+        </div>
+      </div>
+
+      <!-- centered form -->
+      <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 28px 40px 40px;">
+        <div style="width: 100%; max-width: 412px;">
+
+          <div style="display: inline-flex; align-items: center; gap: 7px; background: #F4F1EB; border: 1px solid #ECE6DA; border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 600; color: #8A7E66; margin-bottom: 22px;">
+            <span style="width: 6px; height: 6px; border-radius: 50%; background: #4F8A6B;"></span>{{ authBadge }}
+          </div>
+
+          <h1 style="font-weight: 800; font-size: 34px; line-height: 1.1; letter-spacing: -0.5px; margin: 0 0 9px; color: #15243B;">{{ authTitle }}</h1>
+          <p style="font-size: 15px; line-height: 1.55; color: #6A7180; margin: 0 0 26px;">{{ authSub }}</p>
+
+          <!-- social -->
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <button onClick="{{ goHome }}" style="display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; height: 48px; border: 1px solid #E1E6EC; border-radius: 13px; background: #fff; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 600; color: #2A3344;" style-hover="background: #FAFAF8; border-color: #D3D9E0;">
+              <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"></path><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0012 23z"></path><path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.06H2.18a11 11 0 000 9.88l3.66-2.84z"></path><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z"></path></svg>
+              Continue with Google
+            </button>
+            <button onClick="{{ goHome }}" style="display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; height: 48px; border: 1px solid #E1E6EC; border-radius: 13px; background: #fff; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 600; color: #2A3344;" style-hover="background: #FAFAF8; border-color: #D3D9E0;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><rect x="6" y="2.5" width="12" height="19" rx="2.6" stroke="#2A3344" stroke-width="1.8"></rect><path d="M10.5 18.4h3" stroke="#2A3344" stroke-width="1.8" stroke-linecap="round"></path></svg>
+              Continue with phone
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 20px;">
+            <div style="flex: 1; height: 1px; background: #ECEEF1;"></div>
+            <span style="font-size: 12px; font-weight: 600; color: #9AA1AD; letter-spacing: 0.3px;">or with email</span>
+            <div style="flex: 1; height: 1px; background: #ECEEF1;"></div>
+          </div>
+
+          <!-- role selector (sign up only) -->
+          <sc-if value="{{ authIsSignup }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: #4A5161; margin-bottom: 8px;">I'm here to</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <sc-for list="{{ authRoles }}" as="r" hint-placeholder-count="2">
+                <button onClick="{{ r.onPick }}" style="display: flex; align-items: center; gap: 9px; padding: 11px 13px; border: 1.5px solid {{ r.bd }}; background: {{ r.bg }}; border-radius: 13px; cursor: pointer; font-family: inherit; text-align: left;">
+                  <span style="font-size: 17px;">{{ r.icon }}</span>
+                  <span style="font-size: 13.5px; font-weight: 700; color: {{ r.fg }};">{{ r.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- name (sign up only) -->
+          <sc-if value="{{ authIsSignup }}" hint-placeholder-val="{{ false }}">
+          <label style="display: block; margin-bottom: 14px;">
+            <span style="display: block; font-size: 12.5px; font-weight: 700; color: #4A5161; margin-bottom: 7px;">Full name</span>
+            <input placeholder="e.g. Anika Rahman" style="width: 100%; height: 48px; border: 1px solid #E1E6EC; border-radius: 13px; padding: 0 15px; font-family: inherit; font-size: 15px; color: #15243B; outline: none; background: #fff; box-sizing: border-box;" style-focus="border-color: {{ accent }}; box-shadow: 0 0 0 3px rgba(30,58,92,0.1);">
+          </label>
+          </sc-if>
+
+          <!-- email -->
+          <label style="display: block; margin-bottom: 14px;">
+            <span style="display: block; font-size: 12.5px; font-weight: 700; color: #4A5161; margin-bottom: 7px;">Email address</span>
+            <input type="email" placeholder="you@email.com" style="width: 100%; height: 48px; border: 1px solid #E1E6EC; border-radius: 13px; padding: 0 15px; font-family: inherit; font-size: 15px; color: #15243B; outline: none; background: #fff; box-sizing: border-box;" style-focus="border-color: {{ accent }}; box-shadow: 0 0 0 3px rgba(30,58,92,0.1);">
+          </label>
+
+          <!-- password -->
+          <label style="display: block; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;">
+              <span style="font-size: 12.5px; font-weight: 700; color: #4A5161;">Password</span>
+              <sc-if value="{{ authIsSignin }}" hint-placeholder-val="{{ true }}"><span style="font-size: 12.5px; font-weight: 600; color: {{ accent }}; cursor: pointer;">Forgot?</span></sc-if>
+            </div>
+            <div style="position: relative;">
+              <input type="{{ pwType }}" placeholder="{{ pwPlaceholder }}" style="width: 100%; height: 48px; border: 1px solid #E1E6EC; border-radius: 13px; padding: 0 46px 0 15px; font-family: inherit; font-size: 15px; color: #15243B; outline: none; background: #fff; box-sizing: border-box;" style-focus="border-color: {{ accent }}; box-shadow: 0 0 0 3px rgba(30,58,92,0.1);">
+              <button onClick="{{ togglePw }}" type="button" style="position: absolute; right: 6px; top: 6px; width: 36px; height: 36px; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #8A91A0;">
+                <span style="font-size: 16px;">{{ pwIcon }}</span>
+              </button>
+            </div>
+          </label>
+
+          <button onClick="{{ goHome }}" style="width: 100%; height: 50px; background: {{ accent }}; color: #fff; border: none; border-radius: 13px; font-family: inherit; font-size: 15.5px; font-weight: 700; cursor: pointer; box-shadow: 0 12px 24px -10px rgba(30,58,92,0.6); display: flex; align-items: center; justify-content: center; gap: 9px;">
+            {{ authCta }}
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </button>
+
+          <p style="text-align: center; font-size: 14px; color: #6A7180; margin: 22px 0 0;">{{ authSwitchText }} <span onClick="{{ toggleAuthMode }}" style="font-weight: 700; color: {{ accent }}; cursor: pointer;">{{ authSwitchCta }}</span></p>
+
+          <p style="text-align: center; font-size: 11.5px; color: #A2A8B2; line-height: 1.5; margin: 26px 0 0;">By continuing you agree to Dwell's <span style="color: #6A7180; text-decoration: underline; cursor: pointer;">Terms</span> &amp; <span style="color: #6A7180; text-decoration: underline; cursor: pointer;">Privacy Policy</span>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RIGHT : VISUAL ===== -->
+    <div style="position: relative; height: 100vh; overflow: hidden; background: #15243B;">
+      <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&amp;fit=crop&amp;w=1100&amp;q=78" alt="home interior" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
+      <div style="position: absolute; inset: 0; background: linear-gradient(160deg, rgba(21,36,59,0.30) 0%, rgba(21,36,59,0.55) 52%, rgba(15,28,48,0.92) 100%);"></div>
+
+      <!-- verified chip top -->
+      <div style="position: absolute; top: 34px; right: 36px; display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.14); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.22); border-radius: 999px; padding: 8px 14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#A8E0C0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <span style="font-size: 12.5px; font-weight: 600; color: #fff;">Every owner &amp; document verified</span>
+      </div>
+
+      <!-- bottom content -->
+      <div style="position: absolute; left: 44px; right: 44px; bottom: 44px;">
+        <h2 style="font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 46px; line-height: 1.08; color: #fff; margin: 0 0 14px; letter-spacing: 0.2px;">A calmer way to find<br>your next <span style="font-style: italic;">home</span> in Dhaka.</h2>
+        <p style="font-size: 15px; line-height: 1.6; color: rgba(255,255,255,0.78); margin: 0 0 26px; max-width: 380px;">Browse honest listings across Aftab Nagar, chat with owners directly, and book a visit — no brokers, no surprises.</p>
+
+        <!-- testimonial card -->
+        <div style="background: rgba(255,255,255,0.12); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.18); border-radius: 18px; padding: 18px 20px; max-width: 420px;">
+          <div style="display: flex; gap: 3px; margin-bottom: 10px;">
+            <span style="color: #FFC56B; font-size: 14px;">★★★★★</span>
+          </div>
+          <p style="font-size: 14.5px; line-height: 1.55; color: #fff; margin: 0 0 14px; font-weight: 500;">"Found our flat in Block B in three days. The owner was verified and the visit was booked right inside the app."</p>
+          <div style="display: flex; align-items: center; gap: 11px;">
+            <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg,#E8C9A0,#C99B6E); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #5A3E22;">S</div>
+            <div>
+              <div style="font-size: 13.5px; font-weight: 700; color: #fff;">Sadia &amp; Tanvir</div>
+              <div style="font-size: 12px; color: rgba(255,255,255,0.65);">Moved to Aftab Nagar, 2025</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- stats strip -->
+        <div style="display: flex; align-items: center; gap: 26px; margin-top: 26px;">
+          <div><div style="font-size: 22px; font-weight: 800; color: #fff;">1,200+</div><div style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">Verified listings</div></div>
+          <div style="width: 1px; height: 28px; background: rgba(255,255,255,0.22);"></div>
+          <div><div style="font-size: 22px; font-weight: 800; color: #fff;">4.8★</div><div style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">Avg owner rating</div></div>
+          <div style="width: 1px; height: 28px; background: rgba(255,255,255,0.22);"></div>
+          <div><div style="font-size: 22px; font-weight: 800; color: #fff;">0</div><div style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">Broker fees</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+  <main data-screen-label="Home">
+    <!-- hero -->
+    <section style="max-width: 1240px; margin: 0 auto; padding: 64px 40px 32px;">
+      <div style="overflow: hidden; transition: max-height .6s cubic-bezier(.4,0,.2,1), opacity .42s ease, transform .5s cubic-bezier(.4,0,.2,1); max-height: {{ heroMax }}; opacity: {{ heroOpacity }}; transform: {{ heroTransform }};">
+      <div style="display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding-bottom: 4px;">
+        <div>
+          <div style="display: inline-flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #E7EAEE; border-radius: 999px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: #6A7180; margin-bottom: 26px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #4F8A6B;"></span>
+            Now live in Aftab Nagar, {{ city }}
+          </div>
+          <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 64px; line-height: 1.04; letter-spacing: -0.5px; margin: 0 0 22px; color: #15243B;">A calmer way to find your next <span style="font-style: italic; color: {{ accent }};">home</span> in {{ city }}.</h1>
+          <p style="font-size: 17.5px; line-height: 1.6; color: #5A6172; margin: 0 0 34px; max-width: 460px;">Verified flats, offices and rooms across Aftab Nagar. Browse honest listings, chat with owners, and book a visit — no brokers, no surprises.</p>
+          <div style="display: flex; align-items: center; gap: 30px;">
+            <div><div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; color: #15243B;">1,200+</div><div style="font-size: 13px; color: #7A8090; font-weight: 500;">Verified listings</div></div>
+            <div style="width: 1px; height: 34px; background: #DBE0E6;"></div>
+            <div><div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; color: #15243B;">11</div><div style="font-size: 13px; color: #7A8090; font-weight: 500;">Aftab Nagar blocks</div></div>
+            <div style="width: 1px; height: 34px; background: #DBE0E6;"></div>
+            <div><div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 30px; color: #15243B;">4.8★</div><div style="font-size: 13px; color: #7A8090; font-weight: 500;">Avg owner rating</div></div>
+          </div>
+        </div>
+        <div style="position: relative;">
+          <div style="border-radius: 24px; overflow: hidden; box-shadow: 0 30px 60px -24px rgba(21,36,59,0.4); aspect-ratio: 4/4.4; background: #DDD3C5;">
+            <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&amp;fit=crop&amp;w=900&amp;q=75" alt="home" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+          </div>
+          <div style="position: absolute; left: -26px; bottom: 40px; background: #fff; border-radius: 16px; padding: 14px 16px; box-shadow: 0 18px 40px -16px rgba(21,36,59,0.35); display: flex; align-items: center; gap: 12px; width: 230px;">
+            <div style="width: 44px; height: 44px; border-radius: 11px; background: #EAF1ED; display: flex; align-items: center; justify-content: center;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4F8A6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <div><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">Verified by Dwell</div><div style="font-size: 12px; color: #8A8F9C;">Every owner &amp; document checked</div></div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <!-- search bar -->
+      <div style="margin-top: {{ searchMt }}; transition: margin-top .5s cubic-bezier(.4,0,.2,1); background: #fff; border: 1px solid #E7EAEE; border-radius: 22px; padding: 14px; box-shadow: 0 20px 44px -28px rgba(21,36,59,0.35);">
+        <div style="display: flex; gap: 6px; margin-bottom: 12px;">
+          <sc-for list="{{ intents }}" as="it" hint-placeholder-count="5">
+            <button onClick="{{ it.onPickIntent }}" style="border: 1px solid {{ it.bd }}; background: {{ it.bg }}; color: {{ it.fg }}; border-radius: 999px; padding: 8px 18px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all .15s ease;">{{ it.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.6fr 1fr 1fr auto; gap: 4px; align-items: stretch;">
+          <div style="padding: 10px 16px;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px;">Location</div>
+            <div style="font-size: 15px; color: #15243B; font-weight: 500;">Aftab Nagar, {{ city }}</div>
+          </div>
+          <div style="padding: 10px 16px; border-left: 1px solid #EDE5D7;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px;">Bedrooms</div>
+            <div style="font-size: 15px; color: #15243B; font-weight: 500;">Any</div>
+          </div>
+          <div style="padding: 10px 16px; border-left: 1px solid #EDE5D7;">
+            <div style="font-size: 11.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 3px;">Max budget</div>
+            <div style="font-size: 15px; color: #15243B; font-weight: 500;">৳ 60,000</div>
+          </div>
+          <button onClick="{{ doSearch }}" style="background: {{ accent }}; color: #fff; border: none; border-radius: 50px; padding: 0 30px; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 9px; font-family: inherit; box-shadow: 0 8px 18px -6px rgba(30,58,92,0.55)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#fff" stroke-width="2.2"></circle><path d="M20 20l-3.2-3.2" stroke="#fff" stroke-width="2.2" stroke-linecap="round"></path></svg>
+            Search
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== INLINE SEARCH RESULTS ===== -->
+      <sc-if value="{{ searched }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top: 26px; animation: bvfade .55s cubic-bezier(.4,0,.2,1) .12s both;">
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px;">
+          <div>
+            <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 30px; margin: 0 0 4px; color: #15243B;">{{ resultCount }} homes {{ intentPhrase }}</h2>
+            <div style="font-size: 14px; color: #7A8090;">Aftab Nagar, {{ city }} · sorted by relevance</div>
+          </div>
+          <button onClick="{{ clearSearch }}" style="display: inline-flex; align-items: center; gap: 7px; background: #fff; border: 1px solid #D3D9E0; border-radius: 999px; padding: 9px 17px; font-size: 13.5px; font-weight: 600; color: #41495A; cursor: pointer; font-family: inherit;" style-hover="border-color: #B9C2CD; background: #FAFAFA;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#6A7180" stroke-width="2" stroke-linecap="round"></path></svg>
+            Clear search
+          </button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+          <sc-for list="{{ list }}" as="c" hint-placeholder-count="6">
+            <div onClick="{{ c.onOpen }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 14px 30px -24px rgba(21,36,59,0.4); transition: transform .18s ease, box-shadow .18s ease;" style-hover="transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(21,36,59,0.45);">
+              <div style="position: relative; aspect-ratio: 4/3; background: #DDD3C5;">
+                <div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+                <button onClick="{{ c.onSave }}" style="position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.92); color: {{ accent }}; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center;">{{ c.heart }}</button>
+                <sc-if value="{{ c.verified }}" hint-placeholder-val="{{ true }}">
+                  <div style="position: absolute; bottom: 12px; left: 12px; display: inline-flex; align-items: center; gap: 5px; background: rgba(21,36,59,0.86); color: #fff; border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 600;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#8FD0AC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    Verified
+                  </div>
+                </sc-if>
+              </div>
+              <div style="padding: 16px 17px 18px;">
+                <div style="font-size: 16.5px; font-weight: 700; color: #15243B; line-height: 1.25; margin-bottom: 5px;">{{ c.title }}</div>
+                <div style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #7A8090; margin-bottom: 13px;">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" stroke-width="1.8"></path><circle cx="12" cy="10" r="2.4" stroke="#A8AEB9" stroke-width="1.8"></circle></svg>
+                  {{ c.area }}
+                </div>
+                <div style="display: flex; align-items: center; gap: 13px; padding-top: 13px; border-top: 1px solid #EDF0F4; font-size: 13px; color: #5A6172; font-weight: 500;">
+                  <span>{{ c.bedLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.bathLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.sizeLabel }}</span>
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 14px;">
+                  <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; color: #15243B;">{{ c.priceLabel }}</div>
+                  <div style="font-size: 12.5px; color: #8B93A1; font-weight: 500;">{{ c.furnishing }}</div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="text-align: center; margin-top: 34px;">
+          <button onClick="{{ goSearch }}" style="background: transparent; border: 1px solid #CCD3DB; border-radius: 999px; padding: 12px 26px; font-size: 14px; font-weight: 600; color: #15243B; cursor: pointer; font-family: inherit;" style-hover="border-color: #B9C2CD; background: #FAFAFA;">Open full results with filters &amp; map</button>
+        </div>
+      </div>
+      </sc-if>
+    </section>
+
+    <sc-if value="{{ notSearched }}" hint-placeholder-val="{{ true }}">
+
+    <!-- featured -->
+    <section style="max-width: 1240px; margin: 0 auto; padding: 40px 40px 16px;">
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px;">
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: {{ accent }}; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Handpicked this week</div>
+          <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 38px; margin: 0; color: #15243B;">Featured homes for rent</h2>
+        </div>
+        <button onClick="{{ goSearch }}" style="background: transparent; border: 1px solid #CCD3DB; border-radius: 999px; padding: 11px 22px; font-size: 14px; font-weight: 600; color: #15243B; cursor: pointer; font-family: inherit;">View all listings</button>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
+        <sc-for list="{{ featured }}" as="c" hint-placeholder-count="6">
+          <div onClick="{{ c.onOpen }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 14px 30px -24px rgba(21,36,59,0.4); transition: transform .18s ease, box-shadow .18s ease;" style-hover="transform: translateY(-4px); box-shadow: 0 22px 40px -22px rgba(21,36,59,0.45);">
+            <div style="position: relative; aspect-ratio: 4/3; background: #DDD3C5;">
+              <div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+              <button onClick="{{ c.onSave }}" style="position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.92); color: {{ accent }}; font-size: 17px; cursor: pointer; display: flex; align-items: center; justify-content: center;">{{ c.heart }}</button>
+              <sc-if value="{{ c.verified }}" hint-placeholder-val="{{ true }}">
+                <div style="position: absolute; bottom: 12px; left: 12px; display: inline-flex; align-items: center; gap: 5px; background: rgba(21,36,59,0.86); color: #fff; border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 600;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#8FD0AC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                  Verified
+                </div>
+              </sc-if>
+            </div>
+            <div style="padding: 16px 17px 18px;">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 5px;">
+                <div style="font-size: 16.5px; font-weight: 700; color: #15243B; line-height: 1.25;">{{ c.title }}</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #7A8090; margin-bottom: 13px;">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" stroke-width="1.8"></path><circle cx="12" cy="10" r="2.4" stroke="#A8AEB9" stroke-width="1.8"></circle></svg>
+                {{ c.area }}
+              </div>
+              <div style="display: flex; align-items: center; gap: 13px; padding-top: 13px; border-top: 1px solid #EDF0F4; font-size: 13px; color: #5A6172; font-weight: 500;">
+                <span>{{ c.bedLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.bathLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.sizeLabel }}</span>
+              </div>
+              <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 14px;">
+                <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 24px; color: #15243B;">{{ c.priceLabel }}</div>
+                <div style="font-size: 12.5px; color: #8B93A1; font-weight: 500;">{{ c.furnishing }}</div>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- how it works -->
+    <section style="max-width: 1240px; margin: 0 auto; padding: 56px 40px;">
+      <div style="background: #15243B; border-radius: 28px; padding: 52px 56px; color: #fff; position: relative; overflow: hidden;">
+        <div style="position: absolute; right: -40px; top: -40px; width: 280px; height: 280px; border-radius: 50%; background: rgba(30,58,92,0.16);"></div>
+        <div style="position: relative;">
+          <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 36px; margin: 0 0 8px;">Renting, the way it should be</h2>
+          <p style="font-size: 16px; color: #AEB6C6; margin: 0 0 38px; max-width: 520px;">Three calm steps from searching to your front door — with verification and on-platform chat at every stage.</p>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px;">
+            <div>
+              <div style="width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: {{ accent }};">1</div>
+              <div style="font-size: 18px; font-weight: 700; margin-bottom: 7px;">Browse verified listings</div>
+              <div style="font-size: 14.5px; color: #AEB6C6; line-height: 1.6;">Real photos, honest prices and owner-checked documents. Filter by block, budget and amenities.</div>
+            </div>
+            <div>
+              <div style="width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: {{ accent }};">2</div>
+              <div style="font-size: 18px; font-weight: 700; margin-bottom: 7px;">Chat &amp; book a visit</div>
+              <div style="font-size: 14.5px; color: #AEB6C6; line-height: 1.6;">Message owners on-platform and propose a visit time. They accept or suggest a new slot — no phone tag.</div>
+            </div>
+            <div>
+              <div style="width: 46px; height: 46px; border-radius: 13px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 16px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: {{ accent }};">3</div>
+              <div style="font-size: 18px; font-weight: 700; margin-bottom: 7px;">Move in with confidence</div>
+              <div style="font-size: 14.5px; color: #AEB6C6; line-height: 1.6;">See the place, agree the terms, and leave a review. Two-way ratings keep the whole community honest.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    </sc-if>
+  </main>
+  </sc-if>
+
+  <!-- ============ SEARCH ============ -->
+  <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ true }}">
+  <main data-screen-label="Search results" style="max-width: 1320px; margin: 0 auto; padding: 26px 40px 60px;">
+    <!-- intent + sort bar -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px;">
+      <div>
+        <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 30px; margin: 0 0 4px; color: #15243B;">{{ intentLabel }} in Aftab Nagar</h1>
+        <div style="font-size: 14px; color: #7A8090;">{{ resultCount }} homes · {{ city }}</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 500; color: #41495A; cursor: pointer; user-select: none;" onClick="{{ toggleVerified }}">
+          <span style="font-size: 14px;">Sort</span>
+        </label>
+        <select value="{{ sortVal }}" onChange="{{ setSort }}" style="border: 1px solid #D3D9E0; border-radius: 12px; padding: 9px 14px; font-size: 14px; font-weight: 600; color: #15243B; background: #fff; font-family: inherit; cursor: pointer;">
+          <sc-for list="{{ sortOpts }}" as="o" hint-placeholder-count="4">
+            <option value="{{ o.v }}">{{ o.t }}</option>
+          </sc-for>
+        </select>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 248px 1fr 0.82fr; gap: 26px; align-items: start;">
+      <!-- filter rail -->
+      <aside style="position: sticky; top: 88px; background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 22px;">
+        <div style="font-size: 15px; font-weight: 700; color: #15243B; margin-bottom: 18px;">Filters</div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 11px;">Looking to</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+            <sc-for list="{{ intents }}" as="it" hint-placeholder-count="5">
+              <button onClick="{{ it.onPickIntent }}" style="border: 1px solid {{ it.bd }}; background: {{ it.bg }}; color: {{ it.fg }}; border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">{{ it.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 11px;">Bedrooms</div>
+          <div style="display: flex; gap: 7px;">
+            <sc-for list="{{ bedOpts }}" as="b" hint-placeholder-count="5">
+              <button onClick="{{ b.onPick }}" style="flex: 1; border: 1px solid {{ b.bd }}; background: {{ b.bg }}; color: {{ b.fg }}; border-radius: 10px; padding: 9px 0; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;">{{ b.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 11px;">Monthly budget</div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="flex: 1; border: 1px solid #DBE0E6; border-radius: 10px; padding: 9px 11px; font-size: 13px; color: #5A6172;">৳ Min</div>
+            <span style="color: #C5CCD5;">–</span>
+            <div style="flex: 1; border: 1px solid #DBE0E6; border-radius: 10px; padding: 9px 11px; font-size: 13px; color: #5A6172;">৳ Max</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 11px;">Furnishing</div>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; margin-bottom: 8px; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px; display: inline-block;"></span> Unfurnished</label>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; margin-bottom: 8px; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px; display: inline-block;"></span> Semi-furnished</label>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px; display: inline-block;"></span> Furnished</label>
+        </div>
+
+        <div style="margin-bottom: 22px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 11px;">Amenities</div>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; margin-bottom: 8px; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px;"></span> Generator backup</label>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; margin-bottom: 8px; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px;"></span> Parking</label>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; margin-bottom: 8px; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px;"></span> Lift</label>
+          <label style="display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: #41495A; cursor: pointer;"><span style="width: 16px; height: 16px; border: 1.6px solid #C5CCD5; border-radius: 5px;"></span> Gas line</label>
+        </div>
+
+        <div onClick="{{ toggleVerified }}" style="display: flex; align-items: center; justify-content: space-between; padding-top: 18px; border-top: 1px solid #EDF0F4; cursor: pointer;">
+          <span style="font-size: 13.5px; font-weight: 600; color: #15243B;">Verified only</span>
+          <span style="width: 40px; height: 23px; border-radius: 999px; background: {{ verifiedToggleBg }}; position: relative; transition: background .2s; display: inline-block;">
+            <span style="position: absolute; top: 2.5px; left: {{ verifiedKnobX }}; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></span>
+          </span>
+        </div>
+      </aside>
+
+      <!-- results grid -->
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; align-content: start;">
+        <sc-for list="{{ list }}" as="c" hint-placeholder-count="6">
+          <div onClick="{{ c.onOpen }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 14px 30px -26px rgba(21,36,59,0.4); transition: transform .18s ease;" style-hover="transform: translateY(-4px);">
+            <div style="position: relative; aspect-ratio: 16/11; background: #DDD3C5;">
+              <div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+              <button onClick="{{ c.onSave }}" style="position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.92); color: {{ accent }}; font-size: 17px; cursor: pointer;">{{ c.heart }}</button>
+              <sc-if value="{{ c.verified }}" hint-placeholder-val="{{ true }}">
+                <div style="position: absolute; bottom: 12px; left: 12px; display: inline-flex; align-items: center; gap: 5px; background: rgba(21,36,59,0.86); color: #fff; border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 600;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#8FD0AC" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Verified
+                </div>
+              </sc-if>
+            </div>
+            <div style="padding: 15px 16px 17px;">
+              <div style="font-size: 16px; font-weight: 700; color: #15243B; margin-bottom: 5px; line-height: 1.25;">{{ c.title }}</div>
+              <div style="display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: #7A8090; margin-bottom: 12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" stroke-width="1.8"></path></svg>{{ c.area }}
+              </div>
+              <div style="display: flex; align-items: center; gap: 11px; padding-top: 12px; border-top: 1px solid #EDF0F4; font-size: 12.5px; color: #5A6172; font-weight: 500;">
+                <span>{{ c.bedLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.bathLabel }}</span><span style="color:#CCD3DB;">·</span><span>{{ c.sizeLabel }}</span>
+              </div>
+              <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: #15243B; margin-top: 12px;">{{ c.priceLabel }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- map -->
+      <div style="position: sticky; top: 88px; height: calc(100vh - 110px); min-height: 520px; border-radius: 18px; overflow: hidden; border: 1px solid #DDE2E8; background:
+        linear-gradient(0deg, rgba(216,224,214,0.5), rgba(216,224,214,0.5)),
+        repeating-linear-gradient(0deg, #EAEDE4 0 38px, #E3E7DC 38px 40px),
+        repeating-linear-gradient(90deg, #EAEDE4 0 38px, #E3E7DC 38px 40px);">
+        <div style="position: absolute; inset: 0; background:
+          repeating-linear-gradient(58deg, transparent 0 70px, rgba(255,255,255,0.7) 70px 78px),
+          repeating-linear-gradient(150deg, transparent 0 90px, rgba(255,255,255,0.55) 90px 97px);"></div>
+        <div style="position: absolute; left: 12%; top: 8%; width: 30%; height: 26%; background: rgba(143,180,150,0.4); border-radius: 40% 50% 45% 55%; filter: blur(1px);"></div>
+        <div style="position: absolute; right: 8%; bottom: 14%; width: 34%; height: 22%; background: rgba(143,180,150,0.35); border-radius: 55% 45%;"></div>
+        <div style="position: absolute; left: 18px; top: 18px; background: rgba(255,255,255,0.95); border-radius: 11px; padding: 9px 13px; font-size: 12px; font-weight: 700; color: #15243B; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">Aftab Nagar · Live map</div>
+        <sc-for list="{{ mapPins }}" as="p" hint-placeholder-count="5">
+          <div onClick="{{ p.onOpen }}" style="position: absolute; left: {{ p.mapX }}; top: {{ p.mapY }}; transform: translate(-50%,-50%); background: {{ accent }}; color: #fff; font-size: 12px; font-weight: 700; padding: 6px 11px; border-radius: 999px; cursor: pointer; box-shadow: 0 6px 14px -4px rgba(22,48,77,0.7); border: 2px solid #fff; white-space: nowrap;">{{ p.pinLabel }}</div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ DETAIL ============ -->
+  <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ true }}">
+  <main data-screen-label="Property detail" style="max-width: 1180px; margin: 0 auto; padding: 22px 40px 70px;">
+    <div onClick="{{ goSearch }}" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #6A7180; cursor: pointer; margin-bottom: 18px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to results
+    </div>
+
+    <!-- gallery -->
+    <div style="display: grid; grid-template-columns: 1.7fr 1fr; gap: 12px; margin-bottom: 14px;">
+      <div style="border-radius: 18px; overflow: hidden; aspect-ratio: 16/11; background: #DDD3C5;">
+        <div style="width:100%;height:100%;background-image:url('{{ heroShot }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+      </div>
+      <div style="display: grid; grid-template-rows: repeat(2, 1fr); gap: 12px;">
+        <sc-for list="{{ detailShotsTop }}" as="sh" hint-placeholder-count="2">
+          <div onClick="{{ sh.onPick }}" style="border-radius: 16px; overflow: hidden; background: #DDD3C5; cursor: pointer; border: 2.5px solid {{ sh.ring }};">
+            <div style="width:100%;height:100%;background-image:url('{{ sh.url }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; gap: 10px; margin-bottom: 32px;">
+      <sc-for list="{{ detailShots }}" as="sh" hint-placeholder-count="4">
+        <div onClick="{{ sh.onPick }}" style="width: 92px; height: 64px; border-radius: 11px; overflow: hidden; background: #DDD3C5; cursor: pointer; border: 2.5px solid {{ sh.ring }};">
+          <div style="width:100%;height:100%;background-image:url('{{ sh.url }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 360px; gap: 40px; align-items: start;">
+      <!-- left column -->
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <sc-if value="{{ sel.verified }}" hint-placeholder-val="{{ true }}">
+            <span style="display: inline-flex; align-items: center; gap: 5px; background: #EAF1ED; color: #3C7A58; border-radius: 999px; padding: 5px 11px; font-size: 12px; font-weight: 700;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3C7A58" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>Verified listing
+            </span>
+          </sc-if>
+          <span style="font-size: 12.5px; color: #8B93A1; font-weight: 600;">{{ sel.furnishing }} · For {{ sel.pref }}</span>
+        </div>
+        <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 36px; line-height: 1.12; margin: 0 0 8px; color: #15243B;">{{ sel.title }}</h1>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 14.5px; color: #6A7180; margin-bottom: 24px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" stroke-width="1.8"></path><circle cx="12" cy="10" r="2.4" stroke="#A8AEB9" stroke-width="1.8"></circle></svg>{{ sel.area }}
+        </div>
+
+        <!-- facts band -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; padding: 20px; background: #fff; border: 1px solid #E7EAEE; border-radius: 16px; margin-bottom: 30px;">
+          <div><div style="font-size: 12px; color: #8B93A1; font-weight: 600; margin-bottom: 4px;">Bedrooms</div><div style="font-size: 18px; font-weight: 700; color: #15243B;">{{ sel.beds }}</div></div>
+          <div style="border-left: 1px solid #EDF0F4; padding-left: 16px;"><div style="font-size: 12px; color: #8B93A1; font-weight: 600; margin-bottom: 4px;">Bathrooms</div><div style="font-size: 18px; font-weight: 700; color: #15243B;">{{ sel.baths }}</div></div>
+          <div style="border-left: 1px solid #EDF0F4; padding-left: 16px;"><div style="font-size: 12px; color: #8B93A1; font-weight: 600; margin-bottom: 4px;">Size</div><div style="font-size: 18px; font-weight: 700; color: #15243B;">{{ sel.sizeLabel }}</div></div>
+          <div style="border-left: 1px solid #EDF0F4; padding-left: 16px;"><div style="font-size: 12px; color: #8B93A1; font-weight: 600; margin-bottom: 4px;">Floor</div><div style="font-size: 18px; font-weight: 700; color: #15243B;">{{ sel.floor }}</div></div>
+        </div>
+
+        <h3 style="font-size: 19px; font-weight: 700; margin: 0 0 12px; color: #15243B;">About this home</h3>
+        <p style="font-size: 15.5px; line-height: 1.7; color: #51596A; margin: 0 0 32px;">{{ sel.desc }}</p>
+
+        <h3 style="font-size: 19px; font-weight: 700; margin: 0 0 16px; color: #15243B;">Amenities</h3>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; margin-bottom: 34px;">
+          <sc-for list="{{ detailAmen }}" as="a" hint-placeholder-count="6">
+            <div style="display: flex; align-items: center; gap: 11px; font-size: 14.5px; color: #41495A;">
+              <span style="width: 32px; height: 32px; border-radius: 9px; background: #EEF1F5; display: flex; align-items: center; justify-content: center;">{{ a.icon }}</span>{{ a.label }}
+            </div>
+          </sc-for>
+        </div>
+
+        <h3 style="font-size: 19px; font-weight: 700; margin: 0 0 16px; color: #15243B;">Location</h3>
+        <div style="border-radius: 16px; overflow: hidden; border: 1px solid #DDE2E8; height: 260px; position: relative; background:
+          linear-gradient(0deg, rgba(216,224,214,0.5), rgba(216,224,214,0.5)),
+          repeating-linear-gradient(0deg, #EAEDE4 0 38px, #E3E7DC 38px 40px),
+          repeating-linear-gradient(90deg, #EAEDE4 0 38px, #E3E7DC 38px 40px); margin-bottom: 8px;">
+          <div style="position: absolute; inset: 0; background: repeating-linear-gradient(58deg, transparent 0 70px, rgba(255,255,255,0.7) 70px 78px);"></div>
+          <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%,-100%); display: flex; flex-direction: column; align-items: center;">
+            <div style="background: {{ accent }}; width: 30px; height: 30px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); border: 3px solid #fff; box-shadow: 0 6px 14px -4px rgba(22,48,77,0.7);"></div>
+          </div>
+          <div style="position: absolute; left: 16px; bottom: 16px; background: rgba(21,36,59,0.86); color: #fff; border-radius: 8px; padding: 7px 12px; font-size: 12.5px; font-weight: 600;">Exact pin shown after visit is approved</div>
+        </div>
+      </div>
+
+      <!-- booking card -->
+      <aside style="position: sticky; top: 88px;">
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 24px; box-shadow: 0 1px 2px rgba(21,36,59,0.06), 0 12px 28px rgba(21,36,59,0.10), 0 28px 60px rgba(21,36,59,0.10);">
+          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px;">
+            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 32px; color: #15243B;">{{ sel.priceLabel }}</span>
+          </div>
+          <div style="font-size: 13px; color: #8B93A1; margin-bottom: 20px;">{{ sel.furnishing }} · Available now</div>
+
+          <div style="background: #F4F6F9; border-radius: 13px; padding: 15px 16px; margin-bottom: 18px;">
+            <sc-for list="{{ costRows }}" as="r" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 5px 0; font-size: 13.5px;">
+                <span style="color: #6A7180;">{{ r.k }}</span><span style="color: #15243B; font-weight: 700;">{{ r.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button onClick="{{ openBooking }}" style="width: 100%; background: {{ accent }}; color: #fff; border: none; border-radius: 14px; padding: 15px; font-size: 15.5px; font-weight: 700; cursor: pointer; font-family: inherit; box-shadow: 0 10px 22px -8px rgba(30,58,92,0.6); margin-bottom: 10px;">Request a visit</button>
+          <div style="display: flex; gap: 10px;">
+            <button style="flex: 1; background: #fff; color: #15243B; border: 1px solid #D3D9E0; border-radius: 14px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 7px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.4 8.4 0 01-9 8.4L4 21l1.1-3.6A8.4 8.4 0 1121 11.5z" stroke="#15243B" stroke-width="1.8" stroke-linejoin="round"></path></svg>Chat
+            </button>
+            <button onClick="{{ sel.onSave }}" style="flex: 1; background: #fff; color: #15243B; border: 1px solid #D3D9E0; border-radius: 14px; padding: 13px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 7px;">
+              <span style="color: {{ accent }}; font-size: 16px;">{{ sel.heart }}</span>Save
+            </button>
+          </div>
+        </div>
+
+        <!-- owner -->
+        <div onClick="{{ goPublicProfile }}" class="acct-link" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 20px; margin-top: 16px; cursor: pointer; transition: background .25s, border-color .25s;">
+          <div style="display: flex; align-items: center; gap: 13px;">
+            <div style="width: 48px; height: 48px; border-radius: 13px; background: #15243B; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px;">{{ sel.ownerInitial }}</div>
+            <div style="flex: 1;">
+              <div style="font-size: 15px; font-weight: 700; color: #15243B;">{{ sel.ownerName }}</div>
+              <div style="font-size: 12.5px; color: #8A8F9C;">{{ sel.ownerType }} · ★ {{ sel.ratingLabel }} · View profile</div>
+            </div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="#AEB8C6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #EDF0F4; font-size: 12.5px; color: #6A7180;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="#A8AEB9" stroke-width="1.7"></circle><path d="M12 7.5V12l3 2" stroke="#A8AEB9" stroke-width="1.7" stroke-linecap="round"></path></svg>Typically replies in {{ sel.ownerRt }}
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- similar -->
+    <div style="margin-top: 56px;">
+      <h2 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 28px; margin: 0 0 20px; color: #15243B;">Similar homes nearby</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;">
+        <sc-for list="{{ similar }}" as="c" hint-placeholder-count="3">
+          <div onClick="{{ c.onOpen }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer;">
+            <div style="aspect-ratio: 16/11; background: #DDD3C5;"><div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div></div>
+            <div style="padding: 14px 15px 16px;">
+              <div style="font-size: 15px; font-weight: 700; color: #15243B; margin-bottom: 4px;">{{ c.title }}</div>
+              <div style="font-size: 12.5px; color: #7A8090; margin-bottom: 10px;">{{ c.area }}</div>
+              <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 20px; color: #15243B;">{{ c.priceLabel }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ SAVED / ACTIVITY ============ -->
+  <sc-if value="{{ isSaved }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Saved &amp; activity" style="max-width: 1240px; margin: 0 auto; padding: 34px 40px 70px;">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 36px; margin: 0 0 6px; color: #15243B;">Your activity</h1>
+    <p style="font-size: 15px; color: #6A7180; margin: 0 0 30px;">Homes you've saved and visits you've lined up across Aftab Nagar.</p>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 22px;">
+      <div style="width: 32px; height: 32px; border-radius: 9px; background: #FFF; border: 1px solid #E7EAEE; display: flex; align-items: center; justify-content: center; color: {{ accent }}; font-size: 16px;">♥</div>
+      <h2 style="font-size: 20px; font-weight: 700; margin: 0; color: #15243B;">Saved homes</h2>
+      <span style="font-size: 13px; color: #8B93A1; font-weight: 600;">· {{ savedCount }}</span>
+    </div>
+
+    <sc-if value="{{ hasSaved }}" hint-placeholder-val="{{ true }}">
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 50px;">
+      <sc-for list="{{ savedList }}" as="c" hint-placeholder-count="3">
+        <div onClick="{{ c.onOpen }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer; box-shadow: 0 14px 30px -26px rgba(21,36,59,0.4);">
+          <div style="position: relative; aspect-ratio: 16/11; background: #DDD3C5;">
+            <div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;"></div>
+            <button onClick="{{ c.onSave }}" style="position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(255,255,255,0.92); color: {{ accent }}; font-size: 17px; cursor: pointer;">{{ c.heart }}</button>
+          </div>
+          <div style="padding: 15px 16px 17px;">
+            <div style="font-size: 16px; font-weight: 700; color: #15243B; margin-bottom: 4px;">{{ c.title }}</div>
+            <div style="font-size: 12.5px; color: #7A8090; margin-bottom: 12px;">{{ c.area }}</div>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: #15243B;">{{ c.priceLabel }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ noSaved }}" hint-placeholder-val="{{ false }}">
+    <div style="border: 1px dashed #D3D9E0; border-radius: 18px; padding: 48px; text-align: center; margin-bottom: 50px; background: #fff;">
+      <div style="font-size: 30px; color: #C5CCD5; margin-bottom: 10px;">♡</div>
+      <div style="font-size: 16px; font-weight: 700; color: #15243B; margin-bottom: 6px;">No saved homes yet</div>
+      <p style="font-size: 14px; color: #8B93A1; margin: 0 0 18px;">Tap the heart on any listing to keep it here.</p>
+      <button onClick="{{ goRent }}" style="background: {{ accent }}; color: #fff; border: none; border-radius: 12px; padding: 11px 22px; font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;">Browse listings</button>
+    </div>
+    </sc-if>
+
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 22px;">
+      <div style="width: 32px; height: 32px; border-radius: 9px; background: #FFF; border: 1px solid #E7EAEE; display: flex; align-items: center; justify-content: center;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="#1E3A5C" stroke-width="1.8"></rect><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" stroke="#1E3A5C" stroke-width="1.8" stroke-linecap="round"></path></svg>
+      </div>
+      <h2 style="font-size: 20px; font-weight: 700; margin: 0; color: #15243B;">Upcoming visits</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      <sc-for list="{{ visitsList }}" as="v" hint-placeholder-count="2">
+        <div onClick="{{ v.onOpen }}" style="display: flex; align-items: center; gap: 18px; background: #fff; border: 1px solid #E7EAEE; border-radius: 16px; padding: 16px 18px; cursor: pointer;">
+          <div style="width: 56px; height: 56px; border-radius: 12px; background: {{ accent }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; flex: 0 0 auto;"><span style="font-size: 10px; font-weight: 700;">{{ v.day }}</span><span style="font-size: 20px; font-weight: 800;">{{ v.dateNum }}</span></div>
+          <div style="width: 64px; height: 56px; border-radius: 11px; overflow: hidden; background: #DDD3C5; flex: 0 0 auto;"><div style="width:100%;height:100%;background-image:url('{{ v.coverUrl }}');background-size:cover;background-position:center;"></div></div>
+          <div style="flex: 1;">
+            <div style="font-size: 15.5px; font-weight: 700; color: #15243B; margin-bottom: 3px;">{{ v.title }}</div>
+            <div style="font-size: 13px; color: #7A8090;">{{ v.timeLabel }} · {{ v.area }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 9px; flex: 0 0 auto;">
+            <span style="font-size: 12px; font-weight: 700; color: {{ v.statusFg }}; background: {{ v.statusBg }}; border-radius: 999px; padding: 6px 13px; white-space: nowrap;">{{ v.status }}</span>
+            <sc-if value="{{ v.hasAction }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ v.onAction }}" style="height: 34px; padding: 0 14px; border-radius: 10px; border: none; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: {{ v.actionFg }}; background: {{ v.actionBg }}; white-space: nowrap;">{{ v.actionLabel }}</button>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- saved searches + reviews entry -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 44px;">
+      <div onClick="{{ goSavedSearches }}" class="prop-card" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 22px; cursor: pointer; box-shadow: 0 1px 2px rgba(20,40,70,.03); transition: transform .3s, box-shadow .3s;">
+        <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 44px; height: 44px; border-radius: 12px; background: #EEF3F8; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1112 0c0 5 2 6 2 6H4s2-1 2-6z" stroke="#1E3A5C" stroke-width="1.8" stroke-linejoin="round"></path><path d="M10 20a2 2 0 004 0" stroke="#1E3A5C" stroke-width="1.8" stroke-linecap="round"></path></svg></div><div style="flex: 1;"><div style="font-size: 15.5px; font-weight: 700; color: #15243B;">Saved searches &amp; alerts</div><div style="font-size: 13px; color: #8B93A1; margin-top: 2px;">3 active · 4 new matches</div></div><span style="color: #AEB8C6;">→</span></div>
+      </div>
+      <div onClick="{{ goWriteReview }}" class="prop-card" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 22px; cursor: pointer; box-shadow: 0 1px 2px rgba(20,40,70,.03); transition: transform .3s, box-shadow .3s;">
+        <div style="display: flex; align-items: center; gap: 12px;"><div style="width: 44px; height: 44px; border-radius: 12px; background: #F6EFD9; display: flex; align-items: center; justify-content: center; font-size: 19px;">⭐</div><div style="flex: 1;"><div style="font-size: 15.5px; font-weight: 700; color: #15243B;">Review your last visit</div><div style="font-size: 13px; color: #8B93A1; margin-top: 2px;">Garden-Facing 2-Bed · Jun 14</div></div><span style="color: #AEB8C6;">→</span></div>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ MESSAGES ============ -->
+  <sc-if value="{{ isMessages }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Messages" style="max-width: 1240px; margin: 0 auto; padding: 24px 40px 50px;">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 30px; margin: 0 0 18px; color: #15243B;">Messages</h1>
+    <div style="display: grid; grid-template-columns: 320px 1fr; gap: 0; background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; overflow: hidden; height: 620px; box-shadow: 0 20px 44px -32px rgba(21,36,59,0.4);">
+      <!-- thread list -->
+      <div style="border-right: 1px solid #E7EAEE; display: flex; flex-direction: column;">
+        <div style="padding: 16px 18px; border-bottom: 1px solid #E7EAEE;">
+          <div style="display: flex; align-items: center; gap: 9px; background: #F4F6F9; border-radius: 11px; padding: 9px 12px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#8B93A1" stroke-width="2"></circle><path d="M20 20l-3.2-3.2" stroke="#8B93A1" stroke-width="2" stroke-linecap="round"></path></svg>
+            <span style="font-size: 13.5px; color: #8B93A1;">Search conversations</span>
+          </div>
+        </div>
+        <div style="flex: 1; overflow-y: auto;">
+          <sc-for list="{{ threads }}" as="t" hint-placeholder-count="4">
+            <div onClick="{{ t.onPick }}" style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; cursor: pointer; background: {{ t.rowBg }}; border-left: 3px solid {{ t.rowBar }};">
+              <div style="width: 46px; height: 46px; border-radius: 12px; background: #15243B; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 19px; flex: 0 0 auto;">{{ t.initial }}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+                  <span style="font-size: 14.5px; font-weight: 700; color: #15243B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.name }}</span>
+                  <span style="font-size: 11.5px; color: #A8AEB9; flex: 0 0 auto;">{{ t.time }}</span>
+                </div>
+                <div style="font-size: 12.5px; color: #8B93A1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px;">{{ t.preview }}</div>
+              </div>
+              <sc-if value="{{ t.unread }}" hint-placeholder-val="{{ false }}">
+                <span style="width: 19px; height: 19px; border-radius: 50%; background: {{ accent }}; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">{{ t.unreadCount }}</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <!-- active thread -->
+      <div style="display: flex; flex-direction: column; background: #FBFCFD;">
+        <div style="padding: 14px 20px; border-bottom: 1px solid #E7EAEE; display: flex; align-items: center; gap: 12px; background: #fff;">
+          <div style="width: 42px; height: 42px; border-radius: 11px; background: #15243B; color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 18px;">{{ activeInitial }}</div>
+          <div style="flex: 1;">
+            <div style="font-size: 15px; font-weight: 700; color: #15243B;">{{ activeName }}</div>
+            <div style="font-size: 12px; color: #4F8A6B; font-weight: 600;">● Online · {{ activeType }}</div>
+          </div>
+          <button onClick="{{ openActiveListing }}" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: #15243B; cursor: pointer; font-family: inherit;">View listing</button>
+        </div>
+        <div style="flex: 1; overflow-y: auto; padding: 22px; display: flex; flex-direction: column; gap: 12px;">
+          <!-- inline listing card -->
+          <div onClick="{{ openActiveListing }}" style="align-self: center; display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #E7EAEE; border-radius: 14px; padding: 10px 14px 10px 10px; cursor: pointer; box-shadow: 0 8px 20px -16px rgba(21,36,59,0.4); max-width: 340px;">
+            <div style="width: 52px; height: 52px; border-radius: 10px; overflow: hidden; background: #DDD3C5; flex: 0 0 auto;"><div style="width:100%;height:100%;background-image:url('{{ activeCover }}');background-size:cover;background-position:center;"></div></div>
+            <div><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">{{ activeListingTitle }}</div><div style="font-size: 12px; color: #8B93A1;">{{ activeListingPrice }} · {{ activeListingArea }}</div></div>
+          </div>
+          <sc-for list="{{ activeMessages }}" as="m" hint-placeholder-count="4">
+            <div style="display: flex; justify-content: {{ m.justify }};">
+              <div style="max-width: 74%; background: {{ m.bubbleBg }}; color: {{ m.bubbleFg }}; border: {{ m.bubbleBorder }}; border-radius: {{ m.radius }}; padding: 10px 14px; font-size: 14px; line-height: 1.45;">
+                {{ m.text }}
+                <div style="font-size: 10.5px; color: {{ m.metaFg }}; text-align: right; margin-top: 4px;">{{ m.time }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding: 14px 18px; border-top: 1px solid #E7EAEE; background: #fff; display: flex; align-items: center; gap: 10px;">
+          <input value="{{ msgText }}" onChange="{{ setMsg }}" placeholder="Write a message…" style="flex: 1; border: 1px solid #DBE0E6; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-family: inherit; color: #15243B; outline: none;">
+          <button onClick="{{ sendMsg }}" style="width: 44px; height: 44px; border-radius: 12px; background: {{ accent }}; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none"><path d="M4 12l16-7-7 16-2.5-6.5L4 12z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"></path></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ LIST YOUR PROPERTY (WIZARD) ============ -->
+  <sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="List your property" style="max-width: 1080px; margin: 0 auto; padding: 30px 40px 70px;">
+    <div onClick="{{ goHome }}" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #6A7180; cursor: pointer; margin-bottom: 18px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Cancel
+    </div>
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 34px; margin: 0 0 6px; color: #15243B;">List your property</h1>
+    <p style="font-size: 15px; color: #6A7180; margin: 0 0 26px;">A few calm steps. We verify every listing before it goes live.</p>
+
+    <!-- progress -->
+    <div style="display: flex; align-items: center; gap: 0; margin-bottom: 30px;">
+      <sc-for list="{{ wizSteps }}" as="w" hint-placeholder-count="5">
+        <div style="display: flex; align-items: center; flex: {{ w.flex }};">
+          <div style="display: flex; align-items: center; gap: 9px; flex: 0 0 auto;">
+            <div style="width: 30px; height: 30px; border-radius: 50%; background: {{ w.circleBg }}; color: {{ w.circleFg }}; border: 1.6px solid {{ w.circleBd }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;">{{ w.mark }}</div>
+            <span style="font-size: 13px; font-weight: 600; color: {{ w.labelFg }}; white-space: nowrap;">{{ w.label }}</span>
+          </div>
+          <sc-if value="{{ w.hasLine }}" hint-placeholder-val="{{ true }}">
+            <div style="flex: 1; height: 2px; background: {{ w.lineBg }}; margin: 0 12px;"></div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start;">
+      <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 28px 30px; box-shadow: 0 18px 40px -32px rgba(21,36,59,0.4);">
+
+        <!-- step 1: type -->
+        <sc-if value="{{ isWiz1 }}" hint-placeholder-val="{{ true }}">
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 4px; color: #15243B;">What are you listing?</h2>
+        <p style="font-size: 14px; color: #8B93A1; margin: 0 0 22px;">Pick the type that best fits your property.</p>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+          <sc-for list="{{ wizTypes }}" as="ty" hint-placeholder-count="6">
+            <div onClick="{{ ty.onPick }}" style="display: flex; align-items: center; gap: 13px; border: 1.6px solid {{ ty.bd }}; background: {{ ty.bg }}; border-radius: 14px; padding: 16px; cursor: pointer;">
+              <div style="width: 40px; height: 40px; border-radius: 11px; background: {{ ty.iconBg }}; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">
+                <span style="font-size: 19px;">{{ ty.icon }}</span>
+              </div>
+              <div>
+                <div style="font-size: 14.5px; font-weight: 700; color: #15243B;">{{ ty.label }}</div>
+                <div style="font-size: 12px; color: #8B93A1;">{{ ty.sub }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- step 2: details -->
+        <sc-if value="{{ isWiz2 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 22px; color: #15243B;">Property details</h2>
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Listing title</label>
+            <input value="{{ fTitle }}" onChange="{{ setTitle }}" placeholder="e.g. Sunlit 2-bed apartment in Block B" style="width: 100%; border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; font-family: inherit; color: #15243B; outline: none;">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Block / area</label>
+              <div style="border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; color: #15243B;">Block B, Aftab Nagar</div>
+            </div>
+            <div>
+              <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Size (sqft)</label>
+              <div style="border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; color: #15243B;">1,100</div>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 9px;">Bedrooms</label>
+            <div style="display: flex; gap: 8px;">
+              <sc-for list="{{ wizBeds }}" as="b" hint-placeholder-count="4">
+                <button onClick="{{ b.onPick }}" style="flex: 1; border: 1.6px solid {{ b.bd }}; background: {{ b.bg }}; color: {{ b.fg }}; border-radius: 10px; padding: 11px 0; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit;">{{ b.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 9px;">Furnishing</label>
+            <div style="display: flex; gap: 8px;">
+              <sc-for list="{{ wizFurnish }}" as="f" hint-placeholder-count="3">
+                <button onClick="{{ f.onPick }}" style="flex: 1; border: 1.6px solid {{ f.bd }}; background: {{ f.bg }}; color: {{ f.fg }}; border-radius: 10px; padding: 11px 0; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;">{{ f.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <!-- step 3: media -->
+        <sc-if value="{{ isWiz3 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 4px; color: #15243B;">Photos</h2>
+        <p style="font-size: 14px; color: #8B93A1; margin: 0 0 20px;">Real, recent photos get 3× more enquiries. The first is your cover.</p>
+        <div style="border: 1.8px dashed #C5CCD5; border-radius: 16px; padding: 38px; text-align: center; margin-bottom: 18px; background: #F8FAFC;">
+          <div style="width: 50px; height: 50px; border-radius: 13px; background: #fff; border: 1px solid #E7EAEE; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 16V5m0 0L8 9m4-4l4 4" stroke="#1E3A5C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path><path d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="#1E3A5C" stroke-width="1.8" stroke-linecap="round"></path></svg>
+          </div>
+          <div style="font-size: 14.5px; font-weight: 700; color: #15243B; margin-bottom: 4px;">Drag photos here or browse</div>
+          <div style="font-size: 12.5px; color: #8B93A1;">JPG or PNG · up to 20 images · auto-compressed</div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+          <sc-for list="{{ wizPhotos }}" as="p" hint-placeholder-count="4">
+            <div style="position: relative; aspect-ratio: 1; border-radius: 11px; overflow: hidden; background: #DDD3C5;">
+              <div style="width:100%;height:100%;background-image:url('{{ p.url }}');background-size:cover;background-position:center;"></div>
+              <sc-if value="{{ p.isCover }}" hint-placeholder-val="{{ false }}">
+                <span style="position: absolute; bottom: 6px; left: 6px; background: rgba(21,36,59,0.86); color: #fff; font-size: 10px; font-weight: 700; border-radius: 6px; padding: 3px 7px;">Cover</span>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <!-- step 4: pricing -->
+        <sc-if value="{{ isWiz4 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 22px; color: #15243B;">Pricing &amp; terms</h2>
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          <div>
+            <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Monthly rent (৳)</label>
+            <input value="{{ fPrice }}" onChange="{{ setPrice }}" placeholder="38000" style="width: 100%; border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; font-family: inherit; color: #15243B; outline: none;">
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Service charge (৳/mo)</label>
+              <div style="border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; color: #15243B;">2,500</div>
+            </div>
+            <div>
+              <label style="font-size: 12.5px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 7px;">Advance (months)</label>
+              <div style="border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 12px 14px; font-size: 14.5px; color: #15243B;">2</div>
+            </div>
+          </div>
+          <label onClick="{{ toggleNeg }}" style="display: flex; align-items: center; justify-content: space-between; border: 1.6px solid #DBE0E6; border-radius: 11px; padding: 13px 15px; cursor: pointer;">
+            <span style="font-size: 14px; font-weight: 600; color: #15243B;">Price is negotiable</span>
+            <span style="width: 40px; height: 23px; border-radius: 999px; background: {{ negBg }}; position: relative; display: inline-block; transition: background .2s;"><span style="position: absolute; top: 2.5px; left: {{ negX }}; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: left .2s;"></span></span>
+          </label>
+        </div>
+        </sc-if>
+
+        <!-- step 5: review -->
+        <sc-if value="{{ isWiz5 }}" hint-placeholder-val="{{ false }}">
+        <h2 style="font-size: 20px; font-weight: 700; margin: 0 0 4px; color: #15243B;">Review &amp; publish</h2>
+        <p style="font-size: 14px; color: #8B93A1; margin: 0 0 20px;">Check the details. We'll verify and publish within 24 hours.</p>
+        <div style="display: flex; flex-direction: column;">
+          <sc-for list="{{ reviewRows }}" as="r" hint-placeholder-count="5">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #EDF0F4;">
+              <span style="font-size: 13.5px; color: #8B93A1; font-weight: 600;">{{ r.k }}</span>
+              <span style="font-size: 14px; color: #15243B; font-weight: 700;">{{ r.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 11px; margin-top: 20px; background: #EAF1ED; border-radius: 12px; padding: 14px 16px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#3C7A58" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size: 13px; color: #3C7A58; font-weight: 600;">Free to list · verified by Dwell before going live.</span>
+        </div>
+        </sc-if>
+
+        <!-- nav buttons -->
+        <div style="display: flex; gap: 12px; margin-top: 28px; padding-top: 22px; border-top: 1px solid #EDF0F4;">
+          <sc-if value="{{ showWizBack }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ wizBack }}" style="background: #fff; color: #15243B; border: 1px solid #D3D9E0; border-radius: 12px; padding: 13px 24px; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit;">Back</button>
+          </sc-if>
+          <button onClick="{{ wizPrimary }}" style="flex: 1; background: {{ accent }}; color: #fff; border: none; border-radius: 12px; padding: 13px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;">{{ wizPrimaryLabel }}</button>
+        </div>
+      </div>
+
+      <!-- live preview -->
+      <aside style="position: sticky; top: 88px;">
+        <div style="font-size: 12px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;">Live preview</div>
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 40px -30px rgba(21,36,59,0.4);">
+          <div style="aspect-ratio: 16/11; background: #DDD3C5;"><div style="width:100%;height:100%;background-image:url('{{ wizCover }}');background-size:cover;background-position:center;"></div></div>
+          <div style="padding: 15px 16px 18px;">
+            <div style="font-size: 15.5px; font-weight: 700; color: #15243B; margin-bottom: 4px; line-height: 1.25;">{{ wizPreviewTitle }}</div>
+            <div style="font-size: 12.5px; color: #7A8090; margin-bottom: 12px;">{{ wizPreviewArea }}</div>
+            <div style="display: flex; align-items: center; gap: 10px; padding-top: 11px; border-top: 1px solid #EDF0F4; font-size: 12.5px; color: #5A6172; font-weight: 500;">
+              <span>{{ wizPreviewBeds }}</span><span style="color:#CCD3DB;">·</span><span>{{ wizPreviewFurnish }}</span>
+            </div>
+            <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 22px; color: #15243B; margin-top: 11px;">{{ wizPreviewPrice }}</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ FOOTER ============ -->
+  <sc-if value="{{ showFooter }}" hint-placeholder-val="{{ true }}">
+  <footer style="background: #15243B; color: #fff; margin-top: 20px;">
+    <div style="max-width: 1240px; margin: 0 auto; padding: 56px 40px 40px;">
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 40px; padding-bottom: 40px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+        <div>
+          <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 16px;">
+            <div style="width: 28px; height: 28px; border-radius: 8px; background: {{ accent }}; display: flex; align-items: center; justify-content: center;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4l9 7.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.5 10v9.5h13V10" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <span style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 23px;">Dwell</span>
+          </div>
+          <p style="font-size: 14px; color: #9BA3B4; line-height: 1.6; max-width: 280px;">The trusted, visually-delightful way to find and list property in Bangladesh — starting in Aftab Nagar.</p>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 14px;">Explore</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #9BA3B4;"><span>Flats for rent</span><span>Flats for sale</span><span>Sublets</span><span>Student housing</span></div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 14px;">Company</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #9BA3B4;"><span>About us</span><span>How it works</span><span>Trust &amp; safety</span><span>Careers</span></div>
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 14px;">For owners</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #9BA3B4;"><span onClick="{{ goList }}" style="cursor:pointer;">List a property</span><span>Agency plans</span><span>Pricing</span><span>Owner guide</span></div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 24px; font-size: 13px; color: #7A8294;">
+        <span>© 2026 Dwell · Binary Fusion LLC</span>
+        <span style="display: flex; gap: 22px;"><span>Privacy</span><span>Terms</span><span>Help</span></span>
+      </div>
+    </div>
+  </footer>
+  </sc-if>
+
+  <!-- ============ INSIGHTS (AREA PRICE TRENDS) ============ -->
+  <sc-if value="{{ isInsights }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Insights" style="max-width: 1240px; margin: 0 auto; padding: 34px 40px 70px; animation: bvfade .4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 26px;">
+      <div>
+        <div style="display: inline-flex; align-items: center; gap: 7px; background: #F4F1EB; border: 1px solid #ECE6DA; border-radius: 999px; padding: 6px 13px; font-size: 12px; font-weight: 600; color: #8A7E66; margin-bottom: 14px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #4F8A6B;"></span>Updated weekly · verified data only</div>
+        <h1 style="font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 44px; line-height: 1.05; margin: 0; color: #15243B;">Aftab Nagar market insights</h1>
+        <p style="font-size: 15px; color: #6A7180; margin: 10px 0 0; max-width: 560px;">Real prices from physically verified listings — the numbers competitors can't show because they can't verify supply.</p>
+      </div>
+      <div style="display: flex; gap: 6px; background: #fff; border: 1px solid #E7EAEE; border-radius: 13px; padding: 5px;">
+        <sc-for list="{{ insIntents }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onPick }}" style="padding: 9px 18px; border-radius: 9px; border: none; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 700; color: {{ t.fg }}; background: {{ t.bg }}; transition: all .25s;">{{ t.label }}</button></sc-for>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 22px;">
+      <sc-for list="{{ insStats }}" as="s" hint-placeholder-count="4">
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 20px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <div style="font-size: 13px; font-weight: 600; color: #8893A4;">{{ s.label }}</div>
+          <div style="font-size: 28px; font-weight: 800; letter-spacing: -0.6px; color: #15243B; margin: 9px 0 5px;">{{ s.value }}</div>
+          <div style="display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 700; color: {{ s.dFg }};">{{ s.delta }} <span style="color: #AEB8C6; font-weight: 600;">{{ s.note }}</span></div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; margin-bottom: 20px;">
+      <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;"><div><h3 style="font-size: 17px; font-weight: 800; color: #15243B; margin: 0;">Average rent trend</h3><p style="font-size: 13px; color: #8893A4; margin: 4px 0 0;">৳ per month · 12 months · Aftab Nagar</p></div></div>
+        <svg width="100%" height="220" viewBox="0 0 600 220" preserveAspectRatio="none" style="overflow: visible;">
+          <line x1="0" y1="55" x2="600" y2="55" stroke="#F0F3F7" stroke-width="1"></line><line x1="0" y1="110" x2="600" y2="110" stroke="#F0F3F7" stroke-width="1"></line><line x1="0" y1="165" x2="600" y2="165" stroke="#F0F3F7" stroke-width="1"></line>
+          <path d="{{ trendArea }}" fill="url(# insg)" opacity="0.14"></path>
+          <defs><linearGradient id=" insg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1E3A5C"></stop><stop offset="1" stop-color="#1E3A5C" stop-opacity="0"></stop></linearGradient></defs>
+          <polyline points="{{ trendLine }}" fill="none" stroke="#1E3A5C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>
+        <div style="display: flex; justify-content: space-between; margin-top: 10px;"><sc-for list="{{ trendMonths }}" as="m" hint-placeholder-count="6"><span style="font-size: 11.5px; font-weight: 700; color: #9AA6B6;">{{ m }}</span></sc-for></div>
+      </div>
+      <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+        <h3 style="font-size: 17px; font-weight: 800; color: #15243B; margin: 0 0 4px;">Rent by bedrooms</h3>
+        <p style="font-size: 13px; color: #8893A4; margin: 0 0 16px;">Median monthly rent</p>
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <sc-for list="{{ sizeRows }}" as="r" hint-placeholder-count="4">
+            <div><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;"><span style="font-size: 13px; font-weight: 700; color: #44506A;">{{ r.label }}</span><span style="font-size: 13px; font-weight: 800; color: #15243B;">{{ r.value }}</span></div><div style="height: 9px; border-radius: 999px; background: #F0F3F7; overflow: hidden;"><div style="height: 100%; width: {{ r.w }}; border-radius: 999px; background: linear-gradient(90deg,#2C557F,#1E3A5C); transform-origin: left; animation: bvrise .7s cubic-bezier(.22,1,.36,1) both;"></div></div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px;"><div><h3 style="font-size: 17px; font-weight: 800; color: #15243B; margin: 0;">Average rent by block</h3><p style="font-size: 13px; color: #8893A4; margin: 4px 0 0;">Compare neighbourhoods at a glance</p></div></div>
+      <div style="display: flex; align-items: flex-end; gap: 16px; height: 200px;">
+        <sc-for list="{{ blockBars }}" as="b" hint-placeholder-count="8">
+          <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 9px; height: 100%; justify-content: flex-end;">
+            <div style="font-size: 11.5px; font-weight: 800; color: #15243B;">{{ b.value }}</div>
+            <div style="width: 100%; height: {{ b.h }}; min-height: 6px; border-radius: 8px 8px 0 0; background: {{ b.bg }}; transform-origin: bottom; animation: bvrise .7s cubic-bezier(.22,1,.36,1) both;"></div>
+            <span style="font-size: 12px; font-weight: 700; color: #9AA6B6;">{{ b.label }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ ACCOUNT & PROFILE ============ -->
+  <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Account" style="max-width: 1080px; margin: 0 auto; padding: 34px 40px 70px; animation: bvfade .4s ease both;">
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 34px; margin: 0 0 26px; color: #15243B;">Account</h1>
+    <div style="display: grid; grid-template-columns: 1fr 1.3fr; gap: 22px; align-items: start;">
+      <!-- profile card -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <div style="height: 78px; background: linear-gradient(120deg, #16273F, #2C557F);"></div>
+          <div style="padding: 0 22px 22px;">
+            <div style="width: 78px; height: 78px; border-radius: 22px; background: #15243B; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 30px; margin-top: -39px; border: 4px solid #fff;">A</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: nowrap;"><h2 style="font-size: 20px; font-weight: 800; color: #15243B; margin: 0; white-space: nowrap;">Arif Hossain</h2><span style="font-size: 11.5px; font-weight: 800; color: #2E7D55; background: #EAF1ED; padding: 4px 10px; border-radius: 999px;">✓ Verified</span></div>
+            <div style="font-size: 13.5px; color: #6A7180; margin-top: 5px;">Seeker · joined May 2026</div>
+            <div style="display: flex; gap: 20px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F2F4F7;"><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">6</div><div style="font-size: 11.5px; color: #9AA6B6;">Saved</div></div><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">2</div><div style="font-size: 11.5px; color: #9AA6B6;">Visits</div></div><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">3</div><div style="font-size: 11.5px; color: #9AA6B6;">Reviews</div></div></div>
+          </div>
+        </div>
+        <!-- switch app -->
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 22px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <h3 style="font-size: 15px; font-weight: 800; color: #15243B; margin: 0 0 4px;">Switch workspace</h3>
+          <p style="font-size: 12.5px; color: #8893A4; margin: 0 0 14px;">One account, every role.</p>
+          <a href="Dwell Provider.dc.html" style="text-decoration: none;"><div class="acct-link" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7EAEE; border-radius: 13px; cursor: pointer; margin-bottom: 9px; transition: background .25s, border-color .25s;"><div style="width: 38px; height: 38px; border-radius: 11px; background: #EAF1ED; display: flex; align-items: center; justify-content: center; font-size: 18px;">🏠</div><div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">Provider Studio</div><div style="font-size: 12px; color: #8893A4;">List &amp; manage properties</div></div><span style="color: #AEB8C6;">→</span></div></a>
+          <a href="Dwell Admin.dc.html" style="text-decoration: none;"><div class="acct-link" style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E7EAEE; border-radius: 13px; cursor: pointer; transition: background .25s, border-color .25s;"><div style="width: 38px; height: 38px; border-radius: 11px; background: #E8EDF4; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" stroke="#1E3A5C" stroke-width="1.8" stroke-linejoin="round"></path></svg></div><div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">Admin Console</div><div style="font-size: 12px; color: #8893A4;">Moderation &amp; analytics</div></div><span style="color: #AEB8C6;">→</span></div></a>
+        </div>
+      </div>
+      <!-- settings -->
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 18px;">Personal details</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <sc-for list="{{ acctFields }}" as="f" hint-placeholder-count="4">
+              <label style="display: block; grid-column: {{ f.span }};"><span style="display: block; font-size: 12.5px; font-weight: 700; color: #4A5161; margin-bottom: 7px;">{{ f.label }}</span><input value="{{ f.value }}" style="width: 100%; height: 46px; border: 1px solid #E1E6EC; border-radius: 12px; padding: 0 14px; font-family: inherit; font-size: 14px; color: #15243B; outline: none;"></label>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;"><h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0;">Identity verification</h3><span style="font-size: 11.5px; font-weight: 800; color: #2E7D55; background: #EAF1ED; padding: 4px 11px; border-radius: 999px;">✓ NID verified</span></div>
+          <p style="font-size: 13px; color: #8893A4; margin: 0 0 14px;">Your verified badge helps owners trust your visit requests.</p>
+          <div style="display: flex; align-items: center; gap: 12px; padding: 13px; background: #F7F9FC; border: 1px solid #EDF1F6; border-radius: 13px;"><div style="width: 44px; height: 44px; border-radius: 11px; background: #EAF1ED; display: flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 3l8 3v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3z" stroke="#2E7D55" stroke-width="1.8" stroke-linejoin="round"></path><path d="M8.5 12l2.4 2.4L16 9.5" stroke="#2E7D55" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></div><div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">National ID verified</div><div style="font-size: 12px; color: #8893A4;">Verified on May 14, 2026</div></div></div>
+        </div>
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 14px;">Language</h3>
+          <div style="display: flex; gap: 10px; margin-bottom: 22px;"><sc-for list="{{ acctLangs }}" as="l" hint-placeholder-count="2"><button onClick="{{ l.onPick }}" style="flex: 1; height: 44px; border-radius: 12px; border: 1.5px solid {{ l.bd }}; background: {{ l.bg }}; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: {{ l.fg }}; transition: all .2s;">{{ l.label }}</button></sc-for></div>
+          <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 4px;">Notifications</h3>
+          <div style="display: flex; flex-direction: column;">
+            <sc-for list="{{ acctNotifs }}" as="p" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #F2F4F7;"><div style="flex: 1; padding-right: 14px;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">{{ p.label }}</div><div style="font-size: 12px; color: #8893A4; margin-top: 1px;">{{ p.sub }}</div></div><button onClick="{{ p.onToggle }}" style="width: 46px; height: 27px; border-radius: 999px; border: none; background: {{ p.bg }}; cursor: pointer; position: relative; flex: 0 0 auto; transition: background .25s;"><span style="position: absolute; top: 2.5px; left: {{ p.x }}; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.25); transition: left .25s cubic-bezier(.34,1.56,.64,1);"></span></button></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ PUBLIC PROVIDER PROFILE ============ -->
+  <sc-if value="{{ isPublicProfile }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Provider profile" style="max-width: 1100px; margin: 0 auto; padding: 22px 40px 70px; animation: bvfade .4s ease both;">
+    <div onClick="{{ goSearch }}" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #6A7180; cursor: pointer; margin-bottom: 18px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back</div>
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 22px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03); margin-bottom: 22px;">
+      <div style="height: 120px; background: linear-gradient(120deg, #16273F, #2C557F); position: relative;"></div>
+      <div style="padding: 0 28px 26px; display: flex; align-items: flex-end; gap: 22px; flex-wrap: wrap;">
+        <div style="width: 100px; height: 100px; border-radius: 26px; background: linear-gradient(140deg, #3C6E9E, #2C557F); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 38px; margin-top: -50px; border: 5px solid #fff; box-shadow: 0 10px 24px -10px rgba(20,40,70,.4);">R</div>
+        <div style="flex: 1; min-width: 220px; padding-top: 16px;">
+          <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;"><h1 style="font-size: 26px; font-weight: 800; color: #15243B; margin: 0; letter-spacing: -0.4px;">Rahima Properties</h1><span style="display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 800; color: #2E7D55; background: #EAF1ED; padding: 5px 12px; border-radius: 999px;">✓ Verified agency</span></div>
+          <div style="display: flex; gap: 20px; margin-top: 10px; font-size: 13.5px; color: #6A7180; flex-wrap: wrap;"><span>★ 4.8 (41 reviews)</span><span>Responds in ~15 min</span><span>Block B, Aftab Nagar</span><span>Member since 2019</span></div>
+        </div>
+        <button onClick="{{ goMessages }}" style="height: 46px; padding: 0 22px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: #15243B; box-shadow: 0 10px 22px -10px rgba(21,36,59,.5);">Message agency</button>
+      </div>
+    </div>
+    <p style="font-size: 15px; line-height: 1.6; color: #44506A; margin: 0 0 26px; max-width: 720px;">Trusted family-run agency serving Aftab Nagar since 2019. Every listing is physically verified with recent photos. Known for honest descriptions, fast responses and smooth handovers.</p>
+    <h3 style="font-size: 19px; font-weight: 800; color: #15243B; margin: 0 0 16px;">Active listings ({{ ppCount }})</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-bottom: 40px;">
+      <sc-for list="{{ ppListings }}" as="c" hint-placeholder-count="3">
+        <div onClick="{{ c.onOpen }}" class="prop-card" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; overflow: hidden; cursor: pointer; transition: transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s;">
+          <div style="position: relative; aspect-ratio: 4/3; background: #DDD3C5;"><div style="width:100%;height:100%;background-image:url('{{ c.coverUrl }}');background-size:cover;background-position:center;"></div></div>
+          <div style="padding: 15px;"><div style="font-size: 15px; font-weight: 700; color: #15243B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ c.title }}</div><div style="font-size: 13px; color: #8893A4; margin-top: 3px;">{{ c.area }}</div><div style="font-size: 17px; font-weight: 800; color: #1E3A5C; margin-top: 9px;">{{ c.priceLabel }}</div></div>
+        </div>
+      </sc-for>
+    </div>
+    <h3 style="font-size: 19px; font-weight: 800; color: #15243B; margin: 0 0 16px;">What tenants say</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+      <sc-for list="{{ ppReviews }}" as="r" hint-placeholder-count="2">
+        <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 16px; padding: 20px;"><div style="display: flex; align-items: center; gap: 12px; margin-bottom: 11px;"><div style="width: 40px; height: 40px; border-radius: 11px; background: {{ r.avBg }}; color: {{ r.avFg }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;">{{ r.initial }}</div><div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">{{ r.by }}</div><div style="font-size: 12px; color: #9AA6B6;">{{ r.when }}</div></div><span style="font-size: 13px; color: #C9A24B;">{{ r.stars }}</span></div><p style="font-size: 13.5px; line-height: 1.6; color: #44506A; margin: 0;">{{ r.text }}</p></div>
+      </sc-for>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ SAVED SEARCHES & ALERTS ============ -->
+  <sc-if value="{{ isSavedSearches }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Saved searches" style="max-width: 1000px; margin: 0 auto; padding: 34px 40px 70px; animation: bvfade .4s ease both;">
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 26px;">
+      <div><h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 34px; margin: 0; color: #15243B;">Saved searches &amp; alerts</h1><p style="font-size: 15px; color: #6A7180; margin: 8px 0 0;">We'll notify you the moment a verified match appears.</p></div>
+      <button onClick="{{ createAlert }}" style="height: 46px; padding: 0 20px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: #fff; background: #1E3A5C; box-shadow: 0 10px 22px -10px rgba(30,58,92,.5);">+ New alert</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <sc-for list="{{ savedSearches }}" as="s" hint-placeholder-count="3">
+        <div class="prop-card" style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 20px 22px; box-shadow: 0 1px 2px rgba(20,40,70,.03); transition: box-shadow .3s, transform .3s;">
+          <div style="display: flex; align-items: center; gap: 16px;">
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 9px;"><span style="font-size: 16px; font-weight: 800; color: #15243B;">{{ s.title }}</span><sc-if value="{{ s.hasMatch }}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 800; color: #2E7D55; background: #EAF1ED; padding: 3px 9px; border-radius: 999px;">{{ s.matchLabel }}</span></sc-if></div>
+              <div style="display: flex; flex-wrap: wrap; gap: 7px;"><sc-for list="{{ s.chips }}" as="c" hint-placeholder-count="4"><span style="font-size: 12px; font-weight: 600; color: #44506A; background: #F4F6F9; border: 1px solid #E9EDF2; padding: 5px 11px; border-radius: 999px;">{{ c }}</span></sc-for></div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 16px; flex: 0 0 auto;">
+              <div style="text-align: right;"><div style="font-size: 12px; color: #8893A4;">Alerts</div><div style="font-size: 12.5px; font-weight: 700; color: #15243B;">{{ s.freq }}</div></div>
+              <button onClick="{{ s.onToggle }}" style="width: 46px; height: 27px; border-radius: 999px; border: none; background: {{ s.toggleBg }}; cursor: pointer; position: relative; transition: background .25s;"><span style="position: absolute; top: 2.5px; left: {{ s.toggleX }}; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.25); transition: left .25s cubic-bezier(.34,1.56,.64,1);"></span></button>
+              <button onClick="{{ s.onView }}" style="height: 40px; padding: 0 16px; border-radius: 11px; border: 1px solid #D3D9E0; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #1E3A5C;">View</button>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ WRITE A REVIEW ============ -->
+  <sc-if value="{{ isWriteReview }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Write a review" style="max-width: 680px; margin: 0 auto; padding: 34px 40px 70px; animation: bvfade .4s ease both;">
+    <sc-if value="{{ wrNotDone }}" hint-placeholder-val="{{ true }}">
+    <div onClick="{{ goSaved }}" style="display: inline-flex; align-items: center; gap: 7px; font-size: 13.5px; font-weight: 600; color: #6A7180; cursor: pointer; margin-bottom: 18px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to activity</div>
+    <h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 28px; margin: 0 0 6px; color: #15243B; letter-spacing: -0.5px;">Review your visit</h1>
+    <p style="font-size: 14.5px; color: #6A7180; margin: 0 0 24px;">Honest reviews keep Aftab Nagar trustworthy for everyone.</p>
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 16px; display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
+      <div style="width: 60px; height: 60px; border-radius: 13px; background-image: url('{{ wrCover }}'); background-size: cover; background-position: center; background-color: #DDD3C5;"></div>
+      <div><div style="font-size: 15px; font-weight: 700; color: #15243B;">{{ wrTitle }}</div><div style="font-size: 13px; color: #8893A4; margin-top: 2px;">Visited {{ wrDate }} · {{ wrOwner }}</div></div>
+    </div>
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+      <div style="text-align: center; padding-bottom: 22px; border-bottom: 1px solid #F2F4F7;">
+        <div style="font-size: 14px; font-weight: 700; color: #4A5161; margin-bottom: 12px;">Overall rating</div>
+        <div style="display: flex; justify-content: center; gap: 8px;">
+          <sc-for list="{{ wrStars }}" as="st" hint-placeholder-count="5"><span onClick="{{ st.onPick }}" style="font-size: 38px; cursor: pointer; color: {{ st.color }}; transition: transform .15s, color .2s; line-height: 1;" style-hover="transform: scale(1.15);">★</span></sc-for>
+        </div>
+        <div style="font-size: 13px; font-weight: 700; color: #8893A4; margin-top: 10px;">{{ wrRatingLabel }}</div>
+      </div>
+      <div style="padding: 20px 0; border-bottom: 1px solid #F2F4F7;">
+        <div style="font-size: 13px; font-weight: 700; color: #4A5161; margin-bottom: 14px;">Rate the details</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <sc-for list="{{ wrSubs }}" as="s" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 13.5px; font-weight: 600; color: #44506A;">{{ s.label }}</span><div style="display: flex; gap: 5px;"><sc-for list="{{ s.stars }}" as="st" hint-placeholder-count="5"><span onClick="{{ st.onPick }}" style="font-size: 19px; cursor: pointer; color: {{ st.color }}; transition: color .2s;">★</span></sc-for></div></div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="padding-top: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: #4A5161; margin-bottom: 10px;">Tell others about your experience</div>
+        <textarea onInput="{{ wrSetText }}" placeholder="Was the listing accurate? How was the owner to deal with?" style="width: 100%; min-height: 110px; border: 1px solid #E1E6EC; border-radius: 13px; padding: 13px 15px; font-family: inherit; font-size: 14px; color: #15243B; resize: vertical; outline: none; line-height: 1.6;"></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <div style="width: 72px; height: 72px; border-radius: 13px; border: 1.5px dashed #CBD3DD; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #9AA6B6; gap: 3px;"><span style="font-size: 20px;">+</span><span style="font-size: 10px; font-weight: 700;">Photo</span></div>
+          <sc-for list="{{ wrPhotos }}" as="p" hint-placeholder-count="2"><div style="width: 72px; height: 72px; border-radius: 13px; background-image: url('{{ p }}'); background-size: cover; background-position: center; background-color: #DDD3C5;"></div></sc-for>
+        </div>
+      </div>
+      <button onClick="{{ wrSubmit }}" style="width: 100%; height: 50px; border-radius: 14px; border: none; cursor: pointer; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff; background: {{ wrSubmitBg }}; margin-top: 22px; box-shadow: 0 12px 26px -10px rgba(30,58,92,.5); transition: background .25s;">Post review</button>
+    </div>
+    </sc-if>
+    <sc-if value="{{ wrDone }}" hint-placeholder-val="{{ false }}">
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; padding: 56px 32px; text-align: center; animation: bvpop .4s ease both; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+      <div style="width: 84px; height: 84px; border-radius: 26px; background: #EAF1ED; display: flex; align-items: center; justify-content: center; margin: 0 auto 22px;"><svg width="42" height="42" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2E7D55" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+      <h2 style="font-size: 24px; font-weight: 800; color: #15243B; margin: 0 0 8px;">Thanks for your review!</h2>
+      <p style="font-size: 14.5px; color: #6A7180; margin: 0 auto 26px; max-width: 380px; line-height: 1.6;">Your feedback is now public and helps the next renter choose with confidence.</p>
+      <button onClick="{{ goSaved }}" style="height: 46px; padding: 0 26px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: #15243B;">Back to activity</button>
+    </div>
+    </sc-if>
+  </main>
+  </sc-if>
+
+  <!-- ============ NOTIFICATIONS ============ -->
+  <sc-if value="{{ isNotifs }}" hint-placeholder-val="{{ false }}">
+  <main data-screen-label="Notifications" style="max-width: 720px; margin: 0 auto; padding: 34px 40px 70px; animation: bvfade .4s ease both;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;"><h1 style="font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 400; font-size: 32px; margin: 0; color: #15243B;">Notifications</h1><span onClick="{{ markAllRead }}" style="font-size: 13.5px; font-weight: 700; color: #1E3A5C; cursor: pointer;">Mark all read</span></div>
+    <div style="background: #fff; border: 1px solid #E7EAEE; border-radius: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+      <sc-for list="{{ notifs }}" as="n" hint-placeholder-count="5">
+        <div onClick="{{ n.onClick }}" class="notif-row" style="display: flex; align-items: flex-start; gap: 14px; padding: 16px 20px; border-bottom: 1px solid #F2F4F7; background: {{ n.bg }}; cursor: pointer; transition: background .25s;">
+          <div style="width: 40px; height: 40px; border-radius: 12px; background: {{ n.icoBg }}; color: {{ n.icoFg }}; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">{{ n.icon }}</div>
+          <div style="flex: 1; min-width: 0;"><div style="font-size: 14px; color: #15243B; line-height: 1.45;">{{ n.text }}</div><div style="font-size: 12px; color: #AEB8C6; font-weight: 600; margin-top: 3px;">{{ n.time }}</div></div>
+          <sc-if value="{{ n.unread }}" hint-placeholder-val="{{ false }}"><span style="width: 9px; height: 9px; border-radius: 50%; background: #1E3A5C; margin-top: 6px; flex: 0 0 auto;"></span></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </main>
+  </sc-if>
+
+  <!-- ============ BOOKING MODAL ============ -->
+  <sc-if value="{{ bookingOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; inset: 0; z-index: 60; background: rgba(21,36,59,0.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 24px;" data-screen-label="Booking flow">
+    <div style="background: #FFFFFF; border-radius: 24px; width: 560px; max-width: 100%; max-height: 92vh; overflow: auto; box-shadow: 0 40px 90px -30px rgba(0,0,0,0.5); animation: bvpop .22s ease;">
+      <!-- header -->
+      <div style="padding: 22px 26px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E7EAEE;">
+        <div style="display: flex; align-items: center; gap: 13px;">
+          <div style="width: 48px; height: 48px; border-radius: 12px; overflow: hidden; background: #DDD3C5;"><div style="width:100%;height:100%;background-image:url('{{ sel.coverUrl }}');background-size:cover;background-position:center;background-color:#DDD3C5;"></div></div>
+          <div>
+            <div style="font-size: 15px; font-weight: 700; color: #15243B;">{{ sel.title }}</div>
+            <div style="font-size: 12.5px; color: #8A8F9C;">{{ sel.area }}</div>
+          </div>
+        </div>
+        <button onClick="{{ closeBooking }}" style="width: 34px; height: 34px; border-radius: 50%; border: 1px solid #D3D9E0; background: #fff; cursor: pointer; font-size: 16px; color: #6A7180;">✕</button>
+      </div>
+
+      <!-- stepper -->
+      <div style="display: flex; align-items: center; gap: 8px; padding: 20px 26px 4px;">
+        <sc-for list="{{ steps }}" as="st" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 26px; height: 26px; border-radius: 50%; background: {{ st.circleBg }}; color: {{ st.circleFg }}; display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700;">{{ st.n }}</div>
+            <span style="font-size: 13px; font-weight: 600; color: #51596A;">{{ st.t }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- step 1 -->
+      <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 18px 26px 26px;">
+        <h3 style="font-size: 19px; font-weight: 700; margin: 8px 0 4px; color: #15243B;">Propose a visit time</h3>
+        <p style="font-size: 14px; color: #6A7180; margin: 0 0 18px;">Pick a slot that works for you. The owner will confirm or suggest a new time.</p>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ slots }}" as="sl" hint-placeholder-count="3">
+            <div onClick="{{ sl.onPick }}" style="display: flex; align-items: center; justify-content: space-between; border: 1.6px solid {{ sl.bd }}; background: {{ sl.bg }}; border-radius: 13px; padding: 14px 16px; cursor: pointer;">
+              <div style="display: flex; align-items: center; gap: 13px;">
+                <div style="text-align: center; width: 44px;">
+                  <div style="font-size: 11px; font-weight: 700; color: #8B93A1; text-transform: uppercase;">{{ sl.day }}</div>
+                  <div style="font-size: 14px; font-weight: 700; color: #15243B;">{{ sl.date }}</div>
+                </div>
+                <div style="width: 1px; height: 28px; background: #E7EAEE;"></div>
+                <div style="font-size: 15px; font-weight: 600; color: #15243B;">{{ sl.time }}</div>
+              </div>
+              <span style="width: 20px; height: 20px; border-radius: 50%; border: 2px solid {{ sl.bd }}; display: flex; align-items: center; justify-content: center;"><span style="width: 10px; height: 10px; border-radius: 50%; background: {{ sl.dot }};"></span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- step 2 -->
+      <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 18px 26px 26px;">
+        <h3 style="font-size: 19px; font-weight: 700; margin: 8px 0 4px; color: #15243B;">Add a note for the owner</h3>
+        <p style="font-size: 14px; color: #6A7180; margin: 0 0 16px;">Selected time: <span style="font-weight: 700; color: #15243B;">{{ slotLabel }}</span></p>
+        <textarea value="{{ noteVal }}" onChange="{{ setNote }}" placeholder="Hi! I'm interested in this flat for a long-term lease. Could I visit and see the parking and water supply?" style="width: 100%; min-height: 120px; border: 1.6px solid #DBE0E6; border-radius: 13px; padding: 14px; font-size: 14.5px; font-family: inherit; color: #15243B; resize: vertical; background: #fff;"></textarea>
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 16px; background: #F4F6F9; border-radius: 12px; padding: 13px 15px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#4F8A6B" stroke-width="1.8"></circle><path d="M8.5 12l2.4 2.4L15.5 9.5" stroke="#4F8A6B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="font-size: 13px; color: #51596A;">Your phone number stays private until you both agree to share it.</span>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- step 3 -->
+      <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 18px 26px 26px; text-align: center;">
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: #EAF1ED; display: flex; align-items: center; justify-content: center; margin: 8px auto 16px;">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#4F8A6B" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </div>
+        <h3 style="font-size: 21px; font-weight: 700; margin: 0 0 6px; color: #15243B;">Visit request sent!</h3>
+        <p style="font-size: 14.5px; color: #6A7180; margin: 0 0 22px;">{{ sel.ownerName }} usually replies in {{ sel.ownerRt }}. We'll notify you once they confirm.</p>
+        <div style="text-align: left; background: #fff; border: 1px solid #E7EAEE; border-radius: 15px; padding: 18px;">
+          <div style="font-size: 12px; font-weight: 700; color: #8B93A1; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px;">Your visit card</div>
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <div style="width: 44px; height: 44px; border-radius: 11px; background: {{ accent }}; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1;"><span style="font-size: 9px; font-weight: 700;">{{ slotDay }}</span><span style="font-size: 16px; font-weight: 800;">{{ slotDateNum }}</span></div>
+            <div><div style="font-size: 15px; font-weight: 700; color: #15243B;">{{ slotLabel }}</div><div style="font-size: 12.5px; color: #8A8F9C;">Pending owner confirmation</div></div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 7px; font-size: 13px; color: #6A7180; padding-top: 12px; border-top: 1px solid #EDF0F4;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" stroke-width="1.8"></path></svg>{{ sel.area }}
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- footer actions -->
+      <div style="padding: 16px 26px 24px; display: flex; gap: 12px; border-top: 1px solid #E7EAEE;">
+        <sc-if value="{{ showBookingBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ bookingBack }}" style="flex: 0 0 auto; background: #fff; color: #15243B; border: 1px solid #D3D9E0; border-radius: 13px; padding: 14px 22px; font-size: 14.5px; font-weight: 600; cursor: pointer; font-family: inherit;">Back</button>
+        </sc-if>
+        <button onClick="{{ bookingPrimary }}" disabled="{{ bookingPrimaryDisabled }}" style="flex: 1; background: {{ bookingPrimaryBg }}; color: #fff; border: none; border-radius: 13px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; font-family: inherit;">{{ bookingPrimaryLabel }}</button>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#1E3A5C&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;cityName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Dhaka&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    screen: 'home',
+    selectedId: 1,
+    intent: 'rent',
+    beds: 'any',
+    verifiedOnly: false,
+    sort: 'relevance',
+    maxPrice: 0,
+    gallery: 0,
+    bookingOpen: false,
+    bookingStep: 1,
+    slot: null,
+    note: '',
+    saved: { 1: true, 4: true, 9: true },
+    activeThread: 't1',
+    msgDraft: '',
+    threadMsgs: {},
+    wizStep: 1,
+    wizType: 'rent',
+    wTitle: '',
+    wPrice: '',
+    wBeds: 2,
+    wFurnish: 'Unfurnished',
+    wNeg: true,
+    authMode: 'signin',
+    authRole: 'rent',
+    showPw: false,
+    searched: false,
+  };
+
+  bdGroup(n) {
+    const s = String(Math.round(n));
+    const last3 = s.slice(-3);
+    let rest = s.slice(0, -3);
+    if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+    return (rest ? rest + ',' : '') + last3;
+  }
+
+  data() {
+    const A = (name, type, rating, rt) => ({ name, type, rating, rt });
+    const owner = A('Rahima Properties', 'Agency', 4.8, '~15 min');
+    const owner2 = A('Kamal Hossain', 'Owner', 4.6, '~1 hr');
+    const owner3 = A('Aftab Homes', 'Agency', 4.9, '~10 min');
+    const img = id => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=1100&q=70`;
+    const base = [
+      { id:1, cat:'rent', title:'Sunlit 2-Bed Apartment, Block B', area:'Block B, Aftab Nagar', price:38000, beds:2, baths:2, size:1100, floor:'4 of 7', furnishing:'Unfurnished', pref:'Family', adv:2, service:2500, verified:true, owner, cover:'1502672260266-1c1ef2d93688', shots:['1502672260266-1c1ef2d93688','1493809842364-78817add7ffb','1522708323590-d24dbb6b0267','1556909211-36987daf7b4d'], amen:['Lift','Generator backup','Parking','Gas line','Security','CCTV'], mapX:'30%', mapY:'38%', desc:'A bright, cross-ventilated flat on a quiet lane in Block B. Two well-sized bedrooms, an open living-dining area, and a balcony facing the morning sun. Walking distance to the lake and Block B kitchen market.' },
+      { id:2, cat:'rent', title:'Spacious 3-Bed Family Flat, Block D', area:'Block D, Aftab Nagar', price:52000, beds:3, baths:3, size:1450, floor:'6 of 9', furnishing:'Unfurnished', pref:'Family', adv:3, service:3500, verified:true, owner:owner3, cover:'1493809842364-78817add7ffb', shots:['1493809842364-78817add7ffb','1502672260266-1c1ef2d93688','1560448204-e02f11c3d0e2','1484154218962-a197022b5858'], amen:['Lift','Generator backup','2 Parking','Gas line','Rooftop access','Security','CCTV','Water reserve'], mapX:'52%', mapY:'30%', desc:'Corner unit with three bedrooms, two balconies and an open kitchen. Premium building with double lifts, full backup power and dedicated parking. Ideal for a settled family looking for a long lease.' },
+      { id:3, cat:'rent', title:'Cozy 1-Bed near the Lake', area:'Block C, Aftab Nagar', price:26000, beds:1, baths:1, size:680, floor:'2 of 5', furnishing:'Semi-furnished', pref:'Small family / Couple', adv:2, service:1500, verified:false, owner:owner2, cover:'1522708323590-d24dbb6b0267', shots:['1522708323590-d24dbb6b0267','1502672260266-1c1ef2d93688','1567767292278-a4f21aa2d36e','1493809842364-78817add7ffb'], amen:['Lift','Generator backup','Gas line','Security'], mapX:'40%', mapY:'56%', desc:'A neat one-bedroom with lake views from the balcony. Comes semi-furnished with wardrobes and kitchen cabinets. Calm, green surroundings and easy rickshaw access to Banasree.' },
+      { id:4, cat:'rent', title:'Premium 3-Bed with Rooftop, Block A', area:'Block A, Aftab Nagar', price:60000, beds:3, baths:3, size:1600, floor:'3 of 8', furnishing:'Unfurnished', pref:'Family', adv:3, service:4000, verified:true, owner:owner3, cover:'1560448204-e02f11c3d0e2', shots:['1560448204-e02f11c3d0e2','1484154218962-a197022b5858','1493809842364-78817add7ffb','1502672260266-1c1ef2d93688'], amen:['2 Lifts','Generator backup','2 Parking','Gas line','Rooftop garden','Gym','Security','CCTV'], mapX:'22%', mapY:'24%', desc:'Statement residence in one of Block A’s newer towers. Three en-suite bedrooms, a large drawing-dining hall, and access to a landscaped rooftop. Built for families who want room to grow.' },
+      { id:5, cat:'rent', title:'Bright 2-Bed, Banasree Edge', area:'Banasree, near Aftab Nagar', price:34000, beds:2, baths:2, size:1050, floor:'5 of 7', furnishing:'Unfurnished', pref:'Family / Bachelor', adv:2, service:2000, verified:true, owner, cover:'1484154218962-a197022b5858', shots:['1484154218962-a197022b5858','1556909211-36987daf7b4d','1522708323590-d24dbb6b0267','1560448204-e02f11c3d0e2'], amen:['Lift','Generator backup','Parking','Gas line','CCTV'], mapX:'68%', mapY:'48%', desc:'Modern two-bed on the Banasree side, minutes from the main road and bus stops. Practical layout with a separate kitchen and utility balcony. Great connectivity for commuters.' },
+      { id:6, cat:'buy', title:'Flat for Sale — 95 Lakh, Block E', area:'Block E, Aftab Nagar', price:9500000, beds:3, baths:3, size:1500, floor:'7 of 10', furnishing:'Unfurnished', pref:'—', adv:0, service:0, verified:true, owner:owner3, sale:true, cover:'1567767292278-a4f21aa2d36e', shots:['1567767292278-a4f21aa2d36e','1560448204-e02f11c3d0e2','1484154218962-a197022b5858','1493809842364-78817add7ffb'], amen:['2 Lifts','Generator backup','2 Parking','Gas line','Rooftop access','Security','Loan eligible'], mapX:'58%', mapY:'60%', desc:'Ready, freshly handed-over flat with clean papers (deed + mutation complete). South-east facing with abundant light. Loan-eligible through major banks. Priced for a quick, genuine sale.' },
+      { id:7, cat:'sublet', title:'Furnished Sublet, 6-Month Term', area:'Block B, Aftab Nagar', price:22000, beds:1, baths:1, size:600, floor:'3 of 6', furnishing:'Furnished', pref:'Professional', adv:1, service:1200, verified:true, owner:owner2, cover:'1556909211-36987daf7b4d', shots:['1556909211-36987daf7b4d','1522708323590-d24dbb6b0267','1502672260266-1c1ef2d93688','1567767292278-a4f21aa2d36e'], amen:['Lift','Generator backup','Wifi included','Gas line','Security'], mapX:'34%', mapY:'44%', desc:'Fully furnished sublet available for a 6-month term while the owner is abroad. Move-in ready: bed, sofa, fridge, AC and wifi included. Perfect for a working professional.' },
+      { id:8, cat:'room', title:'Single Room for Bachelor', area:'Block F, Aftab Nagar', price:9000, beds:1, baths:1, size:180, floor:'2 of 5', furnishing:'Semi-furnished', pref:'Male bachelor', adv:1, service:600, verified:false, owner:owner2, cover:'1505693416388-ac5ce068fe85', shots:['1505693416388-ac5ce068fe85','1522708323590-d24dbb6b0267','1567767292278-a4f21aa2d36e','1556909211-36987daf7b4d'], amen:['Generator backup','Shared kitchen','Gas line','Security'], mapX:'46%', mapY:'70%', desc:'A clean single room in a shared flat with kitchen and bathroom access. Quiet, study-friendly building. Suitable for a working bachelor or graduate student.' },
+      { id:9, cat:'student', title:'Student Hostel Seat near Campus', area:'Block G, Aftab Nagar', price:6500, beds:1, baths:1, size:120, floor:'4 of 6', furnishing:'Furnished', pref:'Student (Female)', adv:1, service:500, verified:true, owner, cover:'1555854877-bab0e564b8d5', shots:['1555854877-bab0e564b8d5','1505693416388-ac5ce068fe85','1522708323590-d24dbb6b0267','1567767292278-a4f21aa2d36e'], amen:['Meals included','Wifi','Generator backup','Study desk','Security','CCTV'], mapX:'62%', mapY:'72%', desc:'A seat in a managed female student hostel, 6 minutes’ walk from campus. Includes three meals, study desk, high-speed wifi and 24/7 security. Curfew and house rules apply.' },
+      { id:10, cat:'rent', title:'Garden-Facing 2-Bed, Block H', area:'Block H, Aftab Nagar', price:42000, beds:2, baths:2, size:1180, floor:'5 of 8', furnishing:'Unfurnished', pref:'Family', adv:2, service:2800, verified:true, owner:owner3, cover:'1493809842364-78817add7ffb', shots:['1493809842364-78817add7ffb','1560448204-e02f11c3d0e2','1502672260266-1c1ef2d93688','1484154218962-a197022b5858'], amen:['Lift','Generator backup','Parking','Gas line','Rooftop access','Security','CCTV'], mapX:'74%', mapY:'34%', desc:'Peaceful two-bedroom overlooking the community garden. Thoughtful layout with a wide veranda and ample storage. A calm, family-first building on a tree-lined street.' },
+
+      { id:11, cat:'buy', title:'2-Bed Ready Flat — 68 Lakh, Block C', area:'Block C, Aftab Nagar', price:6800000, beds:2, baths:2, size:1120, floor:'5 of 8', furnishing:'Unfurnished', pref:'—', adv:0, service:0, verified:true, owner, sale:true, cover:'1502672260266-1c1ef2d93688', shots:['1502672260266-1c1ef2d93688','1484154218962-a197022b5858','1493809842364-78817add7ffb','1560448204-e02f11c3d0e2'], amen:['Lift','Generator backup','Parking','Gas line','Security','Loan eligible'], mapX:'42%', mapY:'52%', desc:'Handover-ready two-bed with clean deed and completed mutation. Bright south-facing rooms, dedicated parking and bank-loan eligibility. A sensible first purchase in a quiet Block C lane.' },
+      { id:12, cat:'buy', title:'Penthouse Duplex — 2.4 Cr, Block A', area:'Block A, Aftab Nagar', price:24000000, beds:4, baths:4, size:2600, floor:'9–10 of 10', furnishing:'Unfurnished', pref:'—', adv:0, service:0, verified:true, owner:owner3, sale:true, cover:'1560448204-e02f11c3d0e2', shots:['1560448204-e02f11c3d0e2','1484154218962-a197022b5858','1567767292278-a4f21aa2d36e','1493809842364-78817add7ffb'], amen:['2 Lifts','Generator backup','3 Parking','Private rooftop','Gym','Pool','Security','CCTV'], mapX:'20%', mapY:'22%', desc:'Top-floor duplex with a private rooftop terrace and skyline views. Four en-suite bedrooms across two levels, double living halls and three parking bays. A landmark home in Block A’s premier tower.' },
+      { id:13, cat:'buy', title:'Compact 3-Bed — 1.1 Cr, Block D', area:'Block D, Aftab Nagar', price:11000000, beds:3, baths:2, size:1380, floor:'4 of 9', furnishing:'Unfurnished', pref:'—', adv:0, service:0, verified:false, owner:owner2, sale:true, cover:'1484154218962-a197022b5858', shots:['1484154218962-a197022b5858','1493809842364-78817add7ffb','1502672260266-1c1ef2d93688','1567767292278-a4f21aa2d36e'], amen:['Lift','Generator backup','Parking','Gas line','Rooftop access','Security','Loan eligible'], mapX:'54%', mapY:'34%', desc:'Efficient three-bed family flat at a fair per-sqft price. Functional layout with a separate kitchen, utility balcony and morning light. Papers in order; negotiable for a genuine buyer.' },
+
+      { id:14, cat:'sublet', title:'AC Studio Sublet, 4-Month Term', area:'Block C, Aftab Nagar', price:18000, beds:1, baths:1, size:520, floor:'2 of 5', furnishing:'Furnished', pref:'Professional', adv:1, service:1000, verified:true, owner, cover:'1522708323590-d24dbb6b0267', shots:['1522708323590-d24dbb6b0267','1556909211-36987daf7b4d','1502672260266-1c1ef2d93688','1567767292278-a4f21aa2d36e'], amen:['AC','Wifi included','Generator backup','Gas line','Security'], mapX:'38%', mapY:'50%', desc:'Compact furnished studio available for a 4-month sublet while the tenant travels. Includes AC, fast wifi, fridge and a study nook. Bills shared on actuals — ideal for a single professional.' },
+      { id:15, cat:'sublet', title:'2-Bed Shared Sublet, Block D', area:'Block D, Aftab Nagar', price:14000, beds:1, baths:1, size:1300, floor:'6 of 9', furnishing:'Furnished', pref:'Female / Working', adv:1, service:900, verified:true, owner:owner3, cover:'1556909211-36987daf7b4d', shots:['1556909211-36987daf7b4d','1493809842364-78817add7ffb','1522708323590-d24dbb6b0267','1560448204-e02f11c3d0e2'], amen:['Wifi included','Generator backup','Shared kitchen','Gas line','Security','CCTV'], mapX:'52%', mapY:'32%', desc:'One private room in a furnished 2-bed, sharing kitchen and living space with one calm working professional. Female-only flat. Long or short term — flexible, move-in ready this month.' },
+      { id:16, cat:'sublet', title:'Furnished 1-Bed, 3-Month Sublet', area:'Banasree, near Aftab Nagar', price:20000, beds:1, baths:1, size:640, floor:'4 of 7', furnishing:'Furnished', pref:'Couple / Professional', adv:1, service:1100, verified:false, owner:owner2, cover:'1567767292278-a4f21aa2d36e', shots:['1567767292278-a4f21aa2d36e','1522708323590-d24dbb6b0267','1556909211-36987daf7b4d','1502672260266-1c1ef2d93688'], amen:['AC','Wifi included','Generator backup','Parking','Gas line'], mapX:'70%', mapY:'46%', desc:'Cosy furnished one-bed on the Banasree edge, free for a 3-month term. Comes with bed, sofa, AC and kitchen essentials. Quick access to the main road and easy parking.' },
+
+      { id:17, cat:'room', title:'Female Room in Family Flat', area:'Block C, Aftab Nagar', price:11000, beds:1, baths:1, size:200, floor:'3 of 6', furnishing:'Furnished', pref:'Female / Working', adv:1, service:700, verified:true, owner, cover:'1522708323590-d24dbb6b0267', shots:['1522708323590-d24dbb6b0267','1505693416388-ac5ce068fe85','1556909211-36987daf7b4d','1567767292278-a4f21aa2d36e'], amen:['Furnished','Wifi','Generator backup','Shared kitchen','Security'], mapX:'40%', mapY:'58%', desc:'A private furnished room within a friendly family flat, female tenant preferred. Attached shared bathroom, home-cooked meals optional, wifi included. Safe, quiet building close to the market.' },
+      { id:18, cat:'room', title:'Twin-Sharing Room for Students', area:'Block F, Aftab Nagar', price:5500, beds:1, baths:1, size:160, floor:'2 of 5', furnishing:'Semi-furnished', pref:'Student (Male)', adv:1, service:400, verified:false, owner:owner2, cover:'1505693416388-ac5ce068fe85', shots:['1505693416388-ac5ce068fe85','1555854877-bab0e564b8d5','1522708323590-d24dbb6b0267','1556909211-36987daf7b4d'], amen:['Study desk','Generator backup','Shared kitchen','Wifi','Security'], mapX:'46%', mapY:'72%', desc:'A bed in a twin-sharing room for students, walking distance to coaching centres. Includes study desk, wardrobe and shared kitchen. Budget-friendly with a quiet, study-first house rule.' },
+      { id:19, cat:'room', title:'Spacious Master Room, Block H', area:'Block H, Aftab Nagar', price:13500, beds:1, baths:1, size:240, floor:'5 of 8', furnishing:'Furnished', pref:'Bachelor / Professional', adv:1, service:800, verified:true, owner:owner3, cover:'1556909211-36987daf7b4d', shots:['1556909211-36987daf7b4d','1505693416388-ac5ce068fe85','1567767292278-a4f21aa2d36e','1522708323590-d24dbb6b0267'], amen:['Attached bath','Furnished','Wifi','Generator backup','Parking','Security'], mapX:'72%', mapY:'36%', desc:'Large master room with an attached bathroom and balcony in a tidy shared flat. Comes furnished with a bed, desk and wardrobe. Suits a working professional who wants their own space.' },
+
+      { id:20, cat:'student', title:'Male Hostel Seat, AC Dorm', area:'Block F, Aftab Nagar', price:8500, beds:1, baths:1, size:130, floor:'3 of 6', furnishing:'Furnished', pref:'Student (Male)', adv:1, service:600, verified:true, owner, cover:'1505693416388-ac5ce068fe85', shots:['1505693416388-ac5ce068fe85','1555854877-bab0e564b8d5','1522708323590-d24dbb6b0267','1567767292278-a4f21aa2d36e'], amen:['Meals included','AC','Wifi','Study desk','Generator backup','Security'], mapX:'48%', mapY:'68%', desc:'A seat in a managed male student hostel with an air-conditioned dorm. Three meals, high-speed wifi and a personal study desk included. 6 minutes from campus; house rules and curfew apply.' },
+      { id:21, cat:'student', title:'Female Single Room Hostel', area:'Block G, Aftab Nagar', price:9500, beds:1, baths:1, size:150, floor:'5 of 6', furnishing:'Furnished', pref:'Student (Female)', adv:1, service:700, verified:true, owner:owner3, cover:'1555854877-bab0e564b8d5', shots:['1555854877-bab0e564b8d5','1505693416388-ac5ce068fe85','1556909211-36987daf7b4d','1522708323590-d24dbb6b0267'], amen:['Meals included','Wifi','Single room','Study desk','Generator backup','CCTV','Security'], mapX:'60%', mapY:'70%', desc:'A private single room in a female student hostel for those who prefer their own space. Includes meals, wifi, study desk and 24/7 CCTV security. Calm, supervised and close to campus.' },
+      { id:22, cat:'student', title:'Budget Triple-Sharing Seat', area:'Block G, Aftab Nagar', price:4500, beds:1, baths:1, size:110, floor:'2 of 6', furnishing:'Furnished', pref:'Student', adv:1, service:350, verified:false, owner:owner2, cover:'1567767292278-a4f21aa2d36e', shots:['1567767292278-a4f21aa2d36e','1555854877-bab0e564b8d5','1505693416388-ac5ce068fe85','1556909211-36987daf7b4d'], amen:['Meals optional','Wifi','Study desk','Generator backup','Security'], mapX:'64%', mapY:'74%', desc:'The most affordable option — a seat in a clean triple-sharing room with shared study space. Wifi and backup power included; meals optional. Great for students keeping costs tight.' },
+    ];
+    return base.map(l => ({ ...l, coverUrl: img(l.cover), shotUrls: l.shots.map(img) }));
+  }
+
+  fmtPrice(l) {
+    return '৳' + this.bdGroup(l.price) + (l.sale ? '' : '/mo');
+  }
+
+  cardOf(l) {
+    return {
+      ...l,
+      priceLabel: this.fmtPrice(l),
+      bedLabel: l.beds + (l.beds > 1 ? ' Beds' : ' Bed'),
+      bathLabel: l.baths + (l.baths > 1 ? ' Baths' : ' Bath'),
+      sizeLabel: l.size + ' sqft',
+      ratingLabel: l.owner.rating.toFixed(1),
+      ownerName: l.owner.name,
+      ownerType: l.owner.type,
+      ownerRt: l.owner.rt,
+      ownerInitial: l.owner.name.charAt(0),
+      saved: !!this.state.saved[l.id],
+      heart: this.state.saved[l.id] ? '♥' : '♡',
+      onOpen: () => this.nav('detail', l.id),
+      onSave: (e) => this.toggleSave(l.id, e),
+    };
+  }
+
+  filtered() {
+    const s = this.state;
+    let list = this.data().filter(l => l.cat === s.intent);
+    if (s.beds !== 'any') {
+      const n = parseInt(s.beds, 10);
+      list = list.filter(l => s.beds === '4' ? l.beds >= 4 : l.beds === n);
+    }
+    if (s.verifiedOnly) list = list.filter(l => l.verified);
+    if (s.maxPrice > 0) list = list.filter(l => l.price <= s.maxPrice);
+    if (s.sort === 'low') list = [...list].sort((a, b) => a.price - b.price);
+    if (s.sort === 'high') list = [...list].sort((a, b) => b.price - a.price);
+    if (s.sort === 'new') list = [...list].sort((a, b) => b.id - a.id);
+    return list;
+  }
+
+  nav(screen, id) {
+    const ns = { screen };
+    if (id != null) ns.selectedId = id;
+    if (screen === 'detail') ns.gallery = 0;
+    this.setState(ns);
+    window.scrollTo({ top: 0 });
+  }
+
+  setIntent(i) { this.setState({ intent: i, screen: 'search' }); window.scrollTo({ top: 0 }); }
+  toggleSave(id, e) { if (e) { e.stopPropagation(); } this.setState(s => ({ saved: { ...s.saved, [id]: !s.saved[id] } })); }
+
+  openBooking() { this.setState({ bookingOpen: true, bookingStep: 1, slot: null, note: '' }); }
+  closeBooking() { this.setState({ bookingOpen: false }); }
+  chooseSlot(s) { this.setState({ slot: s }); }
+  bookingNext() { this.setState(st => ({ bookingStep: Math.min(3, st.bookingStep + 1) })); }
+  bookingBack() { this.setState(st => ({ bookingStep: Math.max(1, st.bookingStep - 1) })); }
+  sendMessage() {
+    const txt = this.state.msgDraft.trim();
+    if (!txt) return;
+    this.setState(s => ({
+      threadMsgs: { ...s.threadMsgs, [s.activeThread]: [...(s.threadMsgs[s.activeThread] || []), { me: true, text: txt, time: 'now' }] },
+      msgDraft: '',
+    }));
+  }
+  wizNext() { this.setState(s => ({ wizStep: Math.min(5, s.wizStep + 1) })); window.scrollTo({ top: 0 }); }
+  wizBack() { this.setState(s => ({ wizStep: Math.max(1, s.wizStep - 1) })); window.scrollTo({ top: 0 }); }
+
+  amenIcon(label) {
+    const h = React.createElement;
+    const ico = (d, opts) => h('svg', Object.assign({ width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: '#1E3A5C', strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' }, opts || {}),
+      (Array.isArray(d) ? d : [d]).map((dd, i) => h('path', { key: i, d: dd })));
+    const t = (label || '').toLowerCase();
+    const m = [
+      [/lift|elevator/, ['M5 3h14v18H5z', 'M12 7v10', 'M9 10l3-3 3 3', 'M9 14l3 3 3-3']],
+      [/generator|backup|power|electric/, 'M13 2L4 14h7l-1 8 9-12h-7l1-8z'],
+      [/parking|car/, ['M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11', 'M5 11h14v5H5z', 'M7 16v2', 'M17 16v2']],
+      [/gas|kitchen|cook|stove/, ['M12 3c1.5 2 3 3.5 3 6a3 3 0 1 1-6 0c0-2.5 1.5-4 3-6z', 'M8 14a4 4 0 1 0 8 0c0-1-.5-2-1-2.5']],
+      [/wifi|internet/, ['M5 12.5a10 10 0 0 1 14 0', 'M8 15.5a6 6 0 0 1 8 0', 'M12 19h.01']],
+      [/security|guard|safe/, ['M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z', 'M9.5 12l1.8 1.8 3.4-3.6']],
+      [/cctv|camera|surveil/, ['M3 9l14-3 1 4-14 3-1-4z', 'M5 13v4h5', 'M16 11l4 1.5']],
+      [/rooftop|roof|terrace/, ['M3 11l9-6 9 6', 'M5 10v9h14v-9', 'M9 19v-5h6v5']],
+      [/pool|swim/, ['M2 16c2 1.5 3 1.5 5 0s3-1.5 5 0 3 1.5 5 0 3-1.5 5 0', 'M2 20c2 1.5 3 1.5 5 0s3-1.5 5 0 3 1.5 5 0 3-1.5 5 0', 'M8 13V5a2 2 0 0 1 4 0', 'M8 9h4']],
+      [/gym|fitness/, ['M4 9v6', 'M20 9v6', 'M7 7v10', 'M17 7v10', 'M7 12h10']],
+      [/\bac\b|air ?con/, ['M3 6h18v7H3z', 'M6 16v1', 'M10 16v2', 'M14 16v1', 'M18 16v2', 'M7 9.5h10']],
+      [/meal|food|dining/, ['M5 3v7a2 2 0 0 0 4 0V3', 'M7 10v11', 'M16 3c-1.5 1-2 3-2 5s.5 3 2 3v10', 'M16 3v8']],
+      [/desk|study/, ['M4 6h16v4H4z', 'M5 10v9', 'M19 10v9', 'M8 14h8']],
+      [/bath|attached/, ['M5 11V6a2 2 0 0 1 4 0', 'M3 11h18v3a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4v-3z', 'M7 20l-1 1', 'M17 20l1 1']],
+      [/furnish|furniture|sofa/, ['M4 11a2 2 0 0 1 4 0v2h8v-2a2 2 0 0 1 4 0v5H4v-5z', 'M6 16v2', 'M18 16v2']],
+      [/loan|eligib|bank/, ['M4 10l8-5 8 5', 'M5 10v8h14v-8', 'M9 14h6', 'M3 18h18']],
+      [/single room|room/, ['M4 20V7l8-3 8 3v13', 'M4 20h16', 'M14 20v-5a2 2 0 0 0-4 0v5']],
+      [/balcon/, ['M5 4v16', 'M19 4v16', 'M3 12h18', 'M3 20h18', 'M9 12v8', 'M15 12v8']],
+    ];
+    for (const [re, d] of m) if (re.test(t)) return ico(d);
+    return ico('M5 13l4 4L19 7');
+  }
+
+  extraScreens() {
+    const s = this.state;
+    const accent = this.props.accent || '#1E3A5C';
+    const all = this.data();
+    const screen = s.screen;
+
+    // ---- Insights ----
+    const insIntent = s.insIntent || 'rent';
+    const insIntents = [['rent', 'Rent'], ['buy', 'Buy']].map(([k, label]) => { const on = insIntent === k; return { label, onPick: () => this.setState({ insIntent: k }), fg: on ? '#fff' : '#5A6172', bg: on ? accent : 'transparent' }; });
+    const insStats = insIntent === 'rent'
+      ? [{ label: 'Average rent', value: '৳38,400', delta: '▲ 4.2%', dFg: '#2E7D55', note: 'YoY' }, { label: 'Rent per sqft', value: '৳34', delta: '▲ 2.1%', dFg: '#2E7D55', note: 'YoY' }, { label: 'Median days to rent', value: '11', delta: '▼ 1.8d', dFg: '#2E7D55', note: 'faster' }, { label: 'Verified supply', value: '348', delta: '▲ 6.2%', dFg: '#2E7D55', note: 'live' }]
+      : [{ label: 'Average asking price', value: '৳1.18 Cr', delta: '▲ 6.4%', dFg: '#2E7D55', note: 'YoY' }, { label: 'Price per sqft', value: '৳8,900', delta: '▲ 5.1%', dFg: '#2E7D55', note: 'YoY' }, { label: 'Median days to sell', value: '48', delta: '▼ 5d', dFg: '#2E7D55', note: 'faster' }, { label: 'Loan-eligible', value: '72%', delta: '▲ 3%', dFg: '#2E7D55', note: 'of stock' }];
+    const trendVals = insIntent === 'rent' ? [34, 34.4, 34.8, 35.2, 35.5, 36.1, 36.6, 37, 37.3, 37.8, 38.1, 38.4] : [104, 106, 108, 109, 111, 112, 113, 114, 115, 116, 117, 118];
+    const tMin = Math.min(...trendVals), tMax = Math.max(...trendVals), W = 600, H = 220;
+    const tx = i => (i / (trendVals.length - 1) * W).toFixed(1);
+    const ty = v => (H - ((v - tMin) / (tMax - tMin || 1)) * (H - 30) - 12).toFixed(1);
+    const trendLine = trendVals.map((v, i) => `${tx(i)},${ty(v)}`).join(' ');
+    const trendArea = `M0,${H} ` + trendVals.map((v, i) => `L${tx(i)},${ty(v)}`).join(' ') + ` L${W},${H} Z`;
+    const sizeDef = insIntent === 'rent' ? [['1 Bedroom', '৳24,500', '41%'], ['2 Bedrooms', '৳38,000', '63%'], ['3 Bedrooms', '৳55,000', '92%'], ['4+ Bedrooms', '৳72,000', '100%']] : [['2 Bed flat', '৳68 Lakh', '42%'], ['3 Bed flat', '৳1.1 Cr', '68%'], ['4 Bed flat', '৳1.6 Cr', '100%'], ['Duplex', '৳2.4 Cr', '100%']];
+    const sizeRows = sizeDef.map(([label, value, w]) => ({ label, value, w }));
+    const blockDef = insIntent === 'rent' ? [['A', 56], ['B', 42], ['C', 30], ['D', 48], ['E', 38], ['F', 14], ['G', 9], ['H', 42]] : [['A', 240], ['B', 165], ['C', 130], ['D', 180], ['E', 150], ['F', 70], ['G', 55], ['H', 160]];
+    const bMax = Math.max(...blockDef.map(b => b[1]));
+    const blockBars = blockDef.map(([label, v], i) => ({ label, value: insIntent === 'rent' ? '৳' + v + 'k' : '৳' + (v / 100).toFixed(1) + 'Cr', h: Math.round(v / bMax * 100) + '%', bg: i === 0 ? 'linear-gradient(180deg,#C9A24B,#A67C2E)' : 'linear-gradient(180deg,#2C557F,#1E3A5C)' }));
+
+    // ---- Account ----
+    const acctFields = [{ label: 'Full name', value: 'Arif Hossain', span: 'span 1' }, { label: 'Phone', value: '+880 1719-552 480', span: 'span 1' }, { label: 'Email', value: 'arif.hossain@gmail.com', span: 'span 1' }, { label: 'Preferred area', value: 'Block B, Aftab Nagar', span: 'span 1' }];
+    const aLang = s.acctLang || 'en';
+    const acctLangs = [['en', 'English'], ['bn', 'বাংলা']].map(([k, label]) => { const on = aLang === k; return { label, onPick: () => this.setState({ acctLang: k }), bd: on ? accent : '#E1E6EC', bg: on ? 'rgba(30,58,92,0.05)' : '#fff', fg: on ? accent : '#44506A' }; });
+    const anDef = [['match', 'Saved-search matches', 'When a new verified match appears', true], ['visit', 'Visit updates', 'Confirmations, reminders & changes', true], ['price', 'Price drops', 'On homes you have saved', false]];
+    const aNotif = s.acctNotif || {};
+    const acctNotifs = anDef.map(([key, label, sub, def]) => { const on = aNotif[key] != null ? aNotif[key] : def; return { label, sub, bg: on ? accent : '#CCD3DB', x: on ? '21px' : '2.5px', onToggle: () => this.setState({ acctNotif: Object.assign({}, aNotif, { [key]: !on }) }) }; });
+
+    // ---- Public provider profile ----
+    const rahima = all.filter(l => l.owner.name === 'Rahima Properties').slice(0, 3).map(l => this.cardOf(l));
+    const ppReviews = [
+      { initial: 'T', avFg: '#fff', avBg: '#6B4E8A', by: 'Tasnia Rahman', when: '3 days ago', stars: '★★★★★', text: 'Very responsive and the flat matched the photos exactly. Smooth, honest and on time.' },
+      { initial: 'I', avFg: '#fff', avBg: '#B4602B', by: 'Imran Chowdhury', when: '1 week ago', stars: '★★★★☆', text: 'Clear advance terms and a quick handover. Would rent from them again.' },
+    ];
+
+    // ---- Saved searches ----
+    const ssAlerts = s.ssAlerts || {};
+    const ssDef = [
+      { id: 'a', title: '2-Bed in Block B', chips: ['Rent', '2 beds', '৳30–45k', 'Verified only'], match: 3, freq: 'Instant', def: true },
+      { id: 'b', title: 'Family flat near lake', chips: ['Rent', '3 beds', 'Block C / H', 'Parking'], match: 0, freq: 'Daily', def: true },
+      { id: 'c', title: 'Student hostel — female', chips: ['Student', 'Female', 'Block G', 'Meals'], match: 1, freq: 'Weekly', def: false },
+    ];
+    const savedSearches = ssDef.map(ss => { const on = ssAlerts[ss.id] != null ? ssAlerts[ss.id] : ss.def; return { title: ss.title, chips: ss.chips, hasMatch: ss.match > 0, matchLabel: ss.match + ' new', freq: ss.freq, toggleBg: on ? accent : '#CCD3DB', toggleX: on ? '21px' : '2.5px', onToggle: () => this.setState({ ssAlerts: Object.assign({}, ssAlerts, { [ss.id]: !on }) }), onView: () => this.setIntent('rent') }; });
+
+    // ---- Write review ----
+    const wrItem = all.find(l => l.id === 5) || all[0];
+    const wrRating = s.wrRating || 0;
+    const ratingLabels = ['Tap a star to rate', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+    const star = (filled) => filled ? '#C9A24B' : '#E0E4EA';
+    const wrStars = [1, 2, 3, 4, 5].map(i => ({ onPick: () => this.setState({ wrRating: i }), color: star(i <= wrRating) }));
+    const subDef = [['accuracy', 'Listing accuracy'], ['comm', 'Communication'], ['value', 'Value for money'], ['cond', 'Condition']];
+    const wrSubVals = s.wrSubs || {};
+    const wrSubs = subDef.map(([key, label]) => ({ label, stars: [1, 2, 3, 4, 5].map(i => ({ onPick: () => this.setState({ wrSubs: Object.assign({}, wrSubVals, { [key]: i }) }), color: star(i <= (wrSubVals[key] || 0)) })) }));
+
+    // ---- Notifications ----
+    const notifRead = s.notifRead || {};
+    const nDef = [
+      { id: 1, icon: '📅', icoBg: '#EAF1ED', icoFg: '#2E7D55', text: 'Your visit to Sunlit 2-Bed, Block B is confirmed for Sat 11:00 AM.', time: '2 hours ago', to: 'saved' },
+      { id: 2, icon: '🔑', icoBg: '#E8EDF4', icoFg: '#1E3A5C', text: 'Rahima Properties suggested a new time for your visit — tap to accept.', time: '5 hours ago', to: 'saved' },
+      { id: 3, icon: '🔔', icoBg: '#F6EFD9', icoFg: '#9A7B1F', text: '3 new homes match your saved search “2-Bed in Block B”.', time: 'Yesterday', to: 'savedSearches' },
+      { id: 4, icon: '💬', icoBg: '#EFE9F5', icoFg: '#6B4E8A', text: 'Aftab Homes replied to your message about the rooftop flat.', time: 'Yesterday', to: 'messages' },
+      { id: 5, icon: '⭐', icoBg: '#F6EFD9', icoFg: '#9A7B1F', text: 'How was your visit to Garden-Facing 2-Bed? Leave a review.', time: '2 days ago', to: 'writeReview' },
+    ];
+    const notifs = nDef.map(n => { const unread = !notifRead[n.id] && !(s.allRead); return { icon: n.icon, icoBg: n.icoBg, icoFg: n.icoFg, text: n.text, time: n.time, unread, bg: unread ? '#FBFCFD' : '#fff', onClick: () => { if (n.to === 'writeReview') { this.setState({ screen: 'writeReview', wrRating: 0, wrSubs: {}, wrText: '', wrSubmitted: false }); window.scrollTo({ top: 0 }); } else { this.nav(n.to); } } }; });
+
+    return {
+      insightsNavFg: screen === 'insights' ? accent : '#41495A',
+      accountName: 'Arif', accountInitial: 'A',
+      goInsights: () => this.nav('insights'), goAccount: () => this.nav('account'),
+      goPublicProfile: () => this.nav('publicProfile'), goSavedSearches: () => this.nav('savedSearches'),
+      goWriteReview: () => this.setState({ screen: 'writeReview', wrRating: 0, wrSubs: {}, wrText: '', wrSubmitted: false }),
+      goNotifs: () => this.nav('notifs'),
+      isInsights: screen === 'insights', isAccount: screen === 'account', isPublicProfile: screen === 'publicProfile',
+      isSavedSearches: screen === 'savedSearches', isWriteReview: screen === 'writeReview', isNotifs: screen === 'notifs',
+      insIntents, insStats, trendLine, trendArea, trendMonths: ['Jul', 'Sep', 'Nov', 'Jan', 'Mar', 'Jun'], sizeRows, blockBars,
+      acctFields, acctLangs, acctNotifs,
+      ppListings: rahima, ppCount: rahima.length, ppReviews,
+      savedSearches, createAlert: () => this.nav('savedSearches'),
+      wrCover: wrItem.coverUrl, wrTitle: wrItem.title, wrDate: 'Jun 14, 2026', wrOwner: wrItem.owner.name,
+      wrStars, wrRatingLabel: ratingLabels[wrRating], wrSubs, wrText: s.wrText || '',
+      wrSetText: (e) => this.setState({ wrText: e.target.value }),
+      wrPhotos: [wrItem.shotUrls[1], wrItem.shotUrls[2]],
+      wrSubmitBg: wrRating > 0 ? accent : '#B9C4D2',
+      wrSubmit: () => { if (wrRating > 0) this.setState({ wrSubmitted: true }); window.scrollTo({ top: 0 }); },
+      wrNotDone: !s.wrSubmitted, wrDone: !!s.wrSubmitted,
+      notifs, markAllRead: () => this.setState({ allRead: true }),
+      showFooter: !['insights', 'account', 'publicProfile', 'savedSearches', 'writeReview', 'notifs'].includes(screen),
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const accent = this.props.accent || '#1E3A5C';
+    const accentDeep = '#16304D';
+    const city = this.props.cityName || 'Dhaka';
+    const all = this.data();
+    const selected = all.find(l => l.id === s.selectedId) || all[0];
+
+    const intents = [
+      { key: 'rent', label: 'Rent' },
+      { key: 'buy', label: 'Buy' },
+      { key: 'sublet', label: 'Sublet' },
+      { key: 'room', label: 'Rooms' },
+      { key: 'student', label: 'Students' },
+    ].map(t => ({
+      ...t,
+      bg: s.intent === t.key ? accent : 'transparent',
+      fg: s.intent === t.key ? '#fff' : '#5A6172',
+      bd: s.intent === t.key ? accent : '#DBE0E6',
+      onPick: () => this.setIntent(t.key),
+      onPickIntent: () => this.setState({ intent: t.key }),
+    }));
+
+    const bedOpts = ['any', '1', '2', '3', '4'].map(b => ({
+      key: b,
+      label: b === 'any' ? 'Any' : (b === '4' ? '4+' : b),
+      bg: s.beds === b ? '#15243B' : '#fff',
+      fg: s.beds === b ? '#fff' : '#3B4252',
+      bd: s.beds === b ? '#15243B' : '#DBE0E6',
+      onPick: () => this.setState({ beds: b }),
+    }));
+
+    const sortOpts = [
+      { v: 'relevance', t: 'Relevance' },
+      { v: 'new', t: 'Newest' },
+      { v: 'low', t: 'Price: Low to High' },
+      { v: 'high', t: 'Price: High to Low' },
+    ];
+
+    const featured = all.filter(l => l.cat === 'rent').slice(0, 6).map(l => this.cardOf(l));
+    const list = this.filtered().map(l => this.cardOf(l));
+    const sel = this.cardOf(selected);
+    const detailAmen = selected.amen.map(a => ({ label: a, icon: this.amenIcon(a) }));
+    const detailShots = selected.shotUrls.map((u, i) => ({
+      url: u, idx: i, active: i === s.gallery,
+      ring: i === s.gallery ? accent : 'transparent',
+      onPick: () => this.setState({ gallery: i }),
+    }));
+    const detailShotsTop = detailShots.slice(1, 3);
+    const heroShot = selected.shotUrls[s.gallery] || selected.coverUrl;
+    const similar = all.filter(l => l.cat === selected.cat && l.id !== selected.id).slice(0, 3).map(l => this.cardOf(l));
+
+    const monthly = selected.sale ? 0 : selected.price;
+    const advAmount = selected.sale ? 0 : selected.price * selected.adv;
+    const costRows = selected.sale
+      ? [{ k: 'Asking price', v: '৳' + this.bdGroup(selected.price) }, { k: 'Est. registration (est.)', v: 'Buyer borne' }, { k: 'Platform fee', v: 'None' }]
+      : [
+          { k: 'Monthly rent', v: '৳' + this.bdGroup(selected.price) },
+          { k: 'Service charge', v: '৳' + this.bdGroup(selected.service) + '/mo' },
+          { k: `Advance (${selected.adv} mo)`, v: '৳' + this.bdGroup(advAmount) },
+          { k: 'Platform fee', v: 'Free' },
+        ];
+
+    const slots = [
+      { id: 'a', day: 'Fri', date: 'Jun 19', time: '5:00 PM' },
+      { id: 'b', day: 'Sat', date: 'Jun 20', time: '11:00 AM' },
+      { id: 'c', day: 'Sun', date: 'Jun 21', time: '4:30 PM' },
+    ].map(x => {
+      const on = s.slot && s.slot.id === x.id;
+      return { ...x, active: on, bd: on ? accent : '#DBE0E6', bg: on ? '#EEF3F8' : '#fff', dot: on ? accent : 'transparent', onPick: () => this.chooseSlot(x) };
+    });
+
+    const mapPins = list.map(l => ({ ...l, pinLabel: l.sale ? '৳' + this.bdGroup(Math.round(l.price/100000)) + 'L' : '৳' + this.bdGroup(Math.round(l.price/1000)) + 'k' }));
+
+    const steps = ['Propose a time', 'Add details', 'Confirmed'].map((t, i) => ({
+      t, n: i + 1,
+      done: s.bookingStep > i + 1,
+      active: s.bookingStep === i + 1,
+      circleBg: s.bookingStep >= i + 1 ? accent : '#E7EBF0',
+      circleFg: s.bookingStep >= i + 1 ? '#fff' : '#8B93A1',
+    }));
+
+    // ----- Messages data -----
+    const threadDefs = [
+      { id: 't1', listingId: 1, time: '10:24', unreadCount: 2, msgs: [
+        { me: false, text: "Hi! Yes, the Block B flat is still available for a long lease.", time: '10:20' },
+        { me: true, text: "Great — is the parking covered, and is there generator backup for the whole flat?", time: '10:22' },
+        { me: false, text: "Covered parking for one car, and full backup including the ACs. Want to visit this week?", time: '10:24' },
+      ] },
+      { id: 't2', listingId: 4, time: 'Yesterday', unreadCount: 0, msgs: [
+        { me: true, text: "Is the rooftop garden shared or private to the unit?", time: 'Yest' },
+        { me: false, text: "Shared, residents only — but very well kept.", time: 'Yest' },
+      ] },
+      { id: 't3', listingId: 9, time: 'Mon', unreadCount: 0, msgs: [
+        { me: false, text: "Seats are filling for next term — shall I hold one for you?", time: 'Mon' },
+      ] },
+    ];
+    const threads = threadDefs.map(t => {
+      const l = all.find(x => x.id === t.listingId);
+      const active = t.id === s.activeThread;
+      const last = (s.threadMsgs[t.id] && s.threadMsgs[t.id].slice(-1)[0]) || t.msgs.slice(-1)[0];
+      return {
+        id: t.id, name: l.owner.name, initial: l.owner.name.charAt(0), time: t.time,
+        preview: last.text, unread: !active && t.unreadCount > 0, unreadCount: t.unreadCount,
+        rowBg: active ? '#F4F6F9' : '#fff', rowBar: active ? accent : 'transparent',
+        onPick: () => this.setState({ activeThread: t.id }),
+      };
+    });
+    const activeDef = threadDefs.find(t => t.id === s.activeThread) || threadDefs[0];
+    const activeL = all.find(x => x.id === activeDef.listingId);
+    const activeMessages = [...activeDef.msgs, ...(s.threadMsgs[activeDef.id] || [])].map(m => ({
+      text: m.text, time: m.time, justify: m.me ? 'flex-end' : 'flex-start',
+      bubbleBg: m.me ? accent : '#fff', bubbleFg: m.me ? '#fff' : '#15243B',
+      bubbleBorder: m.me ? 'none' : '1px solid #E7EAEE',
+      radius: m.me ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+      metaFg: m.me ? 'rgba(255,255,255,0.7)' : '#A8AEB9',
+    }));
+
+    // ----- Saved / activity data -----
+    const savedCards = all.filter(l => s.saved[l.id]).map(l => this.cardOf(l));
+    const anySaved = Object.values(s.saved).some(Boolean);
+    const visitsList = [
+      { id: 1, day: 'SAT', dateNum: '20', timeLabel: 'Sat, Jun 20 · 11:00 AM', status: 'Confirmed', sg: '#3C7A58', sb: '#EAF1ED', action: '' },
+      this.state.visitAccepted
+        ? { id: 4, day: 'MON', dateNum: '22', timeLabel: 'Mon, Jun 22 · 5:00 PM', status: 'Confirmed', sg: '#3C7A58', sb: '#EAF1ED', action: '' }
+        : { id: 4, day: 'MON', dateNum: '22', timeLabel: 'Owner suggested Mon, Jun 22 · 5:00 PM', status: 'New time suggested', sg: '#2A5C8A', sb: '#E6EFF7', action: 'accept' },
+      { id: 5, day: 'SAT', dateNum: '14', timeLabel: 'Sat, Jun 14 · 2:00 PM', status: 'Completed', sg: '#5A6172', sb: '#EEF0F3', action: 'review' },
+    ].map(v => {
+      const l = all.find(x => x.id === v.id);
+      return { day: v.day, dateNum: v.dateNum, timeLabel: v.timeLabel, status: v.status,
+        statusFg: v.sg, statusBg: v.sb, title: l.title, area: l.area, coverUrl: l.coverUrl,
+        hasAction: !!v.action,
+        actionLabel: v.action === 'accept' ? '✓ Accept time' : 'Write a review',
+        actionFg: '#fff', actionBg: v.action === 'accept' ? '#2E7D55' : '#15243B',
+        onAction: (e) => { if (e) e.stopPropagation(); if (v.action === 'accept') { this.setState({ visitAccepted: true }); } else { this.setState({ screen: 'writeReview', wrRating: 0, wrSubs: {}, wrText: '', wrSubmitted: false }); window.scrollTo({ top: 0 }); } },
+        onOpen: () => this.nav('detail', l.id) };
+    });
+
+    // ----- Listing wizard data -----
+    const wizDef = [{ n:1, label:'Type' },{ n:2, label:'Details' },{ n:3, label:'Photos' },{ n:4, label:'Pricing' },{ n:5, label:'Review' }];
+    const wizSteps = wizDef.map((w, i) => {
+      const done = s.wizStep > w.n, active = s.wizStep === w.n;
+      return { label: w.label, mark: done ? '✓' : String(w.n),
+        flex: i < wizDef.length - 1 ? '1' : '0 0 auto', hasLine: i < wizDef.length - 1,
+        circleBg: (done || active) ? accent : '#fff', circleFg: (done || active) ? '#fff' : '#8B93A1',
+        circleBd: (done || active) ? accent : '#D3D9E0', labelFg: active ? '#15243B' : '#8B93A1',
+        lineBg: done ? accent : '#E7EAEE' };
+    });
+    const typeDefs = [
+      { k:'rent', icon:'🏠', label:'Flat for rent', sub:'Residential lease' },
+      { k:'buy', icon:'🔑', label:'Flat for sale', sub:'Sell your property' },
+      { k:'office', icon:'🏢', label:'Office space', sub:'Rent or sale' },
+      { k:'sublet', icon:'🛋️', label:'Sublet', sub:'Short-term / shared' },
+      { k:'room', icon:'🚪', label:'Single room', sub:'Bachelor / family' },
+      { k:'student', icon:'🎓', label:'Student hostel', sub:'Seats near campus' },
+    ];
+    const wizTypes = typeDefs.map(t => {
+      const on = s.wizType === t.k;
+      return { ...t, onPick: () => this.setState({ wizType: t.k }),
+        bd: on ? accent : '#E7EAEE', bg: on ? '#EEF3F8' : '#fff', iconBg: on ? '#fff' : '#F4F6F9' };
+    });
+    const wizBeds = ['1','2','3','4+'].map(b => {
+      const on = String(s.wBeds) === b;
+      return { label: b, onPick: () => this.setState({ wBeds: b }),
+        bd: on ? accent : '#DBE0E6', bg: on ? '#EEF3F8' : '#fff', fg: on ? accent : '#3B4252' };
+    });
+    const wizFurnish = ['Unfurnished','Semi','Furnished'].map(f => {
+      const on = s.wFurnish === f;
+      return { label: f, onPick: () => this.setState({ wFurnish: f }),
+        bd: on ? accent : '#DBE0E6', bg: on ? '#EEF3F8' : '#fff', fg: on ? accent : '#3B4252' };
+    });
+    const wizPhotos = all.find(x => x.id === 1).shotUrls.map((u, i) => ({ url: u, isCover: i === 0 }));
+    const wTitle = s.wTitle || 'Sunlit 2-bed apartment, Block B';
+    const wPriceNum = s.wPrice ? parseInt(String(s.wPrice).replace(/\D/g, ''), 10) : 38000;
+    const wPriceLabel = '৳' + this.bdGroup(wPriceNum || 0) + '/mo';
+    const wTypeLabel = (typeDefs.find(t => t.k === s.wizType) || typeDefs[0]).label;
+    const reviewRows = [
+      { k: 'Type', v: wTypeLabel }, { k: 'Title', v: wTitle }, { k: 'Location', v: 'Block B, Aftab Nagar' },
+      { k: 'Bedrooms', v: String(s.wBeds) }, { k: 'Furnishing', v: s.wFurnish }, { k: 'Rent', v: wPriceLabel },
+      { k: 'Negotiable', v: s.wNeg ? 'Yes' : 'No' },
+    ];
+
+    return {
+      accent, accentDeep, city,
+      ...this.extraScreens(),
+      isSaved: s.screen === 'saved',
+      isMessages: s.screen === 'messages',
+      isList: s.screen === 'list',
+      isAuth: s.screen === 'auth',
+      goAuth: () => this.nav('auth'),
+      authIsSignin: s.authMode === 'signin',
+      authIsSignup: s.authMode === 'signup',
+      authBadge: s.authMode === 'signin' ? 'Welcome back to Dwell' : 'Join 40,000+ renters & owners',
+      authTitle: s.authMode === 'signin' ? 'Sign in to your account' : 'Create your account',
+      authSub: s.authMode === 'signin'
+        ? 'Pick up where you left off — your saved homes and visits are waiting.'
+        : 'Save homes, message owners and book visits across Aftab Nagar in minutes.',
+      authCta: s.authMode === 'signin' ? 'Sign in' : 'Create account',
+      authSwitchText: s.authMode === 'signin' ? "New to Dwell?" : 'Already have an account?',
+      authSwitchCta: s.authMode === 'signin' ? 'Create an account' : 'Sign in',
+      toggleAuthMode: () => this.setState(st => ({ authMode: st.authMode === 'signin' ? 'signup' : 'signin', showPw: false })),
+      pwType: s.showPw ? 'text' : 'password',
+      pwIcon: s.showPw ? '🙈' : '👁',
+      pwPlaceholder: s.authMode === 'signin' ? 'Enter your password' : 'Create a password',
+      togglePw: () => this.setState(st => ({ showPw: !st.showPw })),
+      authRoles: [
+        { key: 'rent', label: 'Find a home', icon: '🔑' },
+        { key: 'own', label: 'List a property', icon: '🏠' },
+      ].map(r => ({
+        ...r,
+        bd: s.authRole === r.key ? accent : '#E1E6EC',
+        bg: s.authRole === r.key ? 'rgba(30,58,92,0.06)' : '#fff',
+        fg: s.authRole === r.key ? accent : '#4A5161',
+        onPick: () => this.setState({ authRole: r.key }),
+      })),
+      goRent: () => this.setIntent('rent'),
+      goBuy: () => this.setIntent('buy'),
+      goSublet: () => this.setIntent('sublet'),
+      goStudent: () => this.setIntent('student'),
+      goMessages: () => this.nav('messages'),
+      goSaved: () => this.nav('saved'),
+      goList: () => this.nav('list'),
+      savedNavIcon: anySaved ? '♥' : '♡',
+      savedNavColor: anySaved ? accent : '#41495A',
+      savedList: savedCards, savedCount: savedCards.length,
+      hasSaved: savedCards.length > 0, noSaved: savedCards.length === 0, visitsList,
+      threads,
+      activeName: activeL.owner.name, activeInitial: activeL.owner.name.charAt(0), activeType: activeL.owner.type,
+      activeCover: activeL.coverUrl, activeListingTitle: activeL.title, activeListingPrice: this.fmtPrice(activeL),
+      activeListingArea: activeL.area, activeMessages, msgText: s.msgDraft,
+      setMsg: (e) => this.setState({ msgDraft: e.target.value }), sendMsg: () => this.sendMessage(),
+      openActiveListing: () => this.nav('detail', activeL.id),
+      wizSteps, wizTypes, wizBeds, wizFurnish, wizPhotos,
+      isWiz1: s.wizStep === 1, isWiz2: s.wizStep === 2, isWiz3: s.wizStep === 3, isWiz4: s.wizStep === 4, isWiz5: s.wizStep === 5,
+      showWizBack: s.wizStep > 1, wizBack: () => this.wizBack(),
+      wizPrimary: () => { if (s.wizStep === 5) { this.setState({ screen: 'home', wizStep: 1 }); window.scrollTo({ top: 0 }); } else { this.wizNext(); } },
+      wizPrimaryLabel: s.wizStep === 5 ? 'Publish listing' : 'Continue',
+      fTitle: s.wTitle, setTitle: (e) => this.setState({ wTitle: e.target.value }),
+      fPrice: s.wPrice, setPrice: (e) => this.setState({ wPrice: e.target.value }),
+      negBg: s.wNeg ? accent : '#CCD3DB', negX: s.wNeg ? '19px' : '2.5px',
+      toggleNeg: () => this.setState(st => ({ wNeg: !st.wNeg })),
+      reviewRows, wizCover: all.find(x => x.id === 1).coverUrl,
+      wizPreviewTitle: wTitle, wizPreviewArea: 'Block B, Aftab Nagar',
+      wizPreviewBeds: s.wBeds + ' Bed', wizPreviewFurnish: s.wFurnish, wizPreviewPrice: wPriceLabel,
+      screen: s.screen,
+      isHome: s.screen === 'home',
+      isSearch: s.screen === 'search',
+      isDetail: s.screen === 'detail',
+      intents, bedOpts, sortOpts, sortVal: s.sort,
+      searched: s.searched, notSearched: !s.searched,
+      heroMax: s.searched ? '0px' : '760px',
+      heroOpacity: s.searched ? '0' : '1',
+      heroTransform: s.searched ? 'translateY(-28px)' : 'none',
+      searchMt: s.searched ? '8px' : '44px',
+      intentPhrase: ({rent:'for rent',buy:'for sale',sublet:'to sublet',room:'· private rooms',student:'· student housing'})[s.intent],
+      doSearch: () => this.setState({ searched: true }),
+      clearSearch: () => { this.setState({ searched: false }); window.scrollTo({ top: 0, behavior: 'smooth' }); },
+      featured, list, resultCount: list.length,
+      sel, detailAmen, detailShots, detailShotsTop, heroShot, similar, costRows,
+      mapPins,
+      verifiedOnly: s.verifiedOnly,
+      verifiedToggleBg: s.verifiedOnly ? accent : '#CCD3DB',
+      verifiedKnobX: s.verifiedOnly ? '19px' : '2.5px',
+      slotDay: s.slot ? s.slot.day : '',
+      slotDateNum: s.slot ? (s.slot.date.split(' ')[1] || '') : '',
+      showBookingBack: s.bookingStep === 2,
+      bookingPrimary: () => { if (s.bookingStep === 3) { this.closeBooking(); } else { this.bookingNext(); } },
+      bookingPrimaryDisabled: s.bookingStep === 1 && !s.slot,
+      bookingPrimaryBg: (s.bookingStep === 1 && !s.slot) ? '#B9C4D2' : accent,
+      bookingPrimaryLabel: s.bookingStep === 1 ? 'Continue' : (s.bookingStep === 2 ? 'Send visit request' : 'Done'),
+      intentLabel: ({rent:'For Rent',buy:'For Sale',sublet:'Sublet',room:'Rooms',student:'Student Housing'})[s.intent],
+      // handlers
+      goHome: () => this.nav('home'),
+      goSearch: () => this.setIntent('rent'),
+      openListing: (id) => this.nav('detail', id),
+      setIntent: (i) => this.setIntent(i),
+      pickIntent: (i) => this.setState({ intent: i }),
+      pickBeds: (b) => this.setState({ beds: b }),
+      setSort: (e) => this.setState({ sort: e.target.value }),
+      toggleVerified: () => this.setState(st => ({ verifiedOnly: !st.verifiedOnly })),
+      setGallery: (i) => this.setState({ gallery: i }),
+      toggleSave: (id, e) => this.toggleSave(id, e),
+      openBooking: () => this.openBooking(),
+      closeBooking: () => this.closeBooking(),
+      bookingOpen: s.bookingOpen,
+      bookingStep: s.bookingStep,
+      isStep1: s.bookingStep === 1,
+      isStep2: s.bookingStep === 2,
+      isStep3: s.bookingStep === 3,
+      slots, steps, slot: s.slot,
+      slotLabel: s.slot ? `${s.slot.day}, ${s.slot.date} · ${s.slot.time}` : 'No time selected',
+      chooseSlot: (x) => this.chooseSlot(x),
+      bookingNext: () => this.bookingNext(),
+      bookingBack: () => this.bookingBack(),
+      noteVal: s.note,
+      setNote: (e) => this.setState({ note: e.target.value }),
+      canNext1: !!s.slot,
+    };
+  }
+}
+</script>
+</body>
+</html>

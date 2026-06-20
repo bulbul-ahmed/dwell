@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background: #F4F6F9; -webkit-font-smoothing: antialiased; }
+  ::selection { background: #DCE6F2; }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #D4DAE2; border-radius: 8px; border: 3px solid #F4F6F9; }
+  ::-webkit-scrollbar-thumb:hover { background: #BAC2CD; }
+  @keyframes bvfade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes bvpop { from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; } }
+  @keyframes bvtoast { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+  @keyframes bvrise { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+  @keyframes bvspin { to { transform: rotate(360deg); } }
+  .bv-fill { position: relative; overflow: hidden; z-index: 0; }
+  .bv-fill::before { content: ''; position: absolute; inset: 0; background: var(--fill, rgba(20,40,70,.06)); transform: scaleX(0); transform-origin: right center; transition: transform .45s cubic-bezier(.22,1,.36,1); z-index: -1; }
+  .bv-fill:hover::before { transform: scaleX(1); }
+  .bv-nav { position: relative; overflow: hidden; transition: color .25s ease; }
+  .bv-nav::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); transform: translateX(102%); transition: transform .42s cubic-bezier(.22,1,.36,1); }
+  .bv-nav:hover::before { transform: translateX(0); }
+  .bv-nav > * { position: relative; }
+  .bv-nav .bv-navico { transition: transform .42s cubic-bezier(.22,1,.36,1); }
+  .bv-nav:hover .bv-navico { transform: translateX(2px); }
+  .bv-press { transition: transform .14s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, background .35s ease, border-color .25s ease, color .25s ease; }
+  .bv-press:active { transform: translateY(1.5px) scale(.985); }
+  .bv-lift { transition: transform .34s cubic-bezier(.22,1,.36,1), box-shadow .34s cubic-bezier(.22,1,.36,1), border-color .3s ease; }
+  .bv-lift:hover { transform: translateY(-3px); box-shadow: 0 22px 48px -28px rgba(18,38,66,.42); border-color: #DDE3EB; }
+  .bv-rowh { transition: background .28s ease, box-shadow .28s ease; }
+</style>
+</helmet>
+
+<div style="display: flex; min-height: 100vh; background: #F4F6F9; font-family: 'Plus Jakarta Sans', sans-serif;">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="position: sticky; top: 0; align-self: flex-start; height: 100vh; width: 264px; flex: 0 0 264px; background: linear-gradient(176deg, #16273F 0%, #122035 58%, #0E1A2C 100%); display: flex; flex-direction: column; overflow: hidden;">
+    <div style="position: absolute; top: -90px; right: -70px; width: 240px; height: 240px; border-radius: 50%; background: radial-gradient(circle, rgba(86,131,196,0.22), transparent 68%); pointer-events: none;"></div>
+    <div style="display: flex; align-items: center; gap: 11px; padding: 22px 22px 18px;">
+      <div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(140deg, #2C557F, #1E3A5C); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px -6px rgba(44,85,127,0.7); flex: 0 0 auto;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 11.5L12 4l9 7.5" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path><path d="M5.5 10v9.5h13V10" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+      <div><div style="font-size: 18px; font-weight: 700; color: #fff; letter-spacing: 0.2px; line-height: 1;">Dwell</div><div style="font-size: 10.5px; font-weight: 700; letter-spacing: 1.4px; color: #6E89AD; margin-top: 3px; text-transform: uppercase;">Provider Studio</div></div>
+    </div>
+
+    <!-- list CTA -->
+    <div style="padding: 4px 14px 8px;">
+      <button onClick="{{ goNew }}" class="bv-press" style="width: 100%; height: 44px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #2E7D55, #246046); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 22px -8px rgba(46,125,85,.6);"><span style="font-size: 17px; line-height: 1;">+</span> List a property</button>
+    </div>
+
+    <nav style="flex: 1; overflow-y: auto; padding: 6px 14px 18px;">
+      <sc-for list="{{ navGroups }}" as="g" hint-placeholder-count="3">
+        <div style="margin-top: 16px;">
+          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.3px; color: #56708F; text-transform: uppercase; padding: 0 12px 9px;">{{ g.label }}</div>
+          <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="3">
+            <div onClick="{{ it.onClick }}" class="bv-nav" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 3px; border-radius: 11px; cursor: pointer; color: {{ it.fg }}; background: {{ it.bg }}; font-size: 13.5px; font-weight: {{ it.weight }};">
+              <span style="position: absolute; left: 0; top: 50%; transform: translateY(-50%); width: 3px; height: {{ it.barH }}; border-radius: 0 3px 3px 0; background: #6EA0E0; transition: height .3s cubic-bezier(.22,1,.36,1);"></span>
+              <span class="bv-navico" style="display: flex; color: {{ it.icoFg }};">{{ it.icon }}</span>
+              <span style="flex: 1;">{{ it.label }}</span>
+              <sc-if value="{{ it.count }}" hint-placeholder-val="{{ false }}"><span style="min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: {{ it.countBg }}; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center;">{{ it.count }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </nav>
+
+    <div style="padding: 14px; border-top: 1px solid rgba(255,255,255,0.07);">
+      <div onClick="{{ goProfile }}" class="bv-fill bv-press" style="--fill: rgba(255,255,255,.06); display: flex; align-items: center; gap: 11px; padding: 9px 10px; border-radius: 12px; cursor: pointer;">
+        <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(140deg, #3C6E9E, #2C557F); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex: 0 0 auto;">R</div>
+        <div style="flex: 1; min-width: 0;"><div style="font-size: 13px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px;">Rahima Properties <span style="color: #6EE0A4; font-size: 12px;">✓</span></div><div style="font-size: 11px; color: #7F97B6;">Agency · Verified</div></div>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M8 9l4-4 4 4M8 15l4 4 4-4" stroke="#7F97B6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div style="flex: 1; min-width: 0; display: flex; flex-direction: column;">
+    <header style="position: sticky; top: 0; z-index: 30; background: rgba(244,246,249,0.82); backdrop-filter: blur(12px); border-bottom: 1px solid #E6E9EE; padding: 0 34px; height: 70px; display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; gap: 14px;">
+        <sc-if value="{{ showBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ goBack }}" class="bv-press bv-fill" style="--fill: #EEF2F7; display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 13px; border-radius: 10px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #44506A;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#44506A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back</button>
+        </sc-if>
+        <div style="flex-shrink: 0;"><div style="font-size: 11.5px; font-weight: 700; color: #93A0B2;">{{ crumb }}</div><h1 style="font-size: 21px; font-weight: 800; letter-spacing: -0.4px; color: #15243B; margin: 1px 0 0; white-space: nowrap;">{{ pageTitle }}</h1></div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <button onClick="{{ goLeads }}" class="bv-press bv-fill" style="--fill: #EEF2F7; position: relative; width: 40px; height: 40px; border-radius: 11px; border: 1px solid #E5E9EF; background: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.4 8.4 0 01-9 8.4L4 21l1.1-3.6A8.4 8.4 0 1121 11.5z" stroke="#44506A" stroke-width="1.8" stroke-linejoin="round"></path></svg><span style="position: absolute; top: 8px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: #2E7D55; border: 2px solid #fff;"></span></button>
+        <button onClick="{{ goBoost }}" class="bv-press" style="height: 40px; padding: 0 16px; border-radius: 11px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #9A6A1F; background: #F6EFD9; display: inline-flex; align-items: center; gap: 7px;">★ Boost a listing</button>
+        <div style="width: 1px; height: 26px; background: #E2E7EE;"></div>
+        <div onClick="{{ goProfile }}" class="bv-press" style="display: flex; align-items: center; gap: 9px; cursor: pointer;"><div style="width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(140deg, #3C6E9E, #2C557F); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px;">R</div></div>
+      </div>
+    </header>
+
+    <main style="flex: 1; padding: 28px 34px 56px; min-width: 0;">
+
+      <!-- ============ OVERVIEW ============ -->
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Provider · Overview" style="animation: bvfade .5s cubic-bezier(.22,1,.36,1) both;">
+        <!-- greeting -->
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 22px; gap: 16px; flex-wrap: wrap;">
+          <div><h2 style="font-size: 25px; font-weight: 800; letter-spacing: -0.5px; color: #15243B; margin: 0;">Good morning, Rahima 👋</h2><p style="font-size: 14px; color: #8893A4; margin: 6px 0 0;">You have <strong style="color: #2E7D55;">3 new leads</strong> and <strong style="color: #1E3A5C;">2 visits</strong> scheduled today.</p></div>
+          <button onClick="{{ goNew }}" class="bv-press" style="height: 44px; padding: 0 20px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: #fff; background: #1E3A5C; box-shadow: 0 10px 22px -10px rgba(30,58,92,.55);">+ New listing</button>
+        </div>
+
+        <!-- KPIs -->
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 20px;">
+          <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="5">
+            <div class="bv-lift" style="background: #fff; border: 1px solid #ECEEF1; border-radius: 16px; padding: 17px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <div style="display: flex; align-items: center; justify-content: space-between;"><div style="width: 36px; height: 36px; border-radius: 10px; background: {{ k.bg }}; color: {{ k.fg }}; display: flex; align-items: center; justify-content: center;">{{ k.icon }}</div><span style="font-size: 11.5px; font-weight: 800; color: {{ k.dFg }};">{{ k.delta }}</span></div>
+              <div style="font-size: 26px; font-weight: 800; letter-spacing: -0.6px; color: #15243B; margin-top: 13px; line-height: 1;">{{ k.value }}</div>
+              <div style="font-size: 12.5px; font-weight: 600; color: #8893A4; margin-top: 6px;">{{ k.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; margin-bottom: 20px;">
+          <!-- performance chart -->
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px;"><div><h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0;">Portfolio performance</h3><p style="font-size: 12.5px; color: #8893A4; margin: 4px 0 0;">Views &amp; leads across your listings · 14 days</p></div><div style="display: flex; gap: 14px;"><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #5A6172;"><span style="width: 9px; height: 9px; border-radius: 3px; background: #1E3A5C;"></span>Views</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #5A6172;"><span style="width: 9px; height: 9px; border-radius: 3px; background: #2E7D55;"></span>Leads</span></div></div>
+            <div style="display: flex; align-items: flex-end; gap: 9px; height: 200px; padding-top: 22px;">
+              <sc-for list="{{ perfBars }}" as="b" hint-placeholder-count="14">
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 7px; height: 100%; justify-content: flex-end;">
+                  <div style="display: flex; align-items: flex-end; gap: 3px; height: 100%; width: 100%; justify-content: center;"><div style="width: 42%; height: {{ b.viewH }}; min-height: 3px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #2C557F, #1E3A5C); transform-origin: bottom; animation: bvrise .6s cubic-bezier(.22,1,.36,1) both;"></div><div style="width: 42%; height: {{ b.leadH }}; min-height: 3px; border-radius: 4px 4px 0 0; background: linear-gradient(180deg, #34A06C, #2E7D55); transform-origin: bottom; animation: bvrise .6s cubic-bezier(.22,1,.36,1) .06s both;"></div></div>
+                  <span style="font-size: 10px; font-weight: 700; color: #BAC4D0;">{{ b.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- today's schedule -->
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"><h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0;">Today's visits</h3><span onClick="{{ goVisits }}" class="bv-press" style="font-size: 13px; font-weight: 700; color: #1E3A5C; cursor: pointer;">All →</span></div>
+            <div style="display: flex; flex-direction: column; gap: 11px;">
+              <sc-for list="{{ todayVisits }}" as="v" hint-placeholder-count="3">
+                <div class="bv-rowh" style="display: flex; align-items: center; gap: 12px; padding: 11px; border: 1px solid #EEF1F5; border-radius: 13px;" style-hover="background: #F8FAFC;">
+                  <div style="width: 46px; height: 46px; border-radius: 12px; background: {{ v.tBg }}; color: {{ v.tFg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto;"><span style="font-size: 9px; font-weight: 800; letter-spacing: .5px;">{{ v.ampm }}</span><span style="font-size: 14px; font-weight: 800; line-height: 1;">{{ v.hour }}</span></div>
+                  <div style="flex: 1; min-width: 0;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ v.seeker }}</div><div style="font-size: 12px; color: #8893A4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ v.listing }}</div></div>
+                  <span style="font-size: 10.5px; font-weight: 800; color: {{ v.sFg }}; background: {{ v.sBg }}; padding: 4px 9px; border-radius: 999px; white-space: nowrap;">{{ v.status }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <!-- listings performance preview -->
+        <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;"><h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0;">Your listings</h3><span onClick="{{ goListings }}" class="bv-press" style="font-size: 13px; font-weight: 700; color: #1E3A5C; cursor: pointer;">Manage all →</span></div>
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+            <sc-for list="{{ topListings }}" as="l" hint-placeholder-count="3">
+              <div onClick="{{ l.onOpen }}" class="bv-lift" style="border: 1px solid #EEF1F5; border-radius: 15px; overflow: hidden; cursor: pointer;">
+                <div style="height: 120px; background-image: url('{{ l.thumb }}'); background-size: cover; background-position: center; background-color: #DDD3C5; position: relative;"><span style="position: absolute; top: 9px; left: 9px; font-size: 10.5px; font-weight: 800; color: {{ l.sFg }}; background: {{ l.sBg }}; padding: 3px 9px; border-radius: 999px;">{{ l.status }}</span><sc-if value="{{ l.featured }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 9px; right: 9px; font-size: 10.5px; font-weight: 800; color: #fff; background: rgba(154,123,31,0.95); padding: 3px 9px; border-radius: 999px;">★ Boosted</span></sc-if></div>
+                <div style="padding: 13px;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ l.title }}</div><div style="display: flex; gap: 14px; margin-top: 9px;"><span style="font-size: 12px; color: #8893A4;"><strong style="color: #15243B;">{{ l.views }}</strong> views</span><span style="font-size: 12px; color: #8893A4;"><strong style="color: #15243B;">{{ l.leads }}</strong> leads</span></div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ MY LISTINGS ============ -->
+      <sc-if value="{{ isListings }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Listings" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 14px; flex-wrap: wrap;">
+          <div style="display: flex; gap: 6px; background: #fff; border: 1px solid #E6E9EE; border-radius: 12px; padding: 5px;">
+            <sc-for list="{{ listFilters }}" as="f" hint-placeholder-count="4">
+              <button onClick="{{ f.onPick }}" class="bv-press" style="white-space: nowrap; padding: 7px 14px; border-radius: 9px; border: none; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: {{ f.fg }}; background: {{ f.bg }};">{{ f.label }}</button>
+            </sc-for>
+          </div>
+          <button onClick="{{ goNew }}" class="bv-press" style="height: 42px; padding: 0 18px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: #fff; background: #1E3A5C; box-shadow: 0 10px 22px -10px rgba(30,58,92,.55);">+ New listing</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;">
+          <sc-for list="{{ listingCards }}" as="l" hint-placeholder-count="6">
+            <div class="bv-lift" style="background: #fff; border: 1px solid #ECEEF1; border-radius: 17px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <div onClick="{{ l.onOpen }}" style="height: 150px; background-image: url('{{ l.thumb }}'); background-size: cover; background-position: center; background-color: #DDD3C5; position: relative; cursor: pointer;">
+                <span style="position: absolute; top: 11px; left: 11px; font-size: 11px; font-weight: 800; color: {{ l.sFg }}; background: {{ l.sBg }}; padding: 4px 10px; border-radius: 999px;">{{ l.status }}</span>
+                <sc-if value="{{ l.featured }}" hint-placeholder-val="{{ false }}"><span style="position: absolute; top: 11px; right: 11px; font-size: 11px; font-weight: 800; color: #fff; background: rgba(154,123,31,0.95); padding: 4px 10px; border-radius: 999px;">★ Boosted</span></sc-if>
+              </div>
+              <div style="padding: 15px;">
+                <div onClick="{{ l.onOpen }}" style="font-size: 14.5px; font-weight: 700; color: #15243B; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer;">{{ l.title }}</div>
+                <div style="font-size: 12.5px; color: #8893A4; margin-top: 3px;">{{ l.where }} · {{ l.price }}</div>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0; padding: 12px 0; border-top: 1px solid #F2F4F7; border-bottom: 1px solid #F2F4F7;">
+                  <div><div style="font-size: 16px; font-weight: 800; color: #15243B;">{{ l.views }}</div><div style="font-size: 11px; color: #9AA6B6;">Views</div></div>
+                  <div><div style="font-size: 16px; font-weight: 800; color: #15243B;">{{ l.leads }}</div><div style="font-size: 11px; color: #9AA6B6;">Leads</div></div>
+                  <div><div style="font-size: 16px; font-weight: 800; color: #15243B;">{{ l.visits }}</div><div style="font-size: 11px; color: #9AA6B6;">Visits</div></div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button onClick="{{ l.onOpen }}" class="bv-press bv-fill" style="--fill: #EEF2F7; flex: 1; height: 38px; border-radius: 10px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #1E3A5C;">Stats</button>
+                  <button onClick="{{ l.onBoost }}" class="bv-press bv-fill" style="--fill: #F6EFD9; height: 38px; padding: 0 13px; border-radius: 10px; border: 1px solid #EBDCB4; background: #fff; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #9A7B1F;">★ Boost</button>
+                  <button onClick="{{ l.onMenu }}" class="bv-press bv-fill" style="--fill: #EEF0F3; width: 38px; height: 38px; border-radius: 10px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; color: #8893A4;">⋯</button>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ LISTING DETAIL (PERFORMANCE) ============ -->
+      <sc-if value="{{ isListingDetail }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Listing performance" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: grid; grid-template-columns: 1.6fr 1fr; gap: 22px; align-items: start;">
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <div style="height: 230px; background-image: url('{{ ld.hero }}'); background-size: cover; background-position: center; background-color: #DDD3C5;"></div>
+              <div style="padding: 22px;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;"><div><h2 style="font-size: 20px; font-weight: 800; color: #15243B; margin: 0 0 4px;">{{ ld.title }}</h2><div style="font-size: 13.5px; color: #8893A4;">{{ ld.where }} · {{ ld.price }}</div></div><span style="font-size: 11.5px; font-weight: 800; color: {{ ld.sFg }}; background: {{ ld.sBg }}; padding: 5px 12px; border-radius: 999px;">{{ ld.status }}</span></div>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 18px;">Funnel · last 30 days</h3>
+              <div style="display: flex; flex-direction: column; gap: 13px;">
+                <sc-for list="{{ ld.funnel }}" as="f" hint-placeholder-count="5">
+                  <div><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;"><span style="font-size: 13px; font-weight: 700; color: #44506A;">{{ f.label }}</span><span style="font-size: 12.5px; font-weight: 800; color: #15243B;">{{ f.value }}</span></div><div style="height: 9px; border-radius: 999px; background: #F0F3F7; overflow: hidden;"><div style="height: 100%; width: {{ f.w }}; border-radius: 999px; background: {{ f.bar }}; transform-origin: left; animation: bvrise .7s cubic-bezier(.22,1,.36,1) both;"></div></div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="position: sticky; top: 86px; display: flex; flex-direction: column; gap: 18px;">
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 22px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 13px; font-weight: 800; color: #9AA6B6; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 14px;">Manage</h3>
+              <button onClick="{{ ld.onBoost }}" class="bv-press" style="width: 100%; height: 44px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #C9A24B, #A67C2E); display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 10px 22px -10px rgba(166,124,46,.6); margin-bottom: 10px;">★ Boost this listing</button>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <button onClick="{{ ld.onEdit }}" class="bv-press bv-fill" style="--fill: #EEF2F7; height: 42px; border-radius: 12px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #44506A;">Edit</button>
+                <button onClick="{{ ld.onPause }}" class="bv-press bv-fill" style="--fill: #EEF0F3; height: 42px; border-radius: 12px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #5A6172;">{{ ld.pauseLabel }}</button>
+                <button onClick="{{ ld.onRented }}" class="bv-press bv-fill" style="--fill: #E6EFF7; height: 42px; border-radius: 12px; border: 1px solid #D6E2EF; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #2A5C8A;">✓ Mark rented</button>
+                <button onClick="{{ ld.onShare }}" class="bv-press bv-fill" style="--fill: #E7F1EC; height: 42px; border-radius: 12px; border: 1px solid #CDE6D8; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #2E7D55;">Share</button>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 22px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 13px; font-weight: 800; color: #9AA6B6; text-transform: uppercase; letter-spacing: .5px; margin: 0 0 14px;">vs. area average</h3>
+              <div style="display: flex; flex-direction: column; gap: 14px;">
+                <sc-for list="{{ ld.compare }}" as="c" hint-placeholder-count="3">
+                  <div><div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px;"><span style="font-size: 12.5px; font-weight: 700; color: #44506A;">{{ c.label }}</span><span style="font-size: 12.5px; font-weight: 800; color: {{ c.fg }};">{{ c.delta }}</span></div><div style="font-size: 12px; color: #9AA6B6;">{{ c.note }}</div></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ LEADS ============ -->
+      <sc-if value="{{ isLeads }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Leads" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: flex; gap: 6px; background: #fff; border: 1px solid #E6E9EE; border-radius: 12px; padding: 5px; width: fit-content; margin-bottom: 18px;">
+          <sc-for list="{{ leadFilters }}" as="f" hint-placeholder-count="3">
+            <button onClick="{{ f.onPick }}" class="bv-press" style="white-space: nowrap; padding: 7px 15px; border-radius: 9px; border: none; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: {{ f.fg }}; background: {{ f.bg }};">{{ f.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 13px;">
+          <sc-for list="{{ leads }}" as="l" hint-placeholder-count="5">
+            <div class="bv-lift" style="background: #fff; border: 1px solid {{ l.cardBd }}; border-radius: 16px; padding: 16px 18px; display: flex; align-items: center; gap: 16px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <div style="width: 46px; height: 46px; border-radius: 13px; background: {{ l.avBg }}; color: {{ l.avFg }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 16px; flex: 0 0 auto;">{{ l.initial }}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 3px;"><span style="font-size: 14.5px; font-weight: 700; color: #15243B;">{{ l.name }}</span><span style="font-size: 10.5px; font-weight: 800; color: {{ l.kindFg }}; background: {{ l.kindBg }}; padding: 3px 8px; border-radius: 999px;">{{ l.kind }}</span><sc-if value="{{ l.isNew }}" hint-placeholder-val="{{ false }}"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2E7D55;"></span></sc-if></div>
+                <div style="font-size: 13px; color: #44506A; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ l.message }}</div>
+                <div style="font-size: 12px; color: #9AA6B6; margin-top: 3px;">on {{ l.listing }} · {{ l.time }}</div>
+              </div>
+              <div style="display: flex; gap: 9px; flex: 0 0 auto;">
+                <button onClick="{{ l.onReply }}" class="bv-press" style="height: 38px; padding: 0 16px; border-radius: 10px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #fff; background: #1E3A5C;">Reply</button>
+                <button onClick="{{ l.onVisit }}" class="bv-press bv-fill" style="--fill: #EEF2F7; height: 38px; padding: 0 14px; border-radius: 10px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #44506A;">View visit</button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ VISITS (NEGOTIATION) ============ -->
+      <sc-if value="{{ isVisits }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Visits" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <sc-for list="{{ visitGroups }}" as="grp" hint-placeholder-count="3">
+          <div style="margin-bottom: 26px;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;"><h3 style="font-size: 15px; font-weight: 800; color: #15243B; margin: 0;">{{ grp.title }}</h3><span style="font-size: 11.5px; font-weight: 800; color: {{ grp.cFg }}; background: {{ grp.cBg }}; padding: 3px 9px; border-radius: 999px;">{{ grp.count }}</span></div>
+            <div style="display: flex; flex-direction: column; gap: 13px;">
+              <sc-for list="{{ grp.items }}" as="v" hint-placeholder-count="2">
+                <div class="bv-lift" style="background: #fff; border: 1px solid {{ v.cardBd }}; border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <div style="width: 54px; height: 60px; border-radius: 13px; background: {{ v.dateBg }}; color: {{ v.dateFg }}; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 0 0 auto;"><span style="font-size: 10px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase;">{{ v.mon }}</span><span style="font-size: 22px; font-weight: 800; line-height: 1; margin-top: 1px;">{{ v.day }}</span></div>
+                    <div style="width: 50px; height: 50px; border-radius: 14px; background: {{ v.avBg }}; color: {{ v.avFg }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; flex: 0 0 auto;">{{ v.initial }}</div>
+                    <div style="flex: 1; min-width: 0;">
+                      <div style="display: flex; align-items: center; gap: 9px; margin-bottom: 3px;"><span style="font-size: 15px; font-weight: 700; color: #15243B;">{{ v.seeker }}</span><span style="display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; color: {{ v.sFg }}; background: {{ v.sBg }}; padding: 3px 9px; border-radius: 999px;">{{ v.statusLabel }}</span></div>
+                      <div style="font-size: 13px; color: #44506A;">{{ v.listing }}</div>
+                      <div style="font-size: 12.5px; color: #8893A4; margin-top: 3px; display: inline-flex; align-items: center; gap: 6px;">{{ v.clockIcon }} {{ v.timeLabel }}</div>
+                    </div>
+                    <div style="display: flex; gap: 9px; flex: 0 0 auto; flex-wrap: wrap; justify-content: flex-end; max-width: 320px;">
+                      <sc-for list="{{ v.actions }}" as="a" hint-placeholder-count="3">
+                        <button onClick="{{ a.onClick }}" class="bv-press {{ a.cls }}" style="--fill: {{ a.fill }}; height: 38px; padding: 0 15px; border-radius: 10px; border: {{ a.border }}; background: {{ a.bg }}; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: {{ a.fg }};">{{ a.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <!-- suggest time inline panel -->
+                  <sc-if value="{{ v.suggesting }}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed #E2E7EE; animation: bvfade .3s ease both;">
+                    <div style="font-size: 12.5px; font-weight: 800; color: #44506A; margin-bottom: 10px;">Suggest an alternative time</div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                      <sc-for list="{{ v.slots }}" as="sl" hint-placeholder-count="3">
+                        <button onClick="{{ sl.onPick }}" class="bv-press" style="padding: 11px 16px; border-radius: 12px; border: 1.5px solid {{ sl.bd }}; background: {{ sl.bg }}; cursor: pointer; font-family: inherit; text-align: left;"><div style="font-size: 13px; font-weight: 700; color: {{ sl.fg }}; white-space: nowrap;">{{ sl.day }}</div><div style="font-size: 11.5px; color: #8893A4; margin-top: 1px; white-space: nowrap;">{{ sl.time }}</div></button>
+                      </sc-for>
+                      <button onClick="{{ v.sendSuggest }}" class="bv-press" style="padding: 0 18px; border-radius: 12px; border: none; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: 700; color: #fff; background: #2A5C8A; align-self: stretch;">Send suggestion</button>
+                    </div>
+                  </div>
+                  </sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <!-- ============ REVIEWS ============ -->
+      <sc-if value="{{ isReviews }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Reviews" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: grid; grid-template-columns: 300px 1fr; gap: 22px; align-items: start;">
+          <div style="position: sticky; top: 86px; background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <div style="text-align: center; padding-bottom: 18px; border-bottom: 1px solid #F2F4F7;">
+              <div style="font-size: 46px; font-weight: 800; color: #15243B; letter-spacing: -1px; line-height: 1;">4.8</div>
+              <div style="font-size: 16px; color: #C9A24B; margin: 7px 0 4px; letter-spacing: 2px;">★★★★★</div>
+              <div style="font-size: 12.5px; color: #8893A4;">Based on 41 reviews</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 9px; margin-top: 16px;">
+              <sc-for list="{{ ratingBars }}" as="r" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 10px;"><span style="font-size: 12px; font-weight: 700; color: #8893A4; width: 28px;">{{ r.star }}★</span><div style="flex: 1; height: 7px; border-radius: 999px; background: #F0F3F7; overflow: hidden;"><div style="height: 100%; width: {{ r.w }}; border-radius: 999px; background: #C9A24B; transform-origin: left; animation: bvrise .7s cubic-bezier(.22,1,.36,1) both;"></div></div><span style="font-size: 11.5px; font-weight: 700; color: #9AA6B6; width: 24px; text-align: right;">{{ r.count }}</span></div>
+              </sc-for>
+            </div>
+            <div style="margin-top: 18px; padding: 14px; background: #F7F9FC; border-radius: 13px;"><div style="font-size: 12px; color: #8893A4;">Response rate</div><div style="font-size: 20px; font-weight: 800; color: #2E7D55; margin-top: 3px;">96% · ~15 min</div></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="4">
+              <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 16px; padding: 20px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                  <div style="width: 42px; height: 42px; border-radius: 12px; background: {{ r.avBg }}; color: {{ r.avFg }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px;">{{ r.initial }}</div>
+                  <div style="flex: 1;"><div style="font-size: 14px; font-weight: 700; color: #15243B;">{{ r.by }}</div><div style="font-size: 12px; color: #9AA6B6;">{{ r.when }} · {{ r.context }}</div></div>
+                  <span style="font-size: 13px; color: #C9A24B; letter-spacing: 1px;">{{ r.stars }}</span>
+                </div>
+                <p style="font-size: 14px; line-height: 1.6; color: #44506A; margin: 0;">{{ r.text }}</p>
+                <sc-if value="{{ r.replied }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top: 14px; padding: 14px 16px; background: #F7F9FC; border-radius: 13px; border-left: 3px solid #2C557F;"><div style="font-size: 12px; font-weight: 800; color: #1E3A5C; margin-bottom: 4px;">Your reply</div><p style="font-size: 13px; line-height: 1.55; color: #44506A; margin: 0;">{{ r.reply }}</p></div>
+                </sc-if>
+                <sc-if value="{{ r.canReply }}" hint-placeholder-val="{{ true }}">
+                <div style="display: flex; gap: 9px; margin-top: 14px;"><button onClick="{{ r.onReply }}" class="bv-press bv-fill" style="--fill: #EEF2F7; height: 36px; padding: 0 15px; border-radius: 10px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #1E3A5C;">Reply</button><button onClick="{{ r.onReport }}" class="bv-press bv-fill" style="--fill: #F8E8E3; height: 36px; padding: 0 13px; border-radius: 10px; border: 1px solid #F0D9D2; background: #fff; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 700; color: #B4402B;">Report</button></div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ BOOST & PROMOTE ============ -->
+      <sc-if value="{{ isBoost }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Boost" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <!-- stepper -->
+        <div style="display: flex; align-items: center; gap: 0; max-width: 540px; margin: 0 auto 26px;">
+          <sc-for list="{{ boostSteps }}" as="st" hint-placeholder-count="3">
+            <div style="display: flex; align-items: center; flex: {{ st.flex }};">
+              <div style="display: flex; align-items: center; gap: 9px;"><div style="width: 30px; height: 30px; border-radius: 50%; background: {{ st.circleBg }}; color: {{ st.circleFg }}; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: 0 0 auto;">{{ st.mark }}</div><span style="font-size: 13px; font-weight: 700; color: {{ st.labelFg }}; white-space: nowrap;">{{ st.label }}</span></div>
+              <sc-if value="{{ st.hasLine }}" hint-placeholder-val="{{ true }}"><div style="flex: 1; height: 2px; background: {{ st.lineBg }}; margin: 0 12px;"></div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="max-width: 640px; margin: 0 auto;">
+          <!-- step 1: plan -->
+          <sc-if value="{{ isBoost1 }}" hint-placeholder-val="{{ true }}">
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 26px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <h3 style="font-size: 18px; font-weight: 800; color: #15243B; margin: 0 0 4px;">Choose a promotion</h3>
+            <p style="font-size: 13.5px; color: #8893A4; margin: 0 0 18px;">Boosting moves <strong style="color: #15243B;">{{ boostListingTitle }}</strong> to the top of search and category pages.</p>
+            <div style="display: flex; flex-direction: column; gap: 11px;">
+              <sc-for list="{{ boostPlans }}" as="p" hint-placeholder-count="4">
+                <button onClick="{{ p.onPick }}" class="bv-press" style="display: flex; align-items: center; gap: 15px; padding: 16px 18px; border-radius: 14px; border: 1.5px solid {{ p.bd }}; background: {{ p.bg }}; cursor: pointer; font-family: inherit; text-align: left; width: 100%;">
+                  <div style="width: 22px; height: 22px; border-radius: 50%; border: 2px solid {{ p.dotBd }}; background: {{ p.dotBg }}; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">{{ p.dot }}</div>
+                  <div style="flex: 1;"><div style="display: flex; align-items: center; gap: 8px;"><span style="font-size: 14.5px; font-weight: 700; color: #15243B; white-space: nowrap;">{{ p.name }}</span><sc-if value="{{ p.tag }}" hint-placeholder-val="{{ false }}"><span style="font-size: 10.5px; font-weight: 800; color: #9A7B1F; background: #F6EFD9; padding: 2px 8px; border-radius: 999px;">{{ p.tag }}</span></sc-if></div><div style="font-size: 12.5px; color: #8893A4; margin-top: 2px;">{{ p.sub }}</div></div>
+                  <div style="font-size: 18px; font-weight: 800; color: #1E3A5C;">{{ p.price }}</div>
+                </button>
+              </sc-for>
+            </div>
+            <button onClick="{{ boostNext }}" class="bv-press" style="width: 100%; height: 48px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: #1E3A5C; margin-top: 20px; box-shadow: 0 12px 24px -10px rgba(30,58,92,.55);">Continue to payment</button>
+          </div>
+          </sc-if>
+
+          <!-- step 2: payment -->
+          <sc-if value="{{ isBoost2 }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 26px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <h3 style="font-size: 18px; font-weight: 800; color: #15243B; margin: 0 0 18px;">Payment method</h3>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; margin-bottom: 20px;">
+              <sc-for list="{{ payMethods }}" as="m" hint-placeholder-count="4">
+                <button onClick="{{ m.onPick }}" class="bv-press" style="display: flex; align-items: center; gap: 12px; padding: 15px; border-radius: 13px; border: 1.5px solid {{ m.bd }}; background: {{ m.bg }}; cursor: pointer; font-family: inherit;"><div style="width: 38px; height: 38px; border-radius: 10px; background: {{ m.logoBg }}; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 11px; flex: 0 0 auto;">{{ m.logo }}</div><span style="font-size: 13.5px; font-weight: 700; color: #15243B;">{{ m.label }}</span></button>
+              </sc-for>
+            </div>
+            <div style="background: #F7F9FC; border: 1px solid #EDF1F6; border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px;"><span style="font-size: 13px; color: #8893A4;">Promotion</span><span style="font-size: 13px; font-weight: 700; color: #15243B; white-space: nowrap;">{{ summaryPlan }}</span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px;"><span style="font-size: 13px; color: #8893A4;">Listing</span><span style="font-size: 13px; font-weight: 700; color: #15243B;">{{ boostListingTitle }}</span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 11px; border-top: 1px solid #E7EBF0;"><span style="font-size: 14.5px; font-weight: 800; color: #15243B;">Total</span><span style="font-size: 20px; font-weight: 800; color: #1E3A5C;">{{ summaryPrice }}</span></div>
+            </div>
+            <button onClick="{{ boostPay }}" class="bv-press" style="width: 100%; height: 48px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #2E7D55, #246046); box-shadow: 0 12px 24px -10px rgba(46,125,85,.6);">Pay {{ summaryPrice }} with {{ payLabel }}</button>
+            <p style="font-size: 11.5px; color: #AEB8C6; text-align: center; margin: 12px 0 0;">Secured via certified gateway · no card details stored</p>
+          </div>
+          </sc-if>
+
+          <!-- step 3: success -->
+          <sc-if value="{{ isBoost3 }}" hint-placeholder-val="{{ false }}">
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 44px 32px; text-align: center; box-shadow: 0 1px 2px rgba(20,40,70,.03); animation: bvpop .4s ease both;">
+            <div style="width: 80px; height: 80px; border-radius: 24px; background: #E7F1EC; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#2E7D55" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+            <h3 style="font-size: 22px; font-weight: 800; color: #15243B; margin: 0 0 8px;">Your listing is boosted 🚀</h3>
+            <p style="font-size: 14px; color: #8893A4; margin: 0 auto 24px; max-width: 380px; line-height: 1.6;"><strong style="color: #15243B;">{{ boostListingTitle }}</strong> is now featured at the top of search for {{ summaryDuration }}. Expect 3–5× more views.</p>
+            <button onClick="{{ boostDone }}" class="bv-press" style="height: 46px; padding: 0 28px; border-radius: 13px; border: none; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: #1E3A5C;">Back to listings</button>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ ANALYTICS ============ -->
+      <sc-if value="{{ isAnalytics }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Analytics" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px;">
+          <sc-for list="{{ anKpis }}" as="k" hint-placeholder-count="4">
+            <div class="bv-lift" style="background: #fff; border: 1px solid #ECEEF1; border-radius: 16px; padding: 18px; box-shadow: 0 1px 2px rgba(20,40,70,.03);"><div style="font-size: 12.5px; font-weight: 700; color: #8893A4;">{{ k.label }}</div><div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 9px;"><div style="font-size: 27px; font-weight: 800; color: #15243B; letter-spacing: -0.6px; line-height: 1;">{{ k.value }}</div><span style="font-size: 11.5px; font-weight: 800; color: #2E7D55;">{{ k.delta }}</span></div></div>
+          </sc-for>
+        </div>
+        <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px;">
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 16px;">Listings by performance</h3>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <sc-for list="{{ perfRank }}" as="p" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 13px;"><div style="width: 40px; height: 34px; border-radius: 9px; background-image: url('{{ p.thumb }}'); background-size: cover; background-position: center; background-color: #DDD3C5; flex: 0 0 auto;"></div><span style="font-size: 13px; font-weight: 700; color: #44506A; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ p.title }}</span><div style="width: 130px; height: 9px; border-radius: 999px; background: #F0F3F7; overflow: hidden; flex: 0 0 auto;"><div style="height: 100%; width: {{ p.w }}; border-radius: 999px; background: linear-gradient(90deg,#2C557F,#1E3A5C); transform-origin: left; animation: bvrise .7s cubic-bezier(.22,1,.36,1) both;"></div></div><span style="font-size: 12.5px; font-weight: 800; color: #15243B; width: 54px; text-align: right; flex: 0 0 auto;">{{ p.views }}</span></div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+            <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 16px;">Where leads come from</h3>
+            <div style="display: flex; align-items: center; gap: 22px;"><div style="width: 120px; height: 120px; border-radius: 50%; background: {{ srcConic }}; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;"><div style="width: 76px; height: 76px; border-radius: 50%; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center;"><span style="font-size: 17px; font-weight: 800; color: #15243B;">182</span><span style="font-size: 10px; color: #9AA6B6; font-weight: 700;">leads</span></div></div><div style="flex: 1; display: flex; flex-direction: column; gap: 10px;"><sc-for list="{{ srcLegend }}" as="l" hint-placeholder-count="3"><div style="display: flex; align-items: center; gap: 9px;"><span style="width: 11px; height: 11px; border-radius: 4px; background: {{ l.color }};"></span><span style="font-size: 12.5px; font-weight: 600; color: #44506A; flex: 1;">{{ l.label }}</span><span style="font-size: 12.5px; font-weight: 800; color: #15243B;">{{ l.value }}</span></div></sc-for></div></div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <!-- ============ PROFILE & SETTINGS ============ -->
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Provider · Profile" style="animation: bvfade .45s cubic-bezier(.22,1,.36,1) both;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; max-width: 1000px;">
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; overflow: hidden; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <div style="height: 80px; background: linear-gradient(120deg, #16273F, #2C557F);"></div>
+              <div style="padding: 0 24px 22px;">
+                <div style="width: 76px; height: 76px; border-radius: 20px; background: linear-gradient(140deg, #3C6E9E, #2C557F); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 28px; margin-top: -38px; border: 4px solid #fff; box-shadow: 0 8px 20px -8px rgba(20,40,70,.4);">R</div>
+                <div style="display: flex; align-items: center; gap: 9px; margin-top: 12px;"><h2 style="font-size: 21px; font-weight: 800; color: #15243B; margin: 0;">Rahima Properties</h2><span style="font-size: 12px; font-weight: 800; color: #2E7D55; background: #E7F1EC; padding: 4px 11px; border-radius: 999px;">✓ Verified agency</span></div>
+                <p style="font-size: 13.5px; line-height: 1.6; color: #8893A4; margin: 10px 0 0;">Trusted agency serving Aftab Nagar since 2019. We physically verify every listing and respond within 15 minutes on average.</p>
+                <div style="display: flex; gap: 22px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #F2F4F7;"><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">14</div><div style="font-size: 11.5px; color: #9AA6B6;">Listings</div></div><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">4.8★</div><div style="font-size: 11.5px; color: #9AA6B6;">Rating</div></div><div><div style="font-size: 19px; font-weight: 800; color: #15243B;">96%</div><div style="font-size: 11.5px; color: #9AA6B6;">Response</div></div></div>
+                <button class="bv-press bv-fill" style="--fill: #EEF2F7; margin-top: 16px; width: 100%; height: 42px; border-radius: 12px; border: 1px solid #E2E7EE; background: #fff; cursor: pointer; font-family: inherit; font-size: 13.5px; font-weight: 700; color: #44506A;">Edit public profile</button>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 16px;">Team seats</h3>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <sc-for list="{{ team }}" as="t" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 9px 11px; border: 1px solid #EEF1F5; border-radius: 12px;"><div style="width: 36px; height: 36px; border-radius: 10px; background: {{ t.avBg }}; color: {{ t.avFg }}; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px;">{{ t.initial }}</div><div style="flex: 1;"><div style="font-size: 13px; font-weight: 700; color: #15243B;">{{ t.name }}</div><div style="font-size: 11.5px; color: #9AA6B6;">{{ t.email }}</div></div><span style="font-size: 11px; font-weight: 800; color: {{ t.roleFg }}; background: {{ t.roleBg }}; padding: 4px 10px; border-radius: 999px;">{{ t.role }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 20px;">
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 6px;">Account mode</h3>
+              <p style="font-size: 12.5px; color: #8893A4; margin: 0 0 14px;">Switch between finding and listing without signing out.</p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div style="padding: 14px; border-radius: 13px; border: 1.5px solid #1E3A5C; background: rgba(30,58,92,0.05);"><div style="font-size: 14px; font-weight: 700; color: #1E3A5C;">🏠 Provider</div><div style="font-size: 11.5px; color: #8893A4; margin-top: 3px;">Current mode</div></div>
+                <a href="Dwell.dc.html" style="text-decoration: none;"><div class="bv-press bv-fill" style="--fill: #EEF2F7; padding: 14px; border-radius: 13px; border: 1.5px solid #E2E7EE; background: #fff; cursor: pointer;"><div style="font-size: 14px; font-weight: 700; color: #44506A;">🔑 Seeker</div><div style="font-size: 11.5px; color: #8893A4; margin-top: 3px;">Browse &amp; rent</div></div></a>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 6px;">Language</h3>
+              <p style="font-size: 12.5px; color: #8893A4; margin: 0 0 14px;">Bangla numerals &amp; ৳ formatting apply automatically.</p>
+              <div style="display: flex; gap: 10px;">
+                <sc-for list="{{ langs }}" as="l" hint-placeholder-count="2"><button onClick="{{ l.onPick }}" class="bv-press" style="flex: 1; height: 44px; border-radius: 12px; border: 1.5px solid {{ l.bd }}; background: {{ l.bg }}; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 700; color: {{ l.fg }};">{{ l.label }}</button></sc-for>
+              </div>
+            </div>
+            <div style="background: #fff; border: 1px solid #ECEEF1; border-radius: 18px; padding: 24px; box-shadow: 0 1px 2px rgba(20,40,70,.03);">
+              <h3 style="font-size: 16px; font-weight: 800; color: #15243B; margin: 0 0 14px;">Notifications</h3>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ notifPrefs }}" as="p" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #F2F4F7;"><div style="flex: 1; padding-right: 14px;"><div style="font-size: 13.5px; font-weight: 700; color: #15243B;">{{ p.label }}</div><div style="font-size: 12px; color: #8893A4; margin-top: 1px;">{{ p.sub }}</div></div><button onClick="{{ p.onToggle }}" style="width: 46px; height: 27px; border-radius: 999px; border: none; background: {{ p.bg }}; cursor: pointer; position: relative; flex: 0 0 auto; transition: background .25s;"><span style="position: absolute; top: 2.5px; left: {{ p.x }}; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,.25); transition: left .25s cubic-bezier(.34,1.56,.64,1);"></span></button></div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+    </main>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <sc-if value="{{ toastShow }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); z-index: 90; animation: bvtoast .35s cubic-bezier(.34,1.56,.64,1) both;">
+    <div style="display: flex; align-items: center; gap: 12px; background: #15243B; color: #fff; padding: 13px 20px 13px 16px; border-radius: 14px; box-shadow: 0 24px 50px -18px rgba(10,22,40,.6); min-width: 280px;">
+      <div style="width: 30px; height: 30px; border-radius: 9px; background: rgba(255,255,255,0.12); color: {{ toastIcoFg }}; display: flex; align-items: center; justify-content: center; flex: 0 0 auto;">{{ toastIcon }}</div>
+      <div style="flex: 1;"><div style="font-size: 13.5px; font-weight: 700;">{{ toastTitle }}</div><div style="font-size: 12px; color: #A9B6CA; margin-top: 1px;">{{ toastMsg }}</div></div>
+      <span onClick="{{ closeToast }}" style="cursor: pointer; color: #7F8FA6; font-size: 18px; padding: 0 4px;">×</span>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1380, &quot;height&quot;: 940}}">
+class Component extends DCLogic {
+  state = { view: 'overview', selListing: null, toast: null, suggestFor: null, visitState: {}, leadState: {}, boostStep: 1, boostListing: 1, boostPlan: '7d', boostPay: 'bkash', reviewReply: {}, profileTab: 'profile' };
+
+  componentWillUnmount() { if (this._tt) clearTimeout(this._tt); }
+  bdGroup(n) { const s = String(Math.round(n)); const last3 = s.slice(-3); let rest = s.slice(0, -3); if (rest) rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ','); return (rest ? rest + ',' : '') + last3; }
+  img(id) { return `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=900&q=70`; }
+
+  ico(name, color, size) {
+    const h = React.createElement; const s = size || 18;
+    const paths = {
+      grid: ['M4 4h7v7H4z', 'M13 4h7v4h-7z', 'M13 11h7v9h-7z', 'M4 14h7v6H4z'],
+      building: ['M4 21V6l8-3v18', 'M12 21V9l8 3v9', 'M4 21h16', 'M7 8h2M7 12h2M7 16h2M15 14h1M15 17h1'],
+      inbox: ['M3 13h5l1 2h6l1-2h5', 'M5 5h14l2 8v6H3v-6l2-8z'],
+      calendar: ['M4 6h16v15H4z', 'M4 10h16', 'M8 3v4M16 3v4'],
+      star: ['M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6L12 17l-5.3 2.6 1.1-6L3.4 9.4l6-.8z'],
+      bolt: ['M13 2L4 14h7l-1 8 9-12h-7l1-8z'],
+      chart: ['M4 20V5', 'M4 20h16', 'M8 20v-6', 'M12 20v-9', 'M16 20v-4', 'M20 20V8'],
+      gear: ['M12 9a3 3 0 100 6 3 3 0 000-6z', 'M4 12a8 8 0 01.2-1.8l-1.6-1.3 2-3.4 1.9.8A8 8 0 019 4.3l.3-2h4l.3 2a8 8 0 012.5 1.2l1.9-.8 2 3.4-1.6 1.3a8 8 0 010 3.6l1.6 1.3-2 3.4-1.9-.8a8 8 0 01-2.5 1.2l-.3 2h-4l-.3-2A8 8 0 019 19.7l-1.9.8-2-3.4 1.6-1.3A8 8 0 014 12z'],
+      eye: ['M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z', 'M12 9a3 3 0 100 6 3 3 0 000-6z'],
+      heart: ['M12 20s-7-4.3-9.2-8.4C1 8 3 4.5 6.5 4.5c2 0 3.2 1.2 3.5 1.7.3-.5 1.5-1.7 3.5-1.7C17 4.5 19 8 18.2 11.6 16 15.7 12 20 12 20z'],
+      msg: ['M21 11.5a8.4 8.4 0 01-9 8.4L4 21l1.1-3.6A8.4 8.4 0 1121 11.5z'],
+      check: ['M5 13l4 4L19 7'], x: ['M6 6l12 12M18 6L6 18'], clock: ['M12 7v5l3 2', 'M12 21a9 9 0 100-18 9 9 0 000 18z'],
+      user: ['M16 19a4 4 0 00-8 0', 'M12 11a3.4 3.4 0 100-6.8 3.4 3.4 0 000 6.8'],
+      card: ['M3 7h18v10H3z', 'M3 11h18', 'M6 15h3'],
+      home: ['M3 11.5L12 4l9 7.5', 'M5.5 10v9.5h13V10'],
+    };
+    let d = paths[name] || paths.check; if (!Array.isArray(d)) d = [d];
+    const filled = name === 'star';
+    return h('svg', { width: s, height: s, viewBox: '0 0 24 24', fill: filled ? (color || 'currentColor') : 'none' }, d.map((dd, i) => h('path', { key: i, d: dd, stroke: filled ? 'none' : (color || 'currentColor'), strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round' })));
+  }
+
+  notify(title, msg, kind) { if (this._tt) clearTimeout(this._tt); this.setState({ toast: { title, msg, kind: kind || 'success' } }); this._tt = setTimeout(() => this.setState({ toast: null }), 3400); }
+  go(view, extra) { this.setState(Object.assign({ view }, extra || {})); window.scrollTo({ top: 0 }); }
+  badge(status) {
+    const map = { Active: ['#2E7D55', '#E7F1EC'], Live: ['#2E7D55', '#E7F1EC'], Confirmed: ['#2E7D55', '#E7F1EC'], Pending: ['#9A6A1F', '#F7EFDD'], Requested: ['#9A6A1F', '#F7EFDD'], Suggested: ['#2A5C8A', '#E6EFF7'], Paused: ['#5A6172', '#EEF0F3'], Rented: ['#2A5C8A', '#E6EFF7'], Declined: ['#B4402B', '#F8E8E3'], Completed: ['#5A6172', '#EEF0F3'], New: ['#2E7D55', '#E7F1EC'], Replied: ['#5A6172', '#EEF0F3'] };
+    const c = map[status] || ['#5A6172', '#EEF0F3']; return { fg: c[0], bg: c[1] };
+  }
+
+  myListings() {
+    return [
+      { id: 1, title: 'Sunlit 2-Bed Apartment, Block B', where: 'Block B, Aftab Nagar', type: 'Rent', price: '৳38,000/mo', status: 'Active', featured: true, views: 1284, leads: 31, saves: 96, chats: 18, visits: 7, img: '1502672260266-1c1ef2d93688' },
+      { id: 2, title: 'Garden-Facing 2-Bed, Block H', where: 'Block H, Aftab Nagar', type: 'Rent', price: '৳42,000/mo', status: 'Active', featured: false, views: 1640, leads: 38, saves: 88, chats: 21, visits: 9, img: '1493809842364-78817add7ffb' },
+      { id: 3, title: 'Student Hostel Seat near Campus', where: 'Block G, Aftab Nagar', type: 'Student', price: '৳6,500/mo', status: 'Active', featured: false, views: 980, leads: 22, saves: 53, chats: 15, visits: 6, img: '1555854877-bab0e564b8d5' },
+      { id: 4, title: 'AC Studio Sublet, 4-Month Term', where: 'Block C, Aftab Nagar', type: 'Sublet', price: '৳18,000/mo', status: 'Paused', featured: false, views: 410, leads: 9, saves: 22, chats: 6, visits: 2, img: '1522708323590-d24dbb6b0267' },
+      { id: 5, title: 'Bright 2-Bed, Banasree Edge', where: 'Banasree, Dhaka', type: 'Rent', price: '৳34,000/mo', status: 'Rented', featured: false, views: 1120, leads: 27, saves: 61, chats: 14, visits: 8, img: '1484154218962-a197022b5858' },
+    ];
+  }
+
+  navData() {
+    const v = this.state.view;
+    const det = { listingDetail: 'listings' };
+    const cur = det[v] || v;
+    const groups = [
+      { label: 'Workspace', items: [['overview', 'Overview', 'grid'], ['listings', 'My Listings', 'building'], ['leads', 'Leads', 'inbox', 3], ['visits', 'Visits', 'calendar', 2], ['reviews', 'Reviews', 'star']] },
+      { label: 'Growth', items: [['boost', 'Boost & Promote', 'bolt'], ['analytics', 'Analytics', 'chart']] },
+      { label: 'Account', items: [['profile', 'Profile & Settings', 'gear']] },
+    ];
+    return groups.map(g => ({ label: g.label, items: g.items.map(([id, label, icon, count]) => {
+      const active = cur === id;
+      return { label, count: count || 0, onClick: () => this.go(id, { selListing: null }), icon: this.ico(icon, active ? '#DCE8F7' : '#8AA0BC', 18), fg: active ? '#fff' : '#A9B9CD', icoFg: active ? '#DCE8F7' : '#8AA0BC', bg: active ? 'rgba(110,160,224,0.14)' : 'transparent', weight: active ? 700 : 600, barH: active ? '20px' : '0px', countBg: id === 'leads' ? '#2E7D55' : '#C9A24B' };
+    }) }));
+  }
+
+  shellVals() {
+    const v = this.state.view;
+    const titles = { overview: ['Workspace', 'Overview'], listings: ['Workspace', 'My Listings'], listingDetail: ['Workspace · Listings', 'Listing performance'], leads: ['Workspace', 'Leads & inquiries'], visits: ['Workspace', 'Visits'], reviews: ['Workspace', 'Reviews'], boost: ['Growth', 'Boost & promote'], analytics: ['Growth', 'Analytics'], profile: ['Account', 'Profile & settings'], newListing: ['Workspace', 'New listing'] };
+    const t = titles[v] || ['', ''];
+    const backable = { listingDetail: 'listings', newListing: 'overview' };
+    const tt = this.state.toast; const tk = { success: '✓', error: '!', info: 'i' }[tt ? tt.kind : 'success'];
+    const tkc = { success: '#7FE0AC', error: '#F0A593', info: '#9CC2EE' }[tt ? tt.kind : 'success'];
+    return {
+      navGroups: this.navData(), crumb: t[0], pageTitle: t[1], isOverview: v === 'overview',
+      showBack: !!backable[v], goBack: () => this.go(backable[v] || 'overview'),
+      goNew: () => this.notify('Opening listing wizard', 'The 5-step listing flow lives in the main app.', 'info'),
+      goProfile: () => this.go('profile'), goLeads: () => this.go('leads'), goBoost: () => this.go('boost'),
+      goVisits: () => this.go('visits'), goListings: () => this.go('listings'),
+      toastShow: !!tt, toastTitle: tt ? tt.title : '', toastMsg: tt ? tt.msg : '', toastIcon: tk, toastIcoFg: tkc, closeToast: () => this.setState({ toast: null }),
+    };
+  }
+
+  overviewVals() {
+    const kdef = [
+      { icon: 'building', label: 'Active listings', value: '3', delta: '', c: ['#1E3A5C', '#E8EDF4'] },
+      { icon: 'eye', label: 'Views · 30d', value: '5.6k', delta: '▲ 14%', c: ['#2A5C8A', '#E6EFF7'] },
+      { icon: 'inbox', label: 'New leads', value: '12', delta: '▲ 5', c: ['#2E7D55', '#E7F1EC'] },
+      { icon: 'calendar', label: 'Visits booked', value: '8', delta: '▲ 2', c: ['#9A7B1F', '#F6EFD9'] },
+      { icon: 'heart', label: 'Saves', value: '298', delta: '▲ 9%', c: ['#6B4E8A', '#EFE9F5'] },
+    ];
+    const kpis = kdef.map(k => ({ icon: this.ico(k.icon, k.c[0], 18), bg: k.c[1], fg: k.c[0], label: k.label, value: k.value, delta: k.delta, dFg: '#2E7D55' }));
+    const views = [60, 75, 55, 90, 110, 130, 95, 120, 140, 115, 150, 170, 135, 160];
+    const leads = [3, 5, 2, 6, 8, 7, 4, 9, 11, 6, 10, 13, 8, 12];
+    const maxV = 180, maxL = 14;
+    const perfBars = views.map((v, i) => ({ label: i % 2 === 0 ? String(i + 1) : '', viewH: Math.round(v / maxV * 100) + '%', leadH: Math.round(leads[i] / maxL * 100) + '%' }));
+    const tvDef = [
+      { ampm: 'AM', hour: '11', seeker: 'Tasnia Rahman', listing: 'Sunlit 2-Bed, Block B', status: 'Confirmed' },
+      { ampm: 'PM', hour: '3', seeker: 'Imran Chowdhury', listing: 'Garden-Facing 2-Bed, Block H', status: 'Confirmed' },
+      { ampm: 'PM', hour: '5', seeker: 'Farzana Akter', listing: 'Student Hostel Seat', status: 'Requested' },
+    ];
+    const todayVisits = tvDef.map(v => { const b = this.badge(v.status); const tc = v.status === 'Requested' ? ['#9A6A1F', '#F7EFDD'] : ['#1E3A5C', '#E8EDF4']; return Object.assign({}, v, { sFg: b.fg, sBg: b.bg, tFg: tc[0], tBg: tc[1] }); });
+    const topListings = this.myListings().slice(0, 3).map(l => { const b = this.badge(l.status); return { title: l.title, thumb: this.img(l.img), status: l.status, sFg: b.fg, sBg: b.bg, featured: l.featured, views: this.bdGroup(l.views), leads: l.leads, onOpen: () => this.go('listingDetail', { selListing: l.id }) }; });
+    return { kpis, perfBars, todayVisits, topListings };
+  }
+
+  listingsVals() {
+    const s = this.state;
+    const all = this.myListings();
+    const lf = s.listingFilter || 'all';
+    const fdef = [['all', 'All'], ['Active', 'Active'], ['Paused', 'Paused'], ['Rented', 'Rented']];
+    const listFilters = fdef.map(([k, label]) => { const on = lf === k; return { label, onPick: () => this.setState({ listingFilter: k }), fg: on ? '#fff' : '#5A6172', bg: on ? '#1E3A5C' : 'transparent' }; });
+    let rows = all; if (lf !== 'all') rows = all.filter(l => l.status === lf);
+    const listingCards = rows.map(l => { const b = this.badge(l.status); return {
+      title: l.title, where: l.where, price: l.price, thumb: this.img(l.img), status: l.status, sFg: b.fg, sBg: b.bg, featured: l.featured,
+      views: this.bdGroup(l.views), leads: l.leads, visits: l.visits,
+      onOpen: () => this.go('listingDetail', { selListing: l.id }),
+      onBoost: () => this.go('boost', { boostListing: l.id, boostStep: 1 }),
+      onMenu: () => this.notify('Quick actions', 'Edit, pause, duplicate or mark rented.', 'info'),
+    }; });
+    return { isListings: s.view === 'listings', listFilters, listingCards };
+  }
+
+  listingDetailVals() {
+    const s = this.state;
+    const l = this.myListings().find(x => x.id === s.selListing) || this.myListings()[0];
+    const b = this.badge(l.status);
+    const funnelDef = [['Impressions', this.bdGroup(l.views * 4), '100%', 'linear-gradient(90deg,#2C557F,#1E3A5C)'], ['Listing views', this.bdGroup(l.views), '62%', 'linear-gradient(90deg,#2C557F,#1E3A5C)'], ['Saves', String(l.saves), '34%', 'linear-gradient(90deg,#3C6E9E,#2C557F)'], ['Chats started', String(l.chats), '22%', 'linear-gradient(90deg,#C9A24B,#A67C2E)'], ['Visits booked', String(l.visits), '12%', 'linear-gradient(90deg,#2E7D55,#246046)']];
+    const compare = [
+      { label: 'Views per day', delta: '+38%', fg: '#2E7D55', note: 'Above Block average of 31/day' },
+      { label: 'Lead rate', delta: '+12%', fg: '#2E7D55', note: 'Stronger than similar 2-beds' },
+      { label: 'Days listed', delta: '14 days', fg: '#9A6A1F', note: 'Area median is 11 days' },
+    ];
+    return { isListingDetail: s.view === 'listingDetail', ld: {
+      hero: this.img(l.img), title: l.title, where: l.where, price: l.price, status: l.status, sFg: b.fg, sBg: b.bg,
+      funnel: funnelDef.map(([label, value, w, bar]) => ({ label, value, w, bar })), compare,
+      pauseLabel: l.status === 'Paused' ? 'Resume' : 'Pause',
+      onBoost: () => this.go('boost', { boostListing: l.id, boostStep: 1 }),
+      onEdit: () => this.notify('Opening editor', 'Edit listing details in the wizard.', 'info'),
+      onPause: () => this.notify(l.status === 'Paused' ? 'Listing resumed' : 'Listing paused', l.status === 'Paused' ? 'It is live in search again.' : 'Hidden from search until resumed.', l.status === 'Paused' ? 'success' : 'info'),
+      onRented: () => this.notify('Marked as rented', 'Removed from active search results.', 'success'),
+      onShare: () => this.notify('Link copied', 'Public listing URL copied to clipboard.', 'success'),
+    } };
+  }
+
+  leadsVals() {
+    const s = this.state;
+    const def = [
+      { id: 1, name: 'Tasnia Rahman', initial: 'T', c: ['#fff', '#6B4E8A'], kind: 'Visit request', message: 'Hi, is the Block B flat available this weekend for a visit?', listing: 'Sunlit 2-Bed, Block B', time: '12m ago', status: 'New' },
+      { id: 2, name: 'Imran Chowdhury', initial: 'I', c: ['#fff', '#B4602B'], kind: 'Chat', message: 'Is the parking covered and is there generator backup for the ACs?', listing: 'Garden-Facing 2-Bed, Block H', time: '40m ago', status: 'New' },
+      { id: 3, name: 'Farzana Akter', initial: 'F', c: ['#fff', '#2A5C8A'], kind: 'Visit request', message: 'Can I see the hostel seat on Sunday afternoon?', listing: 'Student Hostel Seat', time: '2h ago', status: 'New' },
+      { id: 4, name: 'Sabbir Ahmed', initial: 'S', c: ['#fff', '#2E7D55'], kind: 'Chat', message: 'What is the advance and service charge for the sublet?', listing: 'AC Studio Sublet', time: 'Yesterday', status: 'Replied' },
+      { id: 5, name: 'Nusrat Jahan', initial: 'N', c: ['#fff', '#9A7B1F'], kind: 'Chat', message: 'Thanks for the quick reply — I will confirm by tomorrow.', listing: 'Bright 2-Bed, Banasree', time: 'Yesterday', status: 'Replied' },
+    ];
+    const lf = s.leadFilter || 'all';
+    const fdef = [['all', 'All'], ['New', 'New'], ['Replied', 'Replied']];
+    const leadFilters = fdef.map(([k, label]) => { const on = lf === k; return { label, onPick: () => this.setState({ leadFilter: k }), fg: on ? '#fff' : '#5A6172', bg: on ? '#1E3A5C' : 'transparent' }; });
+    let rows = def; if (lf !== 'all') rows = def.filter(l => l.status === lf);
+    const kindMeta = { 'Visit request': ['#9A6A1F', '#F7EFDD'], 'Chat': ['#2A5C8A', '#E6EFF7'] };
+    const leads = rows.map(l => { const km = kindMeta[l.kind]; return {
+      name: l.name, initial: l.initial, avFg: l.c[0], avBg: l.c[1], kind: l.kind, kindFg: km[0], kindBg: km[1],
+      message: l.message, listing: l.listing, time: l.time, isNew: l.status === 'New', cardBd: l.status === 'New' ? '#D9E7DD' : '#ECEEF1',
+      onReply: () => this.notify('Reply sent', 'Your message was delivered to ' + l.name + '.', 'success'),
+      onVisit: () => this.go('visits'),
+    }; });
+    return { isLeads: s.view === 'leads', leadFilters, leads };
+  }
+
+  visitData() {
+    return [
+      { id: 1, seeker: 'Farzana Akter', initial: 'F', c: ['#fff', '#2A5C8A'], listing: 'Student Hostel Seat, Block G', mon: 'Jun', day: '21', time: 'Sun, Jun 21 · 4:30 PM', base: 'Requested' },
+      { id: 2, seeker: 'Sabbir Ahmed', initial: 'S', c: ['#fff', '#2E7D55'], listing: 'AC Studio Sublet, Block C', mon: 'Jun', day: '22', time: 'Mon, Jun 22 · 5:00 PM', base: 'Requested' },
+      { id: 3, seeker: 'Tasnia Rahman', initial: 'T', c: ['#fff', '#6B4E8A'], listing: 'Sunlit 2-Bed, Block B', mon: 'Jun', day: '20', time: 'Sat, Jun 20 · 11:00 AM', base: 'Confirmed' },
+      { id: 4, seeker: 'Imran Chowdhury', initial: 'I', c: ['#fff', '#B4602B'], listing: 'Garden-Facing 2-Bed, Block H', mon: 'Jun', day: '20', time: 'Sat, Jun 20 · 3:00 PM', base: 'Confirmed' },
+      { id: 5, seeker: 'Nusrat Jahan', initial: 'N', c: ['#fff', '#9A7B1F'], listing: 'Bright 2-Bed, Banasree', mon: 'Jun', day: '14', time: 'Sat, Jun 14 · 2:00 PM', base: 'Completed' },
+    ];
+  }
+
+  visitStatus(v) { return (this.state.visitState[v.id] && this.state.visitState[v.id].status) || v.base; }
+
+  visitAct(v, action) {
+    const cur = this.state.visitState[v.id] || {};
+    let status = cur.status || v.base;
+    const msgs = {
+      accept: ['Visit confirmed', 'Reminders sent to you and ' + v.seeker + '.', 'success', 'Confirmed'],
+      decline: ['Visit declined', v.seeker + ' has been notified.', 'error', 'Declined'],
+      suggestOpen: null,
+      sendSuggest: ['New time suggested', v.seeker + ' will confirm your proposed slot.', 'info', 'Suggested'],
+      complete: ['Marked complete', 'You can now leave a review for ' + v.seeker + '.', 'success', 'Completed'],
+      cancel: ['Visit cancelled', 'Both parties notified with reason logged.', 'error', 'Declined'],
+    };
+    if (action === 'suggestOpen') { this.setState({ suggestFor: this.state.suggestFor === v.id ? null : v.id }); return; }
+    const m = msgs[action];
+    if (m) { this.setState({ visitState: Object.assign({}, this.state.visitState, { [v.id]: { status: m[3] } }), suggestFor: null }); this.notify(m[0], m[1], m[2]); }
+  }
+
+  visitsVals() {
+    const s = this.state;
+    const all = this.visitData();
+    const clock = this.ico('clock', '#9AA6B6', 14);
+    const slotsDef = [{ day: 'Fri, Jun 19', time: '5:00 PM' }, { day: 'Sat, Jun 20', time: '11:00 AM' }, { day: 'Sun, Jun 21', time: '4:30 PM' }];
+    const build = (v) => {
+      const status = this.visitStatus(v);
+      const b = this.badge(status);
+      const dateC = status === 'Requested' ? ['#9A6A1F', '#F7EFDD'] : status === 'Suggested' ? ['#2A5C8A', '#E6EFF7'] : status === 'Confirmed' ? ['#2E7D55', '#E7F1EC'] : ['#5A6172', '#EEF0F3'];
+      const actions = [];
+      const btn = (label, action, kind) => {
+        const styles = {
+          primary: { bg: '#2E7D55', fg: '#fff', border: 'none', fill: '#246046', cls: '' },
+          suggest: { bg: '#fff', fg: '#2A5C8A', border: '1px solid #D6E2EF', fill: '#E6EFF7', cls: 'bv-fill' },
+          ghost: { bg: '#fff', fg: '#B4402B', border: '1px solid #F0D9D2', fill: '#F8E8E3', cls: 'bv-fill' },
+          neutral: { bg: '#fff', fg: '#44506A', border: '1px solid #E2E7EE', fill: '#EEF2F7', cls: 'bv-fill' },
+        }[kind];
+        return Object.assign({ label, onClick: () => this.visitAct(v, action) }, styles);
+      };
+      if (status === 'Requested') { actions.push(btn('✓ Accept', 'accept', 'primary'), btn('Suggest time', 'suggestOpen', 'suggest'), btn('Decline', 'decline', 'ghost')); }
+      else if (status === 'Suggested') { actions.push(btn('Awaiting seeker', 'suggestOpen', 'neutral')); }
+      else if (status === 'Confirmed') { actions.push(btn('Mark complete', 'complete', 'primary'), btn('Cancel', 'cancel', 'ghost')); }
+      else if (status === 'Completed') { actions.push(btn('Leave review', 'review', 'neutral')); }
+      else if (status === 'Declined') { actions.push(btn('Declined', 'noop', 'neutral')); }
+      const slots = slotsDef.map(sl => ({ day: sl.day, time: sl.time, bd: (s.suggestSlot === sl.day) ? '#2A5C8A' : '#DBE0E6', bg: (s.suggestSlot === sl.day) ? '#E6EFF7' : '#fff', fg: (s.suggestSlot === sl.day) ? '#2A5C8A' : '#3B4252', onPick: () => this.setState({ suggestSlot: sl.day }) }));
+      return {
+        seeker: v.seeker, initial: v.initial, avFg: v.c[0], avBg: v.c[1], listing: v.listing, mon: v.mon, day: v.day, timeLabel: v.time,
+        statusLabel: status, sFg: b.fg, sBg: b.bg, dateFg: dateC[0], dateBg: dateC[1], clockIcon: clock,
+        cardBd: status === 'Requested' ? '#EFE3C8' : '#ECEEF1', actions,
+        suggesting: s.suggestFor === v.id, slots, sendSuggest: () => this.visitAct(v, 'sendSuggest'),
+      };
+    };
+    const requested = all.filter(v => this.visitStatus(v) === 'Requested' || this.visitStatus(v) === 'Suggested');
+    const upcoming = all.filter(v => this.visitStatus(v) === 'Confirmed');
+    const past = all.filter(v => { const st = this.visitStatus(v); return st === 'Completed' || st === 'Declined'; });
+    const groups = [
+      { title: 'Needs your response', items: requested, count: requested.length, cFg: '#9A6A1F', cBg: '#F7EFDD' },
+      { title: 'Upcoming · confirmed', items: upcoming, count: upcoming.length, cFg: '#2E7D55', cBg: '#E7F1EC' },
+      { title: 'Past visits', items: past, count: past.length, cFg: '#5A6172', cBg: '#EEF0F3' },
+    ].filter(g => g.items.length).map(g => Object.assign({}, g, { items: g.items.map(build) }));
+    return { isVisits: s.view === 'visits', visitGroups: groups };
+  }
+
+  reviewsVals() {
+    const s = this.state;
+    const ratingBars = [[5, 32, '90%'], [4, 7, '20%'], [3, 1, '6%'], [2, 1, '6%'], [1, 0, '2%']].map(([star, count, w]) => ({ star, count, w }));
+    const def = [
+      { id: 1, by: 'Tasnia Rahman', initial: 'T', c: ['#fff', '#6B4E8A'], when: '3 days ago', context: 'Visited Block B flat', stars: '★★★★★', text: 'Very responsive and the flat matched the photos exactly. Showed up on time and answered every question patiently. Highly recommend.', replied: true, reply: 'Thank you Tasnia! It was a pleasure showing you the flat. Do reach out anytime.' },
+      { id: 2, by: 'Imran Chowdhury', initial: 'I', c: ['#fff', '#B4602B'], when: '1 week ago', context: 'Rented Block H', stars: '★★★★☆', text: 'Smooth process overall. Advance terms were clear and the handover was quick. Service charge could have been explained a little earlier.', replied: false },
+      { id: 3, by: 'Farzana Akter', initial: 'F', c: ['#fff', '#2A5C8A'], when: '2 weeks ago', context: 'Chatted about sublet', stars: '★★★★★', text: 'Genuine listing and honest about the condition. Helped arrange a flexible visit time. Would recommend to others looking in Aftab Nagar.', replied: false },
+      { id: 4, by: 'Nusrat Jahan', initial: 'N', c: ['#fff', '#9A7B1F'], when: '3 weeks ago', context: 'Visited Banasree', stars: '★★★★★', text: 'Professional and trustworthy. The verified badge is well-earned — everything was exactly as described.', replied: true, reply: 'We appreciate the kind words, Nusrat. Wishing you a happy move!' },
+    ];
+    const reviews = def.map(r => ({ by: r.by, initial: r.initial, avFg: r.c[0], avBg: r.c[1], when: r.when, context: r.context, stars: r.stars, text: r.text, replied: r.replied, reply: r.reply, canReply: !r.replied, onReply: () => this.notify('Reply posted', 'Your response is now public on this review.', 'success'), onReport: () => this.notify('Review reported', 'Sent to moderators for review.', 'info') }));
+    return { isReviews: s.view === 'reviews', ratingBars, reviews };
+  }
+
+  boostVals() {
+    const s = this.state;
+    const step = s.boostStep || 1;
+    const listing = this.myListings().find(x => x.id === s.boostListing) || this.myListings()[0];
+    const stepsDef = [['Promotion', 1], ['Payment', 2], ['Done', 3]];
+    const boostSteps = stepsDef.map(([label, n], i) => { const done = step > n, active = step === n; return { label, mark: done ? '✓' : String(n), flex: i < 2 ? '1' : '0 0 auto', hasLine: i < 2, circleBg: (done || active) ? '#1E3A5C' : '#E7EBF0', circleFg: (done || active) ? '#fff' : '#8B93A1', labelFg: active ? '#15243B' : '#9AA6B6', lineBg: done ? '#1E3A5C' : '#E7EAEE' }; });
+    const plansDef = [
+      { key: '3d', name: 'Boost · 3 days', sub: 'Top of category for 3 days', price: '৳600', tag: '' },
+      { key: '7d', name: 'Boost · 7 days', sub: 'Top of category + search', price: '৳1,200', tag: 'Popular' },
+      { key: '30d', name: 'Boost · 30 days', sub: 'Best value for slow markets', price: '৳3,500', tag: '' },
+      { key: 'feat', name: 'Featured slot', sub: 'Home page banner · 7 days', price: '৳2,000', tag: '' },
+    ];
+    const sel = s.boostPlan || '7d';
+    const boostPlans = plansDef.map(p => { const on = sel === p.key; return Object.assign({}, p, { onPick: () => this.setState({ boostPlan: p.key }), bd: on ? '#1E3A5C' : '#E7EAEE', bg: on ? 'rgba(30,58,92,0.04)' : '#fff', dotBd: on ? '#1E3A5C' : '#CBD3DD', dotBg: on ? '#1E3A5C' : '#fff', dot: on ? '✓' : '' }); });
+    const selPlan = plansDef.find(p => p.key === sel) || plansDef[1];
+    const methodsDef = [['bkash', 'bKash', '#E2136E'], ['nagad', 'Nagad', '#EE7716'], ['rocket', 'Rocket', '#8A2BE2'], ['card', 'Card', '#1E3A5C']];
+    const selPay = s.boostPayM || 'bkash';
+    const payMethods = methodsDef.map(([key, label, logoBg]) => { const on = selPay === key; return { label, logo: label.slice(0, 1).toUpperCase() + (key === 'card' ? '' : ''), logoBg, onPick: () => this.setState({ boostPayM: key }), bd: on ? '#1E3A5C' : '#E7EAEE', bg: on ? 'rgba(30,58,92,0.04)' : '#fff' }; });
+    const payLabel = (methodsDef.find(m => m[0] === selPay) || methodsDef[0])[1];
+    return {
+      isBoost: s.view === 'boost', boostSteps, isBoost1: step === 1, isBoost2: step === 2, isBoost3: step === 3,
+      boostListingTitle: listing.title, boostPlans, payMethods, payLabel,
+      summaryPlan: selPlan.name, summaryPrice: selPlan.price, summaryDuration: selPlan.key === '3d' ? '3 days' : selPlan.key === '30d' ? '30 days' : '7 days',
+      boostNext: () => this.setState({ boostStep: 2 }),
+      boostPay: () => { this.setState({ boostStep: 3 }); this.notify('Payment successful', selPlan.price + ' paid via ' + payLabel + '.', 'success'); },
+      boostDone: () => this.go('listings', { boostStep: 1 }),
+    };
+  }
+
+  analyticsVals() {
+    const s = this.state;
+    const anKpis = [{ label: 'Total views · 30d', value: '5.6k', delta: '▲ 14%' }, { label: 'Leads · 30d', value: '182', delta: '▲ 11%' }, { label: 'Visit conversion', value: '8.4%', delta: '▲ 1.2pt' }, { label: 'Avg. response', value: '15m', delta: '▼ 4m' }];
+    const ranked = [...this.myListings()].sort((a, b) => b.views - a.views);
+    const max = ranked[0].views;
+    const perfRank = ranked.map(l => ({ title: l.title, thumb: this.img(l.img), views: this.bdGroup(l.views), w: Math.round(l.views / max * 100) + '%' }));
+    const srcLegend = [{ label: 'Search', value: '96', color: '#1E3A5C' }, { label: 'Boosted slots', value: '54', color: '#C9A24B' }, { label: 'Direct / saved', value: '32', color: '#2E7D55' }];
+    const srcConic = 'conic-gradient(#1E3A5C 0 53%, #C9A24B 53% 83%, #2E7D55 83% 100%)';
+    return { isAnalytics: s.view === 'analytics', anKpis, perfRank, srcLegend, srcConic };
+  }
+
+  profileVals() {
+    const s = this.state;
+    const teamDef = [['SR', 'Salma Rahman', ['#fff', '#2C557F'], 'salma@rahima.bd', 'Owner', ['#9A7B1F', '#F6EFD9']], ['HK', 'Hasan Kabir', ['#fff', '#2E7D55'], 'hasan@rahima.bd', 'Agent', ['#2A5C8A', '#E6EFF7']], ['MA', 'Mitu Akter', ['#fff', '#6B4E8A'], 'mitu@rahima.bd', 'Agent', ['#2A5C8A', '#E6EFF7']]];
+    const team = teamDef.map(([initial, name, c, email, role, rc]) => ({ initial, name, avFg: c[0], avBg: c[1], email, role, roleFg: rc[0], roleBg: rc[1] }));
+    const lang = s.lang || 'en';
+    const langs = [['en', 'English'], ['bn', 'বাংলা']].map(([k, label]) => { const on = lang === k; return { label, onPick: () => this.setState({ lang: k }), bd: on ? '#1E3A5C' : '#E2E7EE', bg: on ? 'rgba(30,58,92,0.05)' : '#fff', fg: on ? '#1E3A5C' : '#44506A' }; });
+    const pdefs = [['leads', 'New lead alerts', 'SMS + push when a seeker enquires', true], ['visits', 'Visit reminders', 'Reminders 1 hour before each visit', true], ['reviews', 'Review notifications', 'When a seeker leaves a review', false]];
+    const ps = s.notif || {};
+    const notifPrefs = pdefs.map(([key, label, sub, def]) => { const on = ps[key] != null ? ps[key] : def; return { label, sub, bg: on ? '#2E7D55' : '#CCD3DB', x: on ? '21px' : '2.5px', onToggle: () => this.setState({ notif: Object.assign({}, ps, { [key]: !on }) }) }; });
+    return { isProfile: s.view === 'profile', team, langs, notifPrefs };
+  }
+
+  renderVals() { return Object.assign({}, this.shellVals(), this.overviewVals(), this.listingsVals(), this.listingDetailVals(), this.leadsVals(), this.visitsVals(), this.reviewsVals(), this.boostVals(), this.analyticsVals(), this.profileVals()); }
+}
+</script>
+</body>
+</html>
