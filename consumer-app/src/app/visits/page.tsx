@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import { buildGoogleUrl, buildICS, downloadICS } from '@/lib/calendar';
 
 const ACCENT = '#1E3A5C';
 
@@ -16,7 +17,10 @@ interface Booking {
   visitDate: string | null;
   visitTime: string | null;
   note: string | null;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'suggested';
+  suggestedDate: string | null;
+  suggestedTime: string | null;
+  declineReason: string | null;
   createdAt: string;
 }
 
@@ -25,6 +29,7 @@ const STATUS_STYLE: Record<Booking['status'], { fg: string; bg: string; label: s
   confirmed: { fg: '#2E7D55', bg: '#EAF1ED', label: 'Confirmed' },
   cancelled: { fg: '#C0392B', bg: '#FFF0EE', label: 'Cancelled' },
   completed: { fg: '#5A6172', bg: '#EEF0F3', label: 'Completed' },
+  suggested: { fg: '#2A5C8A', bg: '#E6EFF7', label: 'New time proposed' },
 };
 
 function StatusBadge({ status }: { status: Booking['status'] }) {
@@ -62,6 +67,31 @@ export default function VisitsPage() {
       });
       if (res.ok) {
         setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' } : b));
+      }
+    } finally {
+      setCancelling(null);
+    }
+  };
+
+  // Renter responds to an owner's suggested time.
+  const respondSuggested = async (b: Booking, accept: boolean) => {
+    setCancelling(b.id);
+    try {
+      const res = await fetch(`/api/bookings/${b.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          accept
+            ? { status: 'confirmed', acceptSuggested: true }
+            : { status: 'cancelled' },
+        ),
+      });
+      if (res.ok) {
+        setBookings(prev => prev.map(x => x.id === b.id
+          ? accept
+            ? { ...x, status: 'confirmed', visitDate: x.suggestedDate, visitTime: x.suggestedTime, slot: `${x.suggestedDate} · ${x.suggestedTime}`, suggestedDate: null, suggestedTime: null }
+            : { ...x, status: 'cancelled' }
+          : x));
       }
     } finally {
       setCancelling(null);
@@ -128,7 +158,7 @@ export default function VisitsPage() {
 
             {/* Count summary */}
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
-              {(['pending', 'confirmed', 'completed', 'cancelled'] as Booking['status'][]).map(s => {
+              {(['suggested', 'pending', 'confirmed', 'completed', 'cancelled'] as Booking['status'][]).map(s => {
                 const count = bookings.filter(b => b.status === s).length;
                 if (count === 0) return null;
                 const st = STATUS_STYLE[s];
@@ -194,6 +224,20 @@ export default function VisitsPage() {
                     </div>
                   )}
 
+                  {/* Owner suggested a new time */}
+                  {b.status === 'suggested' && b.suggestedDate && (
+                    <div style={{ marginTop: 10, fontSize: 13, color: '#2A5C8A', padding: '10px 14px', background: '#E6EFF7', borderRadius: 10 }}>
+                      Owner proposed a new time: <strong>{b.suggestedDate} at {b.suggestedTime}</strong>
+                    </div>
+                  )}
+
+                  {/* Decline reason */}
+                  {b.status === 'cancelled' && b.declineReason && (
+                    <div style={{ marginTop: 10, fontSize: 13, color: '#9A4034', padding: '8px 14px', background: '#FFF0EE', borderRadius: 10, borderLeft: '3px solid #E5B7B0' }}>
+                      Owner's note: {b.declineReason}
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
                     <Link
@@ -213,6 +257,34 @@ export default function VisitsPage() {
                       Message owner
                     </Link>
 
+                    {b.status === 'confirmed' && b.visitDate && (() => {
+                      const title = `Visit — ${b.listingTitle}`;
+                      const gUrl = buildGoogleUrl(title, b.listingArea, b.visitDate, b.visitTime);
+                      return (
+                        <>
+                          {gUrl && (
+                            <a
+                              href={gUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ height: 36, padding: '0 16px', borderRadius: 10, border: '1px solid #D6E2EF', background: '#F2F7FC', color: '#2A5C8A', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                            >
+                              📅 Google Calendar
+                            </a>
+                          )}
+                          <button
+                            onClick={() => {
+                              const ics = buildICS(b.id, title, b.listingArea, b.visitDate!, b.visitTime);
+                              if (ics) downloadICS(`dwell-visit-${b.id}.ics`, ics);
+                            }}
+                            style={{ height: 36, padding: '0 16px', borderRadius: 10, border: '1px solid #E7EAEE', background: '#F7F9FC', color: '#41495A', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            Save .ics
+                          </button>
+                        </>
+                      );
+                    })()}
+
                     {b.status === 'completed' && (
                       <Link
                         href={`/review/${b.listingId}`}
@@ -220,6 +292,25 @@ export default function VisitsPage() {
                       >
                         ★ Write a review
                       </Link>
+                    )}
+
+                    {b.status === 'suggested' && (
+                      <>
+                        <button
+                          onClick={() => respondSuggested(b, true)}
+                          disabled={cancelling === b.id}
+                          style={{ height: 36, padding: '0 16px', borderRadius: 10, border: 'none', background: '#2E7D55', color: '#fff', fontSize: 13, fontWeight: 700, cursor: cancelling === b.id ? 'default' : 'pointer', fontFamily: 'inherit', opacity: cancelling === b.id ? 0.6 : 1 }}
+                        >
+                          {cancelling === b.id ? 'Saving…' : 'Accept new time'}
+                        </button>
+                        <button
+                          onClick={() => respondSuggested(b, false)}
+                          disabled={cancelling === b.id}
+                          style={{ height: 36, padding: '0 16px', borderRadius: 10, border: '1px solid #F2D0CC', background: '#FFF8F7', color: '#C0392B', fontSize: 13, fontWeight: 700, cursor: cancelling === b.id ? 'default' : 'pointer', fontFamily: 'inherit', opacity: cancelling === b.id ? 0.6 : 1 }}
+                        >
+                          Decline
+                        </button>
+                      </>
                     )}
 
                     {b.status === 'pending' && (

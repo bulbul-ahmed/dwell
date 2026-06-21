@@ -15,7 +15,8 @@ export const zones = pgTable('zones', {
 
 export const listingCatEnum = pgEnum('listing_cat', ['rent', 'buy', 'sublet', 'student', 'room', 'office']);
 export const ownerTypeEnum  = pgEnum('owner_type',  ['Agency', 'Owner']);
-export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'cancelled', 'completed']);
+export const ownerStatusEnum = pgEnum('owner_status', ['unverified', 'phone_verified', 'kyc_verified', 'agency_pending', 'agency_verified', 'suspended']);
+export const bookingStatusEnum = pgEnum('booking_status', ['pending', 'confirmed', 'cancelled', 'completed', 'suggested']);
 export const senderRoleEnum  = pgEnum('sender_role',  ['me', 'other']);
 export const userRoleEnum    = pgEnum('user_role',    ['renter', 'owner', 'admin']);
 export const notifTypeEnum   = pgEnum('notif_type',   ['visit', 'message', 'listing', 'review', 'system']);
@@ -46,6 +47,17 @@ export const owners = pgTable('owners', {
   type:         ownerTypeEnum('type').notNull(),
   rating:       real('rating').notNull().default(4.5),
   responseTime: text('response_time'),
+  verified:       boolean('verified').notNull().default(false),
+  phone:          text('phone'),
+  status:         ownerStatusEnum('status').notNull().default('unverified'),
+  nidNumber:      text('nid_number'),
+  nidDocUrl:      text('nid_doc_url'),
+  businessName:   text('business_name'),
+  tradeLicense:   text('trade_license'),
+  businessDocUrl: text('business_doc_url'),
+  verifiedBy:     integer('verified_by'),
+  verifiedAt:     timestamp('verified_at'),
+  createdAt:      timestamp('created_at').defaultNow().notNull(),
   userId:       integer('user_id').references(() => users.id),
 });
 
@@ -84,6 +96,7 @@ export const listings = pgTable('listings', {
   totalFloors: text('total_floors'),
   videos:            text('videos').array(),
   meta:              jsonb('meta'),
+  views:             integer('views').notNull().default(0),
   moderationStatus:  text('moderation_status').notNull().default('pending'),
   rejectionReason:   text('rejection_reason'),
   createdAt:         timestamp('created_at').defaultNow().notNull(),
@@ -104,6 +117,10 @@ export const bookings = pgTable('bookings', {
   visitTime: text('visit_time'),
   note:      text('note'),
   status:    bookingStatusEnum('status').notNull().default('pending'),
+  suggestedDate: text('suggested_date'),
+  suggestedTime: text('suggested_time'),
+  declineReason: text('decline_reason'),
+  reminderSentAt: timestamp('reminder_sent_at'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 

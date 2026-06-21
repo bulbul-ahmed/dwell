@@ -47,6 +47,7 @@ function mapListing(row: { listing: typeof listings.$inferSelect; owner: typeof 
     totalFloors: row.listing.totalFloors ?? null,
     videos: row.listing.videos ?? null,
     meta: (row.listing.meta as Record<string, unknown>) ?? null,
+    views: row.listing.views ?? 0,
   };
 }
 

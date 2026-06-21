@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { fmtPrice, bdGroup } from '@/data/listings';
@@ -33,6 +33,16 @@ const TIME_SLOTS = [
   '4:00 PM – 6:00 PM',
 ];
 
+const REPORT_REASONS = [
+  'Fake or fraudulent',
+  'Wrong or misleading info',
+  'Already rented or sold',
+  'Duplicate listing',
+  'Offensive content',
+  'Spam',
+  'Other',
+];
+
 export default function DetailClient() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -52,6 +62,16 @@ export default function DetailClient() {
   const [photoTab, setPhotoTab] = useState('All');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+
+  // Share / Report / Views
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const viewedRef = useRef<string | null>(null);
+  const [shareMsg, setShareMsg] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState<string | null>(null);
+  const [reportDetails, setReportDetails] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState(1);
   const [pickedDate, setPickedDate] = useState<Date | null>(null);
@@ -100,6 +120,16 @@ export default function DetailClient() {
       .catch(() => setLoading(false));
   }, [id]);
 
+  // Count a view once per listing load
+  useEffect(() => {
+    if (!id || viewedRef.current === id) return;
+    viewedRef.current = id;
+    fetch(`/api/listings/${id}/view`, { method: 'POST' })
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (d?.views != null) setViewCount(d.views); })
+      .catch(() => {});
+  }, [id]);
+
   // Deep-link from the provider page: /listings/<id>?chat=1 opens the message drawer
   useEffect(() => {
     if (!listing) return;
@@ -142,9 +172,54 @@ export default function DetailClient() {
         .map((url, i) => ({ url, origIdx: i }))
         .filter((_, i) => (shotCats[i] ?? '') === photoTab);
 
-  const clampedGallery = Math.min(gallery, Math.max(0, filteredShots.length - 1));
-  const heroShot = filteredShots[clampedGallery]?.url ?? sel.coverUrl;
-  const detailShots = filteredShots.map((s, i) => ({ url: s.url, ring: clampedGallery === i ? ACCENT : 'transparent', idx: i }));
+  // Combined gallery media: photos first, then videos.
+  const videoUrls = sel.videos ?? [];
+  const mediaItems: { type: 'photo' | 'video'; url: string }[] = [
+    ...filteredShots.map(s => ({ type: 'photo' as const, url: s.url })),
+    ...videoUrls.map(u => ({ type: 'video' as const, url: u })),
+  ];
+  const clampedGallery = Math.min(gallery, Math.max(0, mediaItems.length - 1));
+  const heroItem = mediaItems[clampedGallery] ?? { type: 'photo' as const, url: sel.coverUrl };
+  const detailMedia = mediaItems.map((m, i) => ({ ...m, ring: clampedGallery === i ? ACCENT : 'transparent', idx: i }));
+  const photoCount = filteredShots.length;
+  const views = viewCount ?? sel.views ?? 0;
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (typeof navigator !== 'undefined' && navigator.share) {
+        await navigator.share({ title: sel.title, text: `${sel.title} — ${sel.area}`, url });
+        return;
+      }
+    } catch { return; } // user dismissed the native sheet
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareMsg('Link copied');
+    } catch {
+      setShareMsg('Copy failed');
+    }
+    setTimeout(() => setShareMsg(''), 2000);
+  };
+
+  const openReport = () => {
+    if (!isLoggedIn) { router.push(`/auth?next=/listings/${id}`); return; }
+    setReportReason(null);
+    setReportDetails('');
+    setReportSent(false);
+    setReportOpen(true);
+  };
+
+  const submitReport = () => {
+    if (!reportReason || reportBusy) return;
+    setReportBusy(true);
+    fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingId: sel.id, reason: reportReason, details: reportDetails }),
+    })
+      .then(r => { setReportBusy(false); if (r.ok) setReportSent(true); })
+      .catch(() => setReportBusy(false));
+  };
 
   const costRows = sel.sale
     ? [{ k: 'Sale price', v: priceLabel }]
@@ -241,16 +316,30 @@ export default function DetailClient() {
           <div>
 
             {/* ===== GALLERY ===== */}
-            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', aspectRatio: '16/10', background: '#DDD3C5', cursor: 'zoom-in', marginBottom: 12 }} onClick={() => setLightboxOpen(true)}>
-              <div style={{ width: '100%', height: '100%', backgroundImage: `url('${heroShot}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              {filteredShots.length > 1 && (
+            <div
+              style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', aspectRatio: '16/10', background: heroItem.type === 'video' ? '#000' : '#DDD3C5', cursor: heroItem.type === 'video' ? 'default' : 'zoom-in', marginBottom: 12 }}
+              onClick={() => { if (heroItem.type === 'photo') setLightboxOpen(true); }}
+            >
+              {heroItem.type === 'video' ? (
+                <video
+                  key={heroItem.url}
+                  src={heroItem.url}
+                  controls
+                  playsInline
+                  onClick={e => e.stopPropagation()}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
+                />
+              ) : (
+                <div style={{ width: '100%', height: '100%', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+              )}
+              {heroItem.type === 'photo' && photoCount > 1 && (
                 <div style={{ position: 'absolute', right: 14, bottom: 14, display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(21,36,59,0.78)', color: '#fff', borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 700, backdropFilter: 'blur(4px)' }}>
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                     <rect x="3" y="3" width="18" height="18" rx="3" stroke="#fff" strokeWidth="1.8" />
                     <circle cx="8.5" cy="8.5" r="1.6" fill="#fff" />
                     <path d="M21 15l-5-5L5 21" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
-                  View all {filteredShots.length} photos
+                  View all {photoCount} photos
                 </div>
               )}
             </div>
@@ -273,16 +362,23 @@ export default function DetailClient() {
               </div>
             )}
 
-            {/* Thumbnail strip */}
-            {detailShots.length > 1 && (
+            {/* Thumbnail strip (photos + videos) */}
+            {detailMedia.length > 1 && (
               <div style={{ display: 'flex', gap: 10, marginBottom: 30, flexWrap: 'wrap' }}>
-                {detailShots.map(sh => (
+                {detailMedia.map(m => (
                   <div
-                    key={sh.idx}
-                    onClick={() => setGallery(sh.idx)}
-                    style={{ width: 84, height: 60, borderRadius: 11, overflow: 'hidden', background: '#DDD3C5', cursor: 'pointer', border: `2.5px solid ${sh.ring}`, flexShrink: 0 }}
+                    key={m.idx}
+                    onClick={() => setGallery(m.idx)}
+                    style={{ position: 'relative', width: 84, height: 60, borderRadius: 11, overflow: 'hidden', background: m.type === 'video' ? '#000' : '#DDD3C5', cursor: 'pointer', border: `2.5px solid ${m.ring}`, flexShrink: 0 }}
                   >
-                    <div style={{ width: '100%', height: '100%', backgroundImage: `url('${sh.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                    {m.type === 'video' ? (
+                      <>
+                        <video src={m.url} muted preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.28)', color: '#fff', fontSize: 18 }}>▶</span>
+                      </>
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', backgroundImage: `url('${m.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                    )}
                   </div>
                 ))}
               </div>
@@ -305,6 +401,14 @@ export default function DetailClient() {
                 <circle cx="12" cy="10" r="2.4" stroke="#A8AEB9" strokeWidth="1.8" />
               </svg>
               {sel.area}
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 4, color: '#8B93A1' }}>
+                <span style={{ color: '#D3D9E0' }}>·</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#A8AEB9" strokeWidth="1.8" />
+                  <circle cx="12" cy="12" r="3" stroke="#A8AEB9" strokeWidth="1.8" />
+                </svg>
+                {views.toLocaleString()} {views === 1 ? 'view' : 'views'}
+              </span>
             </div>
 
             {/* Facts band */}
@@ -404,6 +508,15 @@ export default function DetailClient() {
                       Analytics
                     </a>
                   </div>
+                  <button onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#6A7180', padding: 0, marginTop: 12 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                      <circle cx="18" cy="5" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                      <circle cx="6" cy="12" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                      <circle cx="18" cy="19" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                      <path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3" stroke="#6A7180" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                    {shareMsg || 'Share listing'}
+                  </button>
                 </div>
               ) : (
                 <>
@@ -427,6 +540,26 @@ export default function DetailClient() {
                       style={{ flex: 1, background: '#fff', color: '#15243B', border: '1px solid #D3D9E0', borderRadius: 14, padding: 13, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
                     >
                       <HeartIcon saved={isSaved} size={16} />Save
+                    </button>
+                  </div>
+
+                  {/* Share + Report */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 14 }}>
+                    <button onClick={handleShare} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#6A7180', padding: 0 }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <circle cx="18" cy="5" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                        <circle cx="6" cy="12" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                        <circle cx="18" cy="19" r="2.6" stroke="#6A7180" strokeWidth="1.8" />
+                        <path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3" stroke="#6A7180" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                      {shareMsg || 'Share'}
+                    </button>
+                    <span style={{ width: 1, height: 14, background: '#E1E5EA' }} />
+                    <button onClick={openReport} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#6A7180', padding: 0 }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 21V4.5a.5.5 0 01.5-.5H17l-2 4 2 4H5.5" stroke="#6A7180" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      Report
                     </button>
                   </div>
                 </>
@@ -509,20 +642,31 @@ export default function DetailClient() {
             style={{ position: 'absolute', top: 20, right: 22, width: 42, height: 42, borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}
           >✕</button>
 
-          <div style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', background: '#1A2433', backgroundImage: `url('${heroShot}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+          {heroItem.type === 'video' ? (
+            <video key={heroItem.url} src={heroItem.url} controls autoPlay playsInline onClick={e => e.stopPropagation()} style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, background: '#000', objectFit: 'contain' }} />
+          ) : (
+            <div style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', background: '#1A2433', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+          )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600 }}>{clampedGallery + 1} / {filteredShots.length}</span>
+            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600 }}>{clampedGallery + 1} / {mediaItems.length}</span>
           </div>
 
-          {detailShots.length > 1 && (
+          {detailMedia.length > 1 && (
             <div style={{ display: 'flex', gap: 9, maxWidth: '92vw', overflowX: 'auto', paddingBottom: 4 }}>
-              {detailShots.map(sh => (
+              {detailMedia.map(m => (
                 <div
-                  key={sh.idx}
-                  onClick={() => setGallery(sh.idx)}
-                  style={{ width: 78, height: 56, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, border: `2.5px solid ${clampedGallery === sh.idx ? '#fff' : 'transparent'}`, opacity: clampedGallery === sh.idx ? 1 : 0.6, backgroundImage: `url('${sh.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }}
-                />
+                  key={m.idx}
+                  onClick={e => { e.stopPropagation(); setGallery(m.idx); }}
+                  style={{ position: 'relative', width: 78, height: 56, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, border: `2.5px solid ${clampedGallery === m.idx ? '#fff' : 'transparent'}`, opacity: clampedGallery === m.idx ? 1 : 0.6, background: m.type === 'video' ? '#000' : undefined, backgroundImage: m.type === 'photo' ? `url('${m.url}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                >
+                  {m.type === 'video' && (
+                    <>
+                      <video src={m.url} muted preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 16 }}>▶</span>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
           )}
@@ -730,6 +874,72 @@ export default function DetailClient() {
           ownerType={sel.owner.type}
           onClose={() => setChatOpen(false)}
         />
+      )}
+
+      {/* ===== REPORT MODAL ===== */}
+      {reportOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(21,36,59,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={e => { if (e.target === e.currentTarget) setReportOpen(false); }}
+        >
+          <div style={{ background: '#fff', borderRadius: 22, width: 460, maxWidth: '100%', maxHeight: '92vh', overflow: 'auto', boxShadow: '0 40px 90px -30px rgba(0,0,0,0.5)', animation: 'bvpop .22s ease' }}>
+            {reportSent ? (
+              <div style={{ padding: '34px 28px', textAlign: 'center' }}>
+                <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#EAF1ED', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 13l4 4L19 7" stroke="#4F8A6B" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 19, fontWeight: 700, margin: '0 0 6px', color: '#15243B' }}>Report submitted</h3>
+                <p style={{ fontSize: 14, color: '#6A7180', margin: '0 0 22px' }}>Thanks for flagging this. Our team will review it shortly.</p>
+                <button onClick={() => setReportOpen(false)} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 12, padding: '12px 28px', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Done</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #E7EAEE' }}>
+                  <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: '#15243B' }}>Report this listing</h3>
+                  <button onClick={() => setReportOpen(false)} style={{ width: 32, height: 32, borderRadius: '50%', border: '1px solid #D3D9E0', background: '#fff', cursor: 'pointer', fontSize: 15, color: '#6A7180' }}>✕</button>
+                </div>
+                <div style={{ padding: '20px 24px' }}>
+                  <p style={{ fontSize: 13.5, color: '#6A7180', margin: '0 0 14px' }}>Why are you reporting this listing? Reports are sent privately to our moderation team.</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                    {REPORT_REASONS.map(r => {
+                      const active = reportReason === r;
+                      return (
+                        <button
+                          key={r}
+                          onClick={() => setReportReason(r)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left', padding: '11px 14px', borderRadius: 11, border: `1.6px solid ${active ? ACCENT : '#E7EAEE'}`, background: active ? '#EEF4FA' : '#fff', color: active ? ACCENT : '#41495A', fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >
+                          <span style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${active ? ACCENT : '#C4CBD4'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {active && <span style={{ width: 8, height: 8, borderRadius: '50%', background: ACCENT }} />}
+                          </span>
+                          {r}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <textarea
+                    value={reportDetails}
+                    onChange={e => setReportDetails(e.target.value)}
+                    placeholder="Add any details (optional)…"
+                    style={{ width: '100%', minHeight: 80, border: '1.6px solid #DBE0E6', borderRadius: 12, padding: 12, fontSize: 14, fontFamily: 'inherit', color: '#15243B', resize: 'vertical', boxSizing: 'border-box' }}
+                  />
+                </div>
+                <div style={{ padding: '0 24px 22px', display: 'flex', gap: 12 }}>
+                  <button onClick={() => setReportOpen(false)} style={{ flex: 1, background: '#fff', color: '#15243B', border: '1px solid #D3D9E0', borderRadius: 12, padding: 13, fontSize: 14.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Cancel</button>
+                  <button
+                    onClick={submitReport}
+                    disabled={!reportReason || reportBusy}
+                    style={{ flex: 1, background: !reportReason || reportBusy ? '#C0CCDA' : '#B4402B', color: '#fff', border: 'none', borderRadius: 12, padding: 13, fontSize: 14.5, fontWeight: 700, cursor: !reportReason || reportBusy ? 'default' : 'pointer', fontFamily: 'inherit' }}
+                  >
+                    {reportBusy ? 'Submitting…' : 'Submit report'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

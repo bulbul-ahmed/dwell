@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
     amenities?: string[]; shots?: string[]; shotCats?: string[];
     videos?: string[]; meta?: Record<string, unknown>;
     mapLat?: number; mapLng?: number; zoneId?: number;
+    action?: 'draft' | 'submit';
   };
 
   // Fetch user record
@@ -130,6 +131,15 @@ export async function POST(request: NextRequest) {
       responseTime: 'New',
       userId,
     }).returning();
+  }
+
+  // Gate publishing behind verification — drafts always allowed.
+  const action = body.action ?? 'submit';
+  if (action === 'submit' && owner.status === 'unverified') {
+    return NextResponse.json(
+      { error: 'Verify your phone before publishing', needs: 'phone_verification' },
+      { status: 403 },
+    );
   }
 
   // Promote renter → owner in users table and reissue JWT
@@ -158,6 +168,7 @@ export async function POST(request: NextRequest) {
     advance:      body.advance ?? 2,
     service:      body.service ?? Math.round(body.price * 0.06),
     verified:     false,
+    moderationStatus: action === 'draft' ? 'draft' : 'pending',
     sale:         body.cat === 'buy',
     ownerId:      owner.id,
     cover:        shots[0] ?? FALLBACK,

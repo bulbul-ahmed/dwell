@@ -29,6 +29,7 @@ export default function NavRight() {
 
   const [unread, setUnread] = useState({ total: 0, messages: 0, bell: 0 });
   const prevMsgsRef = useRef(0);
+  const prevBellRef = useRef(0);
 
   useEffect(() => {
     if (!user) { setUnread({ total: 0, messages: 0, bell: 0 }); return; }
@@ -40,12 +41,15 @@ export default function NavRight() {
         if (!r.ok) return;
         const d = await r.json() as { total: number; messages: number; bell: number };
         if (cancelled) return;
-        if (d.messages > prevMsgsRef.current && prevMsgsRef.current !== 0) {
-          if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
-            try { new Notification('New message on Dwell'); } catch {}
-          }
+        const canNotify = typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted';
+        if (d.messages > prevMsgsRef.current && prevMsgsRef.current !== 0 && canNotify) {
+          try { new Notification('New message on Dwell'); } catch {}
+        }
+        if (d.bell > prevBellRef.current && prevBellRef.current !== 0 && canNotify) {
+          try { new Notification('New notification on Dwell'); } catch {}
         }
         prevMsgsRef.current = d.messages;
+        prevBellRef.current = d.bell;
         setUnread(d);
       } catch {}
     };

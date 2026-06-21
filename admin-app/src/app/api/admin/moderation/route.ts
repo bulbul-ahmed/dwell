@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, listings, owners, users, notifications } from '@/db';
 import { eq } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
+import { notifyUser } from '@/lib/notify-user';
 import { sendApprovalEmail, sendRejectionEmail } from '@/lib/email';
 import { sendApprovalSMS, sendRejectionSMS } from '@/lib/sms';
 
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
         icoFg: '#16A34A',
         read:  false,
       });
+      await notifyUser(userId, { kind: 'notification' });
     }
 
     // Email + SMS (fire-and-forget — don't block redirect on failure)
@@ -100,6 +102,7 @@ export async function POST(req: NextRequest) {
         icoFg: '#B4402B',
         read:  false,
       });
+      await notifyUser(userId, { kind: 'notification' });
     }
 
     // Email + SMS

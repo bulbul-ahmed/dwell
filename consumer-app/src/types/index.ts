@@ -61,4 +61,5 @@ export interface Listing {
   totalFloors?: string | null;
   videos?: string[] | null;
   meta?: Record<string, unknown> | null;
+  views?: number;
 }

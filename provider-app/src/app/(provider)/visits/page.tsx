@@ -11,6 +11,7 @@ const STATUS_MAP: Record<string, VisitStatus> = {
   confirmed: 'Confirmed',
   cancelled: 'Declined',
   completed: 'Completed',
+  suggested: 'Suggested',
 };
 
 export default async function VisitsPage() {

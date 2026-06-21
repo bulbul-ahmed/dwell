@@ -1,6 +1,6 @@
 import { db, notifications } from '@/db';
 import { and, eq, sql } from 'drizzle-orm';
-import { publishUser } from '@/lib/sse-user';
+import { notifyUser } from '@/lib/notify-user';
 
 type NotifType = 'visit' | 'message' | 'listing' | 'review' | 'system';
 
@@ -54,7 +54,7 @@ export async function createNotification(opts: CreateNotifOpts) {
         })
         .where(eq(notifications.id, existing.id))
         .returning();
-      publishUser(opts.userId, { kind: 'notification', notification: updated });
+      await notifyUser(opts.userId, { kind: 'notification', notification: updated });
       return [updated];
     }
   }
@@ -73,7 +73,7 @@ export async function createNotification(opts: CreateNotifOpts) {
     count:    1,
   }).returning();
 
-  publishUser(opts.userId, { kind: 'notification', notification: inserted[0] });
+  await notifyUser(opts.userId, { kind: 'notification', notification: inserted[0] });
   return inserted;
 }
 

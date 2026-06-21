@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
@@ -111,8 +111,15 @@ function LabelTag({ children }: { children: React.ReactNode }) {
 
 function Toggle({ on, onChange }: { on: boolean; onChange: () => void }) {
   return (
-    <span onClick={onChange} style={{ width: 40, height: 23, borderRadius: 999, background: on ? ACCENT : '#D1D9E0', position: 'relative', display: 'inline-block', transition: 'background .2s', cursor: 'pointer', flexShrink: 0 }}>
-      <span style={{ position: 'absolute', top: 2.5, left: on ? 19 : 2.5, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
+    <span
+      role="switch"
+      aria-checked={on}
+      // stopPropagation: parent rows also toggle on click — without this the click
+      // fires twice (here + parent) and cancels out, making the switch feel stuck.
+      onClick={e => { e.stopPropagation(); onChange(); }}
+      style={{ width: 48, height: 28, borderRadius: 999, background: on ? ACCENT : '#CBD3DC', position: 'relative', display: 'inline-block', transition: 'background .25s ease', cursor: 'pointer', flexShrink: 0 }}
+    >
+      <span style={{ position: 'absolute', top: 3, left: 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.25)', transition: 'transform .25s cubic-bezier(.4,0,.2,1)', transform: on ? 'translateX(20px)' : 'translateX(0)' }} />
     </span>
   );
 }
@@ -188,7 +195,32 @@ export default function ListPage() {
   const [landmark, setLandmark] = useState('');
   const mapRef = useRef<google.maps.Map | null>(null);
   const acRef  = useRef<google.maps.places.Autocomplete | null>(null);
+  const geoRef = useRef<google.maps.Geocoder | null>(null);
   const [locating, setLocating] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+  // Once the user edits the address by hand, stop auto-filling it from the map pin.
+  const addressTouched = useRef(false);
+
+  // Reverse-geocode the dropped pin into the Road/house field (unless the user typed their own).
+  const reverseGeocode = useCallback((lat: number, lng: number) => {
+    if (addressTouched.current) return;
+    if (typeof google === 'undefined' || !google.maps) return;
+    if (!geoRef.current) geoRef.current = new google.maps.Geocoder();
+    setGeocoding(true);
+    geoRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+      setGeocoding(false);
+      if (addressTouched.current) return;
+      if (status === 'OK' && results && results[0]) {
+        setAddress(results[0].formatted_address.replace(/,?\s*Bangladesh$/i, ''));
+      }
+    });
+  }, []);
+
+  // Whenever the pin lands on new coordinates, pull the address from Google (debounced via the ref guard).
+  useEffect(() => {
+    if (pinLat == null || pinLng == null) return;
+    reverseGeocode(pinLat, pinLng);
+  }, [pinLat, pinLng, reverseGeocode]);
 
   // Step 3 — shared
   const [title, setTitle]           = useState('');
@@ -272,6 +304,7 @@ export default function ListPage() {
           const parts = l.landmark.split(' · ');
           setAddress(parts[0] ?? '');
           setLandmark(parts[1] ?? '');
+          if (parts[0]) addressTouched.current = true; // keep the saved address, don't auto-overwrite
         }
         if (d.edit?.mapLat != null && d.edit?.mapLng != null) {
           setPinLat(d.edit.mapLat); setPinLng(d.edit.mapLng);
@@ -320,12 +353,31 @@ export default function ListPage() {
     return null;
   }, [activeZones]);
 
+  // Default map focus = centroid of the first active zone (Aftab Nagar), so a new
+  // listing's pin starts INSIDE a coloured zone instead of generic Dhaka.
+  const zonesCenter = useMemo(() => {
+    if (activeZones.length === 0) return DHAKA_CENTER;
+    const ring = activeZones[0].polygon.coordinates[0];
+    let sx = 0, sy = 0;
+    for (const [lng, lat] of ring) { sx += lng; sy += lat; }
+    return { lat: sy / ring.length, lng: sx / ring.length };
+  }, [activeZones]);
+
   // Edit mode: re-detect the zone for the prefilled pin once zones have loaded
   useEffect(() => {
     if (!isEdit || detectedZone || pinLat === null || pinLng === null || activeZones.length === 0) return;
     const z = detectZone(pinLat, pinLng);
     if (z) setDetectedZone(z);
   }, [isEdit, detectedZone, pinLat, pinLng, activeZones, detectZone]);
+
+  // New listing: seed the pin at the zone centroid as soon as zones load, so the
+  // address auto-fills even if the map's `idle` event is slow/never fires.
+  useEffect(() => {
+    if (isEdit || pinLat !== null || activeZones.length === 0) return;
+    const c = zonesCenter;
+    setPinLat(c.lat); setPinLng(c.lng);
+    setDetectedZone(detectZone(c.lat, c.lng));
+  }, [isEdit, pinLat, activeZones, zonesCenter, detectZone]);
 
   const isHostel = wizType === 'student';
   const isOffice = wizType === 'office';
@@ -634,10 +686,12 @@ export default function ListPage() {
                       <>
                         <GoogleMap
                           mapContainerStyle={{ width: '100%', height: '100%' }}
-                          center={pinLat && pinLng ? { lat: pinLat, lng: pinLng } : DHAKA_CENTER}
-                          zoom={pinLat ? 17 : 14}
+                          center={pinLat && pinLng ? { lat: pinLat, lng: pinLng } : zonesCenter}
+                          zoom={pinLat ? 17 : 15}
                           onLoad={m => { mapRef.current = m; }}
                           onIdle={() => {
+                            // wait for zones so the auto-set pin lands inside Aftab Nagar, not generic Dhaka
+                            if (activeZones.length === 0) return;
                             const c = mapRef.current?.getCenter();
                             if (!c) return;
                             const lat = c.lat(), lng = c.lng();
@@ -680,7 +734,13 @@ export default function ListPage() {
                     <div style={{ fontSize: 12.5, color: '#8B93A1', textAlign: 'center', padding: '4px 0' }}>Pan the map so the pin sits on your property</div>
                   )}
 
-                  <FieldInput label="Road / house / floor (optional)" value={address} onChange={setAddress} placeholder="e.g. Road 4, House 12, 3rd floor" />
+                  <FieldInput
+                    label="Road / house / floor (optional)"
+                    value={address}
+                    onChange={v => { addressTouched.current = true; setAddress(v); }}
+                    placeholder="e.g. Road 4, House 12, 3rd floor"
+                    hint={geocoding ? 'Finding address from the map…' : (!addressTouched.current && address ? 'Auto-filled from the map pin — edit if needed' : undefined)}
+                  />
                   <FieldInput label="Landmark (optional)" value={landmark} onChange={setLandmark} placeholder="e.g. Near IFIC Bank ATM" hint="Helps seekers find you faster" />
                 </div>
               </>

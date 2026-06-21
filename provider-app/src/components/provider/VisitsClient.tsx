@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { badge } from '@/lib/provider/badge';
 import { useToastStore } from '@/lib/provider/toast-store';
 import { Clock } from 'lucide-react';
-import { SUGGEST_SLOTS } from '@/lib/provider/data';
 
 export type VisitStatus = 'Requested' | 'Confirmed' | 'Suggested' | 'Completed' | 'Declined';
 
@@ -30,26 +29,64 @@ const AV_COLORS = ['#2C557F','#2E7D55','#7B3F9E','#9A6A1F','#2A5C8A','#B4402B'];
 export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
   const [statuses, setStatuses] = useState<StatusMap>({});
   const [suggestFor, setSuggestFor] = useState<number | null>(null);
-  const [suggestSlot, setSuggestSlot] = useState<string | null>(null);
+  const [suggestDate, setSuggestDate] = useState('');
+  const [suggestTime, setSuggestTime] = useState('');
+  const [declineFor, setDeclineFor] = useState<number | null>(null);
+  const [declineReason, setDeclineReason] = useState('');
   const notify = useToastStore(s => s.notify);
 
   function getStatus(b: BookingRow): VisitStatus {
     return statuses[b.id] ?? b.baseStatus;
   }
 
-  function act(b: BookingRow, action: string) {
-    const actions: Record<string, { msg: [string, string, 'success' | 'error' | 'info']; next: VisitStatus }> = {
-      accept:      { msg: ['Visit confirmed',    `Reminders sent to you and ${b.seeker}.`, 'success'], next: 'Confirmed' },
-      decline:     { msg: ['Visit declined',     `${b.seeker} has been notified.`,         'error'],   next: 'Declined'  },
-      sendSuggest: { msg: ['New time suggested', `${b.seeker} will confirm your slot.`,    'info'],    next: 'Suggested' },
-      complete:    { msg: ['Marked complete',    'You can now leave a review.',            'success'], next: 'Completed' },
-      cancel:      { msg: ['Visit cancelled',    'Both parties notified.',                 'error'],   next: 'Declined'  },
+  async function act(b: BookingRow, action: string) {
+    if (action === 'suggestOpen') {
+      setDeclineFor(null);
+      setSuggestFor(suggestFor === b.id ? null : b.id);
+      return;
+    }
+    if (action === 'declineOpen') {
+      setSuggestFor(null);
+      setDeclineReason('');
+      setDeclineFor(declineFor === b.id ? null : b.id);
+      return;
+    }
+
+    const map: Record<string, { api: string; next: VisitStatus; ok: [string, string, 'success' | 'error' | 'info'] }> = {
+      decline:     { api: 'decline',  next: 'Declined',  ok: ['Visit declined',     `${b.seeker} has been notified.`,      'error']   },
+      complete:    { api: 'complete', next: 'Completed', ok: ['Marked complete',    'You can now leave a review.',         'success'] },
+      cancel:      { api: 'cancel',   next: 'Declined',  ok: ['Visit cancelled',    `${b.seeker} has been notified.`,      'error']   },
+      accept:      { api: 'accept',   next: 'Confirmed', ok: ['Visit confirmed',    `${b.seeker} has been notified.`,      'success'] },
+      sendSuggest: { api: 'suggest',  next: 'Suggested', ok: ['New time suggested', `${b.seeker} will confirm your slot.`, 'info']    },
     };
-    if (action === 'suggestOpen') { setSuggestFor(suggestFor === b.id ? null : b.id); return; }
-    const a = actions[action]; if (!a) return;
-    setStatuses(prev => ({ ...prev, [b.id]: a.next }));
+    const m = map[action]; if (!m) return;
+
+    const body: Record<string, string> = { action: m.api };
+    if (action === 'sendSuggest') {
+      if (!suggestDate || !suggestTime) { notify('Pick a time', 'Choose a date and time to suggest.', 'error'); return; }
+      body.suggestedDate = suggestDate;
+      body.suggestedTime = suggestTime;
+    }
+    if (action === 'decline') {
+      body.reason = declineReason.trim();
+    }
+
+    const prev = statuses[b.id];
+    setStatuses(p => ({ ...p, [b.id]: m.next }));   // optimistic
     setSuggestFor(null);
-    notify(...a.msg);
+    setDeclineFor(null);
+    try {
+      const res = await fetch(`/api/visits/${b.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+      notify(...m.ok);
+    } catch {
+      setStatuses(p => ({ ...p, [b.id]: prev }));   // rollback
+      notify('Action failed', 'Please try again.', 'error');
+    }
   }
 
   const requested = bookings.filter(b => { const s = getStatus(b); return s === 'Requested' || s === 'Suggested'; });
@@ -111,7 +148,7 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
               if (status === 'Requested') actions = [
                 { label: '✓ Accept', action: 'accept', kind: 'primary' },
                 { label: 'Suggest time', action: 'suggestOpen', kind: 'suggest' },
-                { label: 'Decline', action: 'decline', kind: 'ghost' },
+                { label: 'Decline', action: 'declineOpen', kind: 'ghost' },
               ];
               else if (status === 'Suggested') actions = [{ label: 'Awaiting seeker', action: '', kind: 'neutral' }];
               else if (status === 'Confirmed') actions = [
@@ -161,18 +198,26 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
                   {suggestFor === v.id && (
                     <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #E2E7EE' }}>
                       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#44506A', marginBottom: 10 }}>Suggest an alternative time</div>
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        {SUGGEST_SLOTS.map(sl => {
-                          const selected = suggestSlot === sl.day;
-                          return (
-                            <button key={sl.day} onClick={() => setSuggestSlot(sl.day)} className="bv-press" style={{ padding: '11px 16px', borderRadius: 12, border: `1.5px solid ${selected ? '#2A5C8A' : '#DBE0E6'}`, background: selected ? '#E6EFF7' : '#fff', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: selected ? '#2A5C8A' : '#3B4252', whiteSpace: 'nowrap' }}>{sl.day}</div>
-                              <div style={{ fontSize: 11.5, color: '#8893A4', marginTop: 1, whiteSpace: 'nowrap' }}>{sl.time}</div>
-                            </button>
-                          );
-                        })}
-                        <button onClick={() => act(v, 'sendSuggest')} className="bv-press" style={{ padding: '0 18px', borderRadius: 12, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: '#2A5C8A', alignSelf: 'stretch' }}>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input type="date" value={suggestDate} onChange={e => setSuggestDate(e.target.value)}
+                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                        <input type="time" value={suggestTime} onChange={e => setSuggestTime(e.target.value)}
+                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                        <button onClick={() => act(v, 'sendSuggest')} className="bv-press" style={{ padding: '11px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: '#2A5C8A' }}>
                           Send suggestion
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {declineFor === v.id && (
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #E2E7EE' }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#44506A', marginBottom: 10 }}>Reason for declining (optional)</div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input type="text" value={declineReason} onChange={e => setDeclineReason(e.target.value)} placeholder="e.g. Already rented"
+                          style={{ flex: 1, minWidth: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                        <button onClick={() => act(v, 'decline')} className="bv-press" style={{ padding: '11px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: '#B4402B' }}>
+                          Confirm decline
                         </button>
                       </div>
                     </div>
