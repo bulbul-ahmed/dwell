@@ -160,25 +160,27 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
 
               return (
                 <div key={v.id} className="bv-lift" style={{ background: '#fff', border: `1px solid ${cardBd}`, borderRadius: 16, padding: 18, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 54, height: 60, borderRadius: 13, background: dateBg, color: dateFg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase' }}>{mon}</span>
-                      <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, marginTop: 1 }}>{day}</span>
-                    </div>
-                    <div style={{ width: 50, height: 50, borderRadius: 14, background: avBg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
-                      {initials(v.seeker)}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 3 }}>
-                        <span style={{ fontSize: 15, fontWeight: 700, color: '#15243B' }}>{v.seeker}</span>
-                        <span style={{ fontSize: 10.5, fontWeight: 800, color: b.fg, background: b.bg, padding: '3px 9px', borderRadius: 999 }}>{status}</span>
+                  <div className="flex flex-col gap-3.5 lg:flex-row lg:items-center lg:gap-4">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
+                      <div style={{ width: 54, height: 60, borderRadius: 13, background: dateBg, color: dateFg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.5, textTransform: 'uppercase' }}>{mon}</span>
+                        <span style={{ fontSize: 22, fontWeight: 800, lineHeight: 1, marginTop: 1 }}>{day}</span>
                       </div>
-                      <div style={{ fontSize: 13, color: '#44506A' }}>{v.listingTitle}</div>
-                      <div style={{ fontSize: 12.5, color: '#8893A4', marginTop: 3, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                        <Clock size={14} color="#9AA6B6" strokeWidth={1.8} /> {v.visitTime ?? v.slot}
+                      <div style={{ width: 50, height: 50, borderRadius: 14, background: avBg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 17, flexShrink: 0 }}>
+                        {initials(v.seeker)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 3, flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: 15, fontWeight: 700, color: '#15243B' }}>{v.seeker}</span>
+                          <span style={{ fontSize: 10.5, fontWeight: 800, color: b.fg, background: b.bg, padding: '3px 9px', borderRadius: 999 }}>{status}</span>
+                        </div>
+                        <div style={{ fontSize: 13, color: '#44506A' }}>{v.listingTitle}</div>
+                        <div style={{ fontSize: 12.5, color: '#8893A4', marginTop: 3, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <Clock size={14} color="#9AA6B6" strokeWidth={1.8} /> {v.visitTime ?? v.slot}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 9, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: 320 }}>
+                    <div className="flex flex-wrap gap-[9px] lg:flex-shrink-0 lg:justify-end">
                       {actions.map(a => {
                         const s = btnStyle(a.kind);
                         return (

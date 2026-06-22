@@ -17,7 +17,7 @@ export default function ProfilePage() {
 
   return (
     <div className="animate-bvfade">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start', maxWidth: 1000 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2" style={{ gap: 20, alignItems: 'start', maxWidth: 1000 }}>
         {/* Left col */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Profile card */}
@@ -81,7 +81,7 @@ export default function ProfilePage() {
           <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
             <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 6px' }}>Account mode</h3>
             <p style={{ fontSize: 12.5, color: '#8893A4', margin: '0 0 14px' }}>Switch between finding and listing without signing out.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 10 }}>
               <div style={{ padding: 14, borderRadius: 13, border: '1.5px solid #1E3A5C', background: 'rgba(30,58,92,0.05)' }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: '#1E3A5C' }}>🏠 Provider</div>
                 <div style={{ fontSize: 11.5, color: '#8893A4', marginTop: 3 }}>Current mode</div>

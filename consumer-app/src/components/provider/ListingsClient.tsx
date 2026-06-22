@@ -74,7 +74,7 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
       {rows.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 0', color: '#8893A4', fontSize: 14 }}>No listings match this filter</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 18 }}>
           {rows.map(l => {
             const statusLabel = l.verified ? 'Active' : 'Pending';
             const b = badge(statusLabel);

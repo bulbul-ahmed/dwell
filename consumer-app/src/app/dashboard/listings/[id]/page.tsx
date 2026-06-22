@@ -55,7 +55,7 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
   return (
     <div className="animate-bvfade">
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 22, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr]" style={{ gap: 22, alignItems: 'start' }}>
         {/* Left */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
           {/* Hero card */}

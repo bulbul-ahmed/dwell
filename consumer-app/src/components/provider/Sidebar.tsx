@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutGrid, Building2, Inbox, Calendar, Star,
-  Zap, BarChart2, Settings, Home,
+  Zap, BarChart2, Settings, Home, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToastStore } from '@/lib/provider/toast-store';
@@ -46,9 +46,11 @@ const NAV_GROUPS: NavGroup[] = [
 interface SidebarProps {
   ownerName?: string;
   ownerType?: string;
+  open?: boolean;
+  onClose?: () => void;
 }
 
-export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = 'Agency' }: SidebarProps) {
+export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = 'Agency', open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const notify = useToastStore(s => s.notify);
 
@@ -61,12 +63,10 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
   }
 
   return (
-    <aside style={{
-      position: 'sticky', top: 0, alignSelf: 'flex-start', height: '100vh',
-      width: 264, flex: '0 0 264px',
-      background: 'linear-gradient(176deg, #16273F 0%, #122035 58%, #0E1A2C 100%)',
-      display: 'flex', flexDirection: 'column', overflow: 'hidden',
-    }}>
+    <aside
+      className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[264px] flex-col overflow-hidden transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:flex-[0_0_264px] lg:translate-x-0 ${open ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
+      style={{ background: 'linear-gradient(176deg, #16273F 0%, #122035 58%, #0E1A2C 100%)' }}
+    >
       {/* glow orb */}
       <div style={{
         position: 'absolute', top: -90, right: -70, width: 240, height: 240,
@@ -91,6 +91,18 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
             Provider Studio
           </div>
         </div>
+        <button
+          onClick={onClose}
+          aria-label="Close menu"
+          className="bv-press ml-auto flex items-center justify-center lg:hidden"
+          style={{
+            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+            border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
+            cursor: 'pointer',
+          }}
+        >
+          <X size={17} color="#A9B9CD" strokeWidth={2} />
+        </button>
       </div>
 
       {/* List a property CTA */}
@@ -123,7 +135,7 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
             {group.items.map(({ id, label, Icon, badge: badgeCount }) => {
               const active = isActive(id);
               return (
-                <Link key={id} href={hrefFor(id)} style={{ textDecoration: 'none' }}>
+                <Link key={id} href={hrefFor(id)} onClick={onClose} style={{ textDecoration: 'none' }}>
                   <div
                     className="bv-nav"
                     style={{
@@ -168,7 +180,7 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
 
       {/* User profile */}
       <div style={{ padding: '14px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-        <Link href="/dashboard/profile" style={{ textDecoration: 'none' }}>
+        <Link href="/dashboard/profile" onClick={onClose} style={{ textDecoration: 'none' }}>
           <div
             className="bv-fill bv-press"
             style={{

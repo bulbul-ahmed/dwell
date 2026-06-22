@@ -92,11 +92,12 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
           {rows.map((l, idx) => {
             const isNew = !replied.has(l.id);
             return (
-              <div key={l.id} className="bv-lift" style={{
+              <div key={l.id} className="bv-lift flex flex-col gap-3.5 lg:flex-row lg:items-center lg:gap-4" style={{
                 background: '#fff', border: `1px solid ${isNew ? '#D9E7DD' : '#ECEEF1'}`, borderRadius: 16,
-                padding: '16px 18px', display: 'flex', alignItems: 'center', gap: 16,
+                padding: '16px 18px',
                 boxShadow: '0 1px 2px rgba(20,40,70,.03)',
               }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
                 <div style={{
                   width: 46, height: 46, borderRadius: 13, background: AV_COLORS[idx % AV_COLORS.length],
                   color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -117,7 +118,8 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
                   </div>
                   <div style={{ fontSize: 12, color: '#9AA6B6', marginTop: 3 }}>on {l.listingTitle} · {l.timeAgo}</div>
                 </div>
-                <div style={{ display: 'flex', gap: 9, flexShrink: 0 }}>
+                </div>
+                <div className="flex flex-wrap gap-[9px] lg:flex-shrink-0 lg:justify-end">
                   <button
                     onClick={() => reply(l)}
                     disabled={sending === l.id}

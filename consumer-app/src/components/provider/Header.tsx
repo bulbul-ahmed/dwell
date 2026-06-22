@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ChevronLeft, LogOut } from 'lucide-react';
+import { ChevronLeft, LogOut, Menu } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 const ROUTE_META: Record<string, { crumb: string; title: string; back?: string }> = {
@@ -16,7 +16,7 @@ const ROUTE_META: Record<string, { crumb: string; title: string; back?: string }
   '/profile':    { crumb: 'Account',   title: 'Profile & settings' },
 };
 
-export default function Header() {
+export default function Header({ onMenu }: { onMenu?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [unread, setUnread] = useState(0);
@@ -42,15 +42,30 @@ export default function Header() {
     : ROUTE_META[sub] ?? { crumb: '', title: '' };
 
   return (
-    <header style={{
-      position: 'sticky', top: 0, zIndex: 30,
-      background: 'rgba(244,246,249,0.82)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid #E6E9EE',
-      padding: '0 34px', height: 70,
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+    <header
+      className="px-4 lg:px-[34px]"
+      style={{
+        position: 'sticky', top: 0, zIndex: 30,
+        background: 'rgba(244,246,249,0.82)',
+        backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #E6E9EE',
+        height: 70,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
+        <button
+          onClick={onMenu}
+          aria-label="Open menu"
+          className="bv-press flex items-center justify-center lg:hidden"
+          style={{
+            width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+            border: '1px solid #E2E7EE', background: '#fff',
+            cursor: 'pointer',
+          }}
+        >
+          <Menu size={18} color="#44506A" strokeWidth={2} />
+        </button>
         {meta.back && (
           <button
             onClick={() => router.push(BASE + meta.back!)}
@@ -68,9 +83,9 @@ export default function Header() {
             Back
           </button>
         )}
-        <div style={{ flexShrink: 0 }}>
+        <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 11.5, fontWeight: 700, color: '#93A0B2' }}>{meta.crumb}</div>
-          <h1 style={{ fontSize: 21, fontWeight: 800, letterSpacing: -0.4, color: '#15243B', margin: '1px 0 0', whiteSpace: 'nowrap' }}>
+          <h1 style={{ fontWeight: 800, letterSpacing: -0.4, color: '#15243B', margin: '1px 0 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} className="text-[17px] lg:text-[21px]">
             {meta.title}
           </h1>
         </div>
@@ -80,10 +95,11 @@ export default function Header() {
         {/* Switch back to the consumer (seeker) app — shared cookie = SSO */}
         <a
           href="/"
+          className="hidden lg:inline-flex"
           style={{
             height: 40, padding: '0 14px', borderRadius: 11, border: '1px solid #E2E7EE',
             background: '#fff', color: '#44506A', fontSize: 13, fontWeight: 700,
-            textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7,
+            textDecoration: 'none', alignItems: 'center', gap: 7,
           }}
         >
           <ChevronLeft size={15} color="#44506A" strokeWidth={2} />
@@ -120,7 +136,7 @@ export default function Header() {
         </Link>
 
         {/* Boost */}
-        <Link href="/dashboard/boost" style={{ textDecoration: 'none' }}>
+        <Link href="/dashboard/boost" className="hidden lg:block" style={{ textDecoration: 'none' }}>
           <button
             className="bv-press"
             style={{
@@ -134,7 +150,7 @@ export default function Header() {
           </button>
         </Link>
 
-        <div style={{ width: 1, height: 26, background: '#E2E7EE' }} />
+        <div className="hidden lg:block" style={{ width: 1, height: 26, background: '#E2E7EE' }} />
 
         {/* Profile avatar */}
         <Link href="/dashboard/profile" style={{ textDecoration: 'none' }}>

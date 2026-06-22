@@ -60,7 +60,7 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="animate-bvfade">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4" style={{ gap: 16, marginBottom: 20 }}>
         {KPIS.map(k => (
           <div key={k.label} className="bv-lift" style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 16, padding: 18, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
             <div style={{ fontSize: 12.5, fontWeight: 700, color: '#8893A4' }}>{k.label}</div>
@@ -72,7 +72,7 @@ export default async function AnalyticsPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]" style={{ gap: 20 }}>
         {/* Listings by engagement */}
         <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
           <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 16px' }}>Listings by engagement</h3>

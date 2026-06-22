@@ -36,7 +36,7 @@ export default function ReviewsClient({ reviews, totalReviews, avgRating, starCo
 
   return (
     <div className="animate-bvfade">
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: 22, alignItems: 'start' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr]" style={{ gap: 22, alignItems: 'start' }}>
         {/* Rating summary */}
         <div style={{ position: 'sticky', top: 86, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
           <div style={{ textAlign: 'center', paddingBottom: 18, borderBottom: '1px solid #F2F4F7' }}>

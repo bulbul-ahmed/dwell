@@ -97,7 +97,7 @@ export default async function OverviewPage() {
       </div>
 
       {/* KPIs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16, marginBottom: 20 }}>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" style={{ gap: 16, marginBottom: 20 }}>
         {KPIs.map(({ Icon, label, value, delta, dFg, bg, fg }) => (
           <div key={label} className="bv-lift" style={{
             background: '#fff', border: '1px solid #ECEEF1', borderRadius: 16,
@@ -115,7 +115,7 @@ export default async function OverviewPage() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 20, marginBottom: 20 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr]" style={{ gap: 20, marginBottom: 20 }}>
         {/* Performance chart — static 14-day visual */}
         <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: '22px 24px', boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -214,7 +214,7 @@ export default async function OverviewPage() {
         {data.topListings.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '32px 0', color: '#8893A4', fontSize: 13 }}>No listings yet</div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 16 }}>
             {data.topListings.map(l => {
               const statusLabel = l.verified ? 'Active' : 'Pending';
               const b = badge(statusLabel);

@@ -126,7 +126,7 @@ function BoostContent() {
         {step === 2 && (
           <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 26, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
             <h3 style={{ fontSize: 18, fontWeight: 800, color: '#15243B', margin: '0 0 18px' }}>Payment method</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 11, marginBottom: 20 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 11, marginBottom: 20 }}>
               {PAY_METHODS.map(m => {
                 const on = selPay === m.key;
                 return (
