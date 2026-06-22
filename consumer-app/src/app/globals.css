@@ -181,3 +181,24 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background:
   .g-list-wizard    { grid-template-columns: 1fr; }
   .list-preview-col { display: none; }
 }
+
+/* ── Owner dashboard (merged from provider app) ───────────────────────────── */
+@keyframes bvskel { 0% { background-position: -340px 0; } 100% { background-position: 340px 0; } }
+@keyframes bvfade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.animate-bvfade { animation: bvfade .4s ease both; }
+.bv-skel { background: linear-gradient(90deg, #EEF1F5 25%, #E3E8EF 37%, #EEF1F5 63%); background-size: 680px 100%; animation: bvskel 1.3s infinite linear; border-radius: 8px; }
+.bv-lift { transition: transform .34s cubic-bezier(.22,1,.36,1), box-shadow .34s cubic-bezier(.22,1,.36,1), border-color .3s ease; }
+.bv-lift:hover { transform: translateY(-3px); box-shadow: 0 22px 48px -28px rgba(18,38,66,.42); border-color: #DDE3EB; }
+.bv-press { transition: transform .14s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease, background .35s ease, border-color .25s ease, color .25s ease; }
+.bv-press:active { transform: translateY(1.5px) scale(.985); }
+.bv-rowh { transition: background .28s ease, box-shadow .28s ease; }
+.bv-rowh:hover { background: #F8FAFC; }
+.bv-nav { position: relative; overflow: hidden; transition: color .25s ease; }
+.bv-nav::before { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); transform: translateX(102%); transition: transform .42s cubic-bezier(.22,1,.36,1); }
+.bv-nav:hover::before { transform: translateX(0); }
+.bv-nav > * { position: relative; }
+.bv-nav .bv-navico { transition: transform .42s cubic-bezier(.22,1,.36,1); }
+.bv-nav:hover .bv-navico { transform: translateX(2px); }
+.bv-fill { position: relative; overflow: hidden; z-index: 0; }
+.bv-fill::before { content: ''; position: absolute; inset: 0; background: var(--fill, rgba(20,40,70,.06)); transform: scaleX(0); transform-origin: right center; transition: transform .45s cubic-bezier(.22,1,.36,1); z-index: -1; }
+.bv-fill:hover::before { transform: scaleX(1); }

@@ -1,12 +1,15 @@
 # Dwell — Local Setup
 
-Three Next.js apps over one Postgres DB.
+Two Next.js apps over one Postgres DB.
 
 | App | Dir | Port | URL | Auth |
 |---|---|---|---|---|
-| Consumer (seeker + light provider) | `consumer-app` | 3001 | http://localhost:3001 | `dwell_token` cookie |
+| Consumer (seeker + owner dashboard) | `consumer-app` | 3001 | http://localhost:3001 | `dwell_token` cookie |
 | Admin / moderation | `admin-app` | 3002 | http://localhost:3002 | `role === 'admin'` |
-| Provider / agency dashboard | `provider-app` | 3003 | http://localhost:3003 | `role === 'owner'` |
+
+> The owner/provider dashboard is **merged into the consumer app** at **`/dashboard`**
+> (role-gated to `role === 'owner'`). There is no separate provider app/port anymore.
+> Owners reach it via "Switch to Owner" (account) — same cookie, no re-login.
 
 ## Prerequisites
 - Node 20+ (developed on v25)
@@ -47,7 +50,6 @@ These are gitignored (secrets). Copy from each `.env.example` and fill.
 DATABASE_URL=postgresql://dwell:dwell@localhost:5434/dwell
 JWT_SECRET=dwell-dev-secret-change-in-production-32chars!!
 NEXT_PUBLIC_APP_URL=http://localhost:3001
-NEXT_PUBLIC_PROVIDER_URL=http://localhost:3003
 NEXT_PUBLIC_GOOGLE_MAPS_KEY=<your maps key>
 # optional — without these, emails/SMS log to console
 RESEND_API_KEY=
@@ -71,26 +73,18 @@ BULKSMSBD_API_KEY=
 BULKSMSBD_SENDER_ID=Dwell
 ```
 
-**`provider-app/.env.local`**
-```
-DATABASE_URL=postgresql://dwell:dwell@localhost:5434/dwell
-JWT_SECRET=dwell-dev-secret-change-in-production-32chars!!
-NEXT_PUBLIC_CONSUMER_URL=http://localhost:3001
-```
-
-> ✅ **All three apps share the same `JWT_SECRET`** → cross-app SSO works (the
-> `dwell_token` cookie is valid in consumer, admin and provider). "Switch to Owner"
-> (consumer account) and "Switch to browsing" (provider header) rely on this.
+> ✅ **Both apps share the same `JWT_SECRET`** → the `dwell_token` cookie is valid in
+> consumer and admin. The owner dashboard lives inside the consumer app (`/dashboard`),
+> so "Switch to Owner" needs no re-login.
 
 ## 5. Install + run (each app)
 ```bash
-cd consumer-app && npm install && npm run dev   # :3001
+cd consumer-app && npm install && npm run dev   # :3001  (seeker + /dashboard owner)
 cd admin-app    && npm install && npm run dev   # :3002
-cd provider-app && npm install && npm run dev   # :3003
 ```
 
 ## Test credentials
-- **Provider:** `rahima@dwell.bd` / `Dwell@1234` (owner "Rahima Properties", linked profile)
+- **Owner (→ /dashboard):** `rahima@dwell.bd` / `Dwell@1234` (owner "Rahima Properties", linked profile)
 - **Admin:** `admin@dwell.bd` (password not seeded — set one:
   `UPDATE users SET password_hash='<bcrypt>' WHERE email='admin@dwell.bd';`)
 

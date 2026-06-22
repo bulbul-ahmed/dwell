@@ -8,7 +8,9 @@ admin.dwell.bd {
 	reverse_proxy localhost:3002
 }
 
+# Owner dashboard merged into the consumer app at /dashboard.
+# Keep the old host working by redirecting to the new path.
 provider.dwell.bd {
 	tls internal
-	reverse_proxy localhost:3003
+	redir https://dwell.bd/dashboard{uri}
 }

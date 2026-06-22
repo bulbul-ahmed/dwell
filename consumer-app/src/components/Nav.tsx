@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import InsightsLink from '@/components/InsightsLink';
 
 const ACCENT = '#1E3A5C';
@@ -14,6 +14,7 @@ interface SessionUser { name: string; email: string; role: string }
 
 export default function Nav() {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
 
@@ -35,6 +36,9 @@ export default function Nav() {
     router.push('/');
     router.refresh();
   }
+
+  // Owner dashboard has its own chrome (Sidebar/Header) — hide the seeker nav there.
+  if (pathname?.startsWith('/dashboard')) return null;
 
   return (
     <>
