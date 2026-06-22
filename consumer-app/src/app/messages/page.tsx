@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { fmtPrice } from '@/data/listings';
@@ -63,6 +63,14 @@ function Bubble({ me, text, time }: { me: boolean; text: string; time: string })
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function MessagesPage() {
+  return (
+    <Suspense fallback={null}>
+      <MessagesInner />
+    </Suspense>
+  );
+}
+
+function MessagesInner() {
   const [threads,       setThreads]       = useState<ThreadRow[]>([]);
   const [activeThread,  setActiveThread]  = useState<ThreadRow | null>(null);
   const [msgs,          setMsgs]          = useState<MsgRow[]>([]);
