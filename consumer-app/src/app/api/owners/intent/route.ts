@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { db, users, owners } from '@/db';
 import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/session';
@@ -6,10 +7,13 @@ import { signToken, COOKIE_NAME } from '@/lib/jwt';
 
 // POST /api/owners/intent
 // Enter "owner mode": flip role → owner, ensure an owners row (status unverified).
+// Optional { address } captured during become-owner onboarding.
 // No verification performed here — that gates publishing, not intent.
-export async function POST() {
+export async function POST(req: NextRequest) {
   const userId = await getSession();
   if (!userId) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
+
+  const { address } = await req.json().catch(() => ({})) as { address?: string };
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -22,8 +26,11 @@ export async function POST() {
       type:         'Owner',
       responseTime: 'New',
       status:       'unverified',
+      address:      address ?? null,
       userId,
     }).returning();
+  } else if (address) {
+    [owner] = await db.update(owners).set({ address }).where(eq(owners.id, owner.id)).returning();
   }
 
   const res = NextResponse.json({

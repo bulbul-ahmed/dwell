@@ -75,6 +75,19 @@ export default function Header() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Switch back to the consumer (seeker) app — shared cookie = SSO */}
+        <a
+          href={(process.env.NEXT_PUBLIC_CONSUMER_URL ?? '') || '/'}
+          style={{
+            height: 40, padding: '0 14px', borderRadius: 11, border: '1px solid #E2E7EE',
+            background: '#fff', color: '#44506A', fontSize: 13, fontWeight: 700,
+            textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 7,
+          }}
+        >
+          <ChevronLeft size={15} color="#44506A" strokeWidth={2} />
+          Switch to browsing
+        </a>
+
         {/* Leads notification */}
         <Link href="/leads" style={{ textDecoration: 'none' }}>
           <button

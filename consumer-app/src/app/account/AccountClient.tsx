@@ -4,8 +4,10 @@ import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
+import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
+const PROVIDER_URL = process.env.NEXT_PUBLIC_PROVIDER_URL ?? '';
 
 const NOTIF_PREFS = [
   { label: 'Visit confirmations', sub: 'When an owner confirms or changes your visit' },
@@ -28,7 +30,7 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
   const [saving,        setSaving]        = useState(false);
   const [name,          setName]          = useState(initialUser.name);
   const [phone,         setPhone]         = useState(initialUser.phone ?? '');
-  const [roleSwitching, setRoleSwitching] = useState(false);
+  const [showOwnerSheet, setShowOwnerSheet] = useState(false);
   const [showChangePw,  setShowChangePw]  = useState(false);
   const [currentPw,     setCurrentPw]     = useState('');
   const [newPw,         setNewPw]         = useState('');
@@ -49,16 +51,8 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
     finally { setSaving(false); }
   };
 
-  const switchRole = async () => {
-    const newRole = user?.role === 'owner' ? 'renter' : 'owner';
-    setRoleSwitching(true);
-    try {
-      const res = await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: newRole }) });
-      const { user: u } = await res.json();
-      if (res.ok && u) setUser(u);
-    } catch { /* ignore */ }
-    finally { setRoleSwitching(false); }
-  };
+  // Owners jump straight to the provider dashboard (shared cookie = SSO).
+  const goToDashboard = () => { window.location.href = PROVIDER_URL || '/'; };
 
   const savePassword = async () => {
     setPwError(''); setPwSuccess('');
@@ -250,19 +244,19 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
               </div>
             )}
 
-            {/* Role switch */}
+            {/* Owner mode → provider dashboard */}
             <div style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 22, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#15243B', margin: '0 0 4px' }}>{isOwner ? 'Switch to Renter' : 'Become an Owner'}</h3>
+              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#15243B', margin: '0 0 4px' }}>{isOwner ? 'Owner Dashboard' : 'Become an Owner'}</h3>
               <p style={{ fontSize: 12.5, color: '#8893A4', margin: '0 0 14px' }}>
-                {isOwner ? 'Switch back to renter mode to browse listings and book visits.' : 'List your property and manage bookings as an owner.'}
+                {isOwner ? 'Manage your listings, leads and visits in the owner dashboard.' : 'List your property and manage bookings as an owner.'}
               </p>
-              <button onClick={switchRole} disabled={roleSwitching} className="acct-link"
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid #E7EAEE', borderRadius: 13, cursor: 'pointer', transition: 'background .25s, border-color .25s', background: '#fff', width: '100%', fontFamily: 'inherit', opacity: roleSwitching ? 0.6 : 1 }}
+              <button onClick={isOwner ? goToDashboard : () => setShowOwnerSheet(true)} className="acct-link"
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid #E7EAEE', borderRadius: 13, cursor: 'pointer', transition: 'background .25s, border-color .25s', background: '#fff', width: '100%', fontFamily: 'inherit' }}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 11, background: isOwner ? '#EAF1ED' : '#FFF0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{isOwner ? '🏠' : '🏢'}</div>
+                <div style={{ width: 38, height: 38, borderRadius: 11, background: '#FFF0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏢</div>
                 <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B' }}>{roleSwitching ? 'Switching…' : (isOwner ? 'Switch to Renter' : 'Switch to Owner')}</div>
-                  <div style={{ fontSize: 12, color: '#8893A4' }}>{isOwner ? 'Browse and book visits' : 'List & manage properties'}</div>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B' }}>Switch to Owner</div>
+                  <div style={{ fontSize: 12, color: '#8893A4' }}>{isOwner ? 'Open your dashboard' : 'List & manage properties'}</div>
                 </div>
                 <span style={{ color: '#AEB8C6' }}>→</span>
               </button>
@@ -386,6 +380,7 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
         {/* Sign out — full width, end of page */}
         <button onClick={signOut} style={{ width: '100%', marginTop: 22, padding: '14px 0', borderRadius: 14, border: '1px solid #F2D0CC', background: '#FFF8F7', color: '#C0392B', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
       </main>
+      {showOwnerSheet && <BecomeOwnerSheet onClose={() => setShowOwnerSheet(false)} />}
       <Footer />
     </div>
   );

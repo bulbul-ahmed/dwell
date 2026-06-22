@@ -63,6 +63,7 @@ export const owners = pgTable('owners', {
   businessName:   text('business_name'),
   tradeLicense:   text('trade_license'),
   businessDocUrl: text('business_doc_url'),
+  address:        text('address'),
   verifiedBy:     integer('verified_by'),
   verifiedAt:     timestamp('verified_at'),
   createdAt:      timestamp('created_at').defaultNow().notNull(),

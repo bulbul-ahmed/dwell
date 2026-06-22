@@ -74,12 +74,13 @@ BULKSMSBD_SENDER_ID=Dwell
 **`provider-app/.env.local`**
 ```
 DATABASE_URL=postgresql://dwell:dwell@localhost:5434/dwell
-JWT_SECRET=dwell-secret-key-change-in-production
+JWT_SECRET=dwell-dev-secret-change-in-production-32chars!!
+NEXT_PUBLIC_CONSUMER_URL=http://localhost:3001
 ```
 
-> ⚠️ **JWT secret mismatch (known):** provider uses a *different* `JWT_SECRET` than
-> consumer/admin, so a consumer login does NOT carry into the provider app (no SSO).
-> To enable cross-app redirect later, set all three to the same value.
+> ✅ **All three apps share the same `JWT_SECRET`** → cross-app SSO works (the
+> `dwell_token` cookie is valid in consumer, admin and provider). "Switch to Owner"
+> (consumer account) and "Switch to browsing" (provider header) rely on this.
 
 ## 5. Install + run (each app)
 ```bash
