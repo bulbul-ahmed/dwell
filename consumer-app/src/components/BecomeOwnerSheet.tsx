@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 
-const PROVIDER_URL = process.env.NEXT_PUBLIC_PROVIDER_URL ?? '';
 const ACCENT = '#1E3A5C';
 
-// Become-owner onboarding: phone (OTP verify) + address → owner mode → dashboard.
-export default function BecomeOwnerSheet({ onClose }: { onClose: () => void }) {
+// Become-owner onboarding: phone (OTP verify) + address → owner mode → redirect.
+// redirectTo defaults to the provider dashboard; pass '/list' for the listing wizard.
+export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () => void; redirectTo?: string }) {
+  const dest = redirectTo || '/dashboard';
   const [step, setStep]       = useState<'phone' | 'verify'>('phone');
   const [phone, setPhone]     = useState('');
   const [code, setCode]       = useState('');
@@ -45,7 +46,7 @@ export default function BecomeOwnerSheet({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ phone: phone.trim(), code: code.trim() }),
       });
       if (!res.ok) throw new Error();
-      window.location.href = PROVIDER_URL || '/';
+      window.location.href = dest;
     } catch {
       setError('Invalid or expired code.');
       setBusy(false);

@@ -33,6 +33,10 @@ const AUTH_ROLES = [
 
 type Flow = 'password' | 'otp-email' | 'otp-verify' | 'forgot-email' | 'forgot-verify';
 
+// MVP: email + password only. Google + email-OTP login hidden until OAuth is
+// configured. Forgot-password (OTP-based) and owner phone-verify stay on.
+const MVP_EMAIL_ONLY = true;
+
 function AuthPageInner() {
   const searchParams = useSearchParams();
   const nextUrl = searchParams.get('next') ?? '/';
@@ -43,7 +47,12 @@ function AuthPageInner() {
   const [pwVisible, setPwVisible] = useState(false);
   const [name,      setName]      = useState('');
   const [email,     setEmail]     = useState('');
+  const [phone,     setPhone]     = useState('');
   const [password,  setPassword]  = useState('');
+  const [confirmPw, setConfirmPw] = useState('');
+  const [ownerType, setOwnerType] = useState<'Owner' | 'Agency'>('Owner');
+  const [acceptTos, setAcceptTos] = useState(false);
+  const [marketing, setMarketing] = useState(false);
   const [otpCode,   setOtpCode]   = useState('');
   const [newPw,     setNewPw]     = useState('');
   const [newPwVis,  setNewPwVis]  = useState(false);
@@ -51,27 +60,64 @@ function AuthPageInner() {
   const [info,      setInfo]      = useState('');
   const [loading,   setLoading]   = useState(false);
 
-  const copy = COPY[mode];
   const isSignup = mode === 'signup';
+  const isOwnerIntent = role === 'own';
   const isForgot = flow === 'forgot-email' || flow === 'forgot-verify';
 
+  // Adaptive signup copy by intent (renter vs owner).
+  const copy = !isSignup ? COPY.signin : isOwnerIntent
+    ? { ...COPY.signup, title: 'List your property on Dwell.', sub: 'Create a free owner account to list properties, manage visit requests, and reach verified seekers.' }
+    : COPY.signup;
+
+  // Live password rules (signup only).
+  const pwRules = [
+    { label: 'At least 8 characters', ok: password.length >= 8 },
+    { label: 'One capital letter',    ok: /[A-Z]/.test(password) },
+    { label: 'One number',            ok: /[0-9]/.test(password) },
+    { label: 'One special character', ok: /[^A-Za-z0-9]/.test(password) },
+  ];
+  const pwValid = pwRules.every(r => r.ok);
+
+  // Field validity
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const phoneDigits = phone.replace(/\D/g, '').slice(0, 10);   // local part after +880
+  const phoneValid = /^1[3-9]\d{8}$/.test(phoneDigits);        // BD mobile: 1 + [3-9] + 8 digits
+  const fullPhone = phoneDigits ? '880' + phoneDigits : '';
+  const confirmOk = confirmPw.length > 0 && confirmPw === password;
+
+  // Create-account gate
+  const signupReady = !!name.trim() && emailValid && phoneValid && acceptTos;
+  const submitDisabled = loading || (
+    isSignup && flow === 'password'  ? !(signupReady && pwValid && confirmOk) :
+    isSignup && flow === 'otp-email' ? !signupReady :
+    false
+  );
+
   const redirect = () => { window.location.href = nextUrl; };
+  // Owners land in their dashboard (verification prompt handles phone+address there).
+  const redirectAfterSignup = () => { window.location.href = isOwnerIntent ? '/dashboard' : nextUrl; };
 
   const handlePasswordSubmit = async () => {
     setError('');
     if (!email)    { setError('Email is required'); return; }
-    if (!password) { setError('Password is required'); return; }
-    if (isSignup && !name)               { setError('Full name is required'); return; }
-    if (isSignup && password.length < 8) { setError('Password must be at least 8 characters'); return; }
+    if (isSignup) {
+      if (!name.trim())   { setError('Full name is required'); return; }
+      if (!emailValid)    { setError('Enter a valid email address'); return; }
+      if (!phoneValid)    { setError('Enter a valid Bangladesh mobile number'); return; }
+      if (!pwValid)       { setError('Password does not meet the requirements'); return; }
+      if (!confirmOk)     { setError('Passwords do not match'); return; }
+      if (!acceptTos)     { setError('Please accept the Terms & Privacy Policy'); return; }
+    } else if (!password) { setError('Password is required'); return; }
     setLoading(true);
     try {
       const endpoint = isSignup ? '/api/auth/signup' : '/api/auth/signin';
       const body = isSignup
-        ? { name, email, password, role: role === 'own' ? 'owner' : 'renter' }
+        ? { name, email, phone: fullPhone, password, role: isOwnerIntent ? 'owner' : 'renter', ownerType, marketingConsent: marketing, acceptTos }
         : { email, password };
       const res  = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json() as { error?: string };
       if (!res.ok) { setError(data.error ?? 'Something went wrong'); }
+      else if (isSignup) { redirectAfterSignup(); }
       else { redirect(); }
     } catch { setError('Network error. Please try again.'); }
     finally { setLoading(false); }
@@ -80,6 +126,12 @@ function AuthPageInner() {
   const handleSendOTP = async () => {
     setError(''); setInfo('');
     if (!email) { setError('Email is required'); return; }
+    if (isSignup) {
+      if (!name.trim()) { setError('Full name is required'); return; }
+      if (!emailValid)  { setError('Enter a valid email address'); return; }
+      if (!phoneValid)  { setError('Enter a valid Bangladesh mobile number'); return; }
+      if (!acceptTos)   { setError('Please accept the Terms & Privacy Policy'); return; }
+    }
     setLoading(true);
     try {
       const res  = await fetch('/api/auth/otp/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email }) });
@@ -98,12 +150,13 @@ function AuthPageInner() {
       const body = {
         email,
         code: otpCode,
-        role: role === 'own' ? 'owner' : 'renter',
-        ...(isSignup && name ? { name } : {}),
+        role: isOwnerIntent ? 'owner' : 'renter',
+        ...(isSignup ? { name, phone: fullPhone, ownerType, marketingConsent: marketing, acceptTos } : {}),
       };
       const res  = await fetch('/api/auth/otp/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json() as { error?: string };
       if (!res.ok) { setError(data.error ?? 'Invalid or expired code'); }
+      else if (isSignup) { redirectAfterSignup(); }
       else { redirect(); }
     } catch { setError('Network error. Please try again.'); }
     finally { setLoading(false); }
@@ -183,7 +236,7 @@ function AuthPageInner() {
           </Link>
         </div>
 
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '28px 40px 40px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 40px 48px' }}>
           <div style={{ width: '100%', maxWidth: 412 }}>
 
             {/* Forgot password flow */}
@@ -249,28 +302,77 @@ function AuthPageInner() {
               </>
             ) : (
               <>
+                {/* mode segmented control — sign in vs create account */}
+                <div style={{ display: 'flex', background: '#F1F3F6', borderRadius: 12, padding: 4, gap: 4, marginBottom: 22 }}>
+                  {(['signin', 'signup'] as const).map(m => {
+                    const on = mode === m;
+                    return (
+                      <button key={m} onClick={() => { setMode(m); setError(''); setInfo(''); setFlow('password'); }}
+                        style={{ flex: 1, padding: '9px 0', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700, background: on ? '#fff' : 'transparent', color: on ? '#15243B' : '#8A93A1', boxShadow: on ? '0 1px 2px rgba(20,40,70,.10)' : 'none', transition: 'background .3s, color .3s' }}>
+                        {m === 'signin' ? 'Sign in' : 'Create account'}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: '#F4F1EB', border: '1px solid #ECE6DA', borderRadius: 999, padding: '6px 13px', fontSize: 12, fontWeight: 600, color: '#8A7E66', marginBottom: 22 }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4F8A6B' }} />
                   {copy.badge}
                 </div>
 
                 <h1 style={{ fontWeight: 800, fontSize: 34, lineHeight: 1.1, letterSpacing: '-0.5px', margin: '0 0 9px', color: '#15243B' }}>{copy.title}</h1>
-                <p style={{ fontSize: 15, lineHeight: 1.55, color: '#6A7180', margin: '0 0 26px' }}>{copy.sub}</p>
+                <p style={{ fontSize: 15, lineHeight: 1.55, color: '#6A7180', margin: '0 0 22px' }}>{copy.sub}</p>
 
-                {/* social buttons */}
+                {/* intent selector (signup) — first, so it drives the whole flow */}
+                {isSignup && (
+                  <div style={{ marginBottom: 18 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: '#4A5161', marginBottom: 8 }}>I'm here to</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {AUTH_ROLES.map(r => {
+                        const active = role === r.id;
+                        return (
+                          <button key={r.id} onClick={() => setRole(r.id)} title={r.label} style={{
+                            flexGrow: active ? 5 : 1, flexBasis: 0, minWidth: 0, overflow: 'hidden', whiteSpace: 'nowrap',
+                            display: 'flex', alignItems: 'center', justifyContent: active ? 'flex-start' : 'center', gap: 9,
+                            height: 50, padding: active ? '0 16px' : '0', borderRadius: 13,
+                            border: `1.5px solid ${active ? ACCENT : '#E1E6EC'}`, background: active ? '#EEF3F8' : '#fff',
+                            cursor: 'pointer', fontFamily: 'inherit',
+                            transition: 'flex-grow .8s cubic-bezier(.22,1,.36,1), background .5s ease, border-color .5s ease, padding .8s cubic-bezier(.22,1,.36,1)',
+                          }}>
+                            <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>{r.icon}</span>
+                            <span style={{ fontSize: 13.5, fontWeight: 700, color: active ? ACCENT : '#41495A', maxWidth: active ? 180 : 0, opacity: active ? 1 : 0, overflow: 'hidden', transition: 'max-width .8s cubic-bezier(.22,1,.36,1), opacity .4s ease' }}>{r.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {isOwnerIntent && (
+                      <div style={{ fontSize: 11.5, color: '#9AA1AD', marginTop: 8 }}>You&apos;ll verify your phone after signing up. Register as an agency anytime from your dashboard.</div>
+                    )}
+                  </div>
+                )}
+
+                {!MVP_EMAIL_ONLY && (<>
+                {/* social buttons — Google not offered for owner sign-up (we must capture phone + consent) */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-                  <button
-                    onClick={() => { window.location.href = '/api/auth/google'; }}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 11, width: '100%', height: 48, border: '1px solid #E1E6EC', borderRadius: 13, background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#2A3344' }}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0012 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.06H2.18a11 11 0 000 9.88l3.66-2.84z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z" />
-                    </svg>
-                    Continue with Google
-                  </button>
+                  {!(isSignup && isOwnerIntent) && (
+                    <button
+                      onClick={() => { window.location.href = '/api/auth/google?next=' + encodeURIComponent(nextUrl); }}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 11, width: '100%', height: 48, border: '1px solid #E1E6EC', borderRadius: 13, background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14.5, fontWeight: 600, color: '#2A3344' }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z" />
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0012 23z" />
+                        <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 010-4.2V7.06H2.18a11 11 0 000 9.88l3.66-2.84z" />
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 002.18 7.06l3.66 2.84C6.71 7.3 9.14 5.38 12 5.38z" />
+                      </svg>
+                      Continue with Google
+                    </button>
+                  )}
+                  {isSignup && isOwnerIntent && (
+                    <div style={{ fontSize: 12, color: '#8A7E66', background: '#FBF8F1', border: '1px solid #ECE6DA', borderRadius: 11, padding: '10px 13px' }}>
+                      Owner accounts sign up with email so we can verify your phone and details.
+                    </div>
+                  )}
 
                   <button
                     onClick={() => { setFlow(f => f === 'password' ? 'otp-email' : 'password'); setError(''); setInfo(''); setOtpCode(''); }}
@@ -280,7 +382,7 @@ function AuthPageInner() {
                       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="currentColor" strokeWidth="1.8" />
                       <path d="M22 6l-10 7L2 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     </svg>
-                    {flow !== 'password' ? 'Use password instead' : 'Sign in with email OTP'}
+                    {flow !== 'password' ? 'Use password instead' : (isSignup ? 'Sign up with email OTP' : 'Sign in with email OTP')}
                   </button>
                 </div>
 
@@ -291,24 +393,7 @@ function AuthPageInner() {
                   </span>
                   <div style={{ flex: 1, height: 1, background: '#ECEEF1' }} />
                 </div>
-
-                {/* role selector (signup only) */}
-                {isSignup && (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 12.5, fontWeight: 700, color: '#4A5161', marginBottom: 8 }}>I'm here to</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                      {AUTH_ROLES.map(r => {
-                        const active = role === r.id;
-                        return (
-                          <button key={r.id} onClick={() => setRole(r.id)} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', border: `1.5px solid ${active ? ACCENT : '#E1E6EC'}`, background: active ? '#EEF3F8' : '#fff', borderRadius: 13, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left' }}>
-                            <span style={{ fontSize: 17 }}>{r.icon}</span>
-                            <span style={{ fontSize: 13.5, fontWeight: 700, color: active ? ACCENT : '#41495A' }}>{r.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                </>)}
 
                 {/* name (signup only) */}
                 {isSignup && (
@@ -318,11 +403,31 @@ function AuthPageInner() {
                   </label>
                 )}
 
+                {/* phone (signup, hidden on otp-verify) — BD mobile, +880 prefix */}
+                {isSignup && flow !== 'otp-verify' && (
+                  <label style={{ display: 'block', marginBottom: 14 }}>
+                    <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#4A5161', marginBottom: 7 }}>Phone number</span>
+                    <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', padding: '0 14px', height: 48, border: '1px solid #E1E6EC', borderRight: 'none', borderRadius: '13px 0 0 13px', background: '#F4F6F9', fontSize: 14.5, fontWeight: 700, color: '#5A6172' }}>+880</span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        value={phoneDigits}
+                        onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        placeholder="1711XXXXXX"
+                        style={{ ...inputStyle, borderRadius: '0 13px 13px 0', borderColor: phoneDigits && !phoneValid ? '#E0A99B' : '#E1E6EC' }}
+                      />
+                    </div>
+                    {phoneDigits && !phoneValid && <span style={{ fontSize: 11.5, color: '#C7553B', marginTop: 5, display: 'block' }}>Enter a valid Bangladesh mobile (e.g. 1711XXXXXX).</span>}
+                  </label>
+                )}
+
                 {/* email (hidden on otp-verify) */}
                 {flow !== 'otp-verify' && (
                   <label style={{ display: 'block', marginBottom: 14 }}>
                     <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#4A5161', marginBottom: 7 }}>Email address</span>
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" style={inputStyle} />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@email.com" style={{ ...inputStyle, borderColor: isSignup && email && !emailValid ? '#E0A99B' : '#E1E6EC' }} />
+                    {isSignup && email && !emailValid && <span style={{ fontSize: 11.5, color: '#C7553B', marginTop: 5, display: 'block' }}>Enter a valid email address.</span>}
                   </label>
                 )}
 
@@ -381,6 +486,48 @@ function AuthPageInner() {
                     </div>
                   </label>
                 )}
+
+                {/* live password rules + confirm (signup) */}
+                {isSignup && flow === 'password' && (
+                  <>
+                    <div style={{ margin: '-6px 0 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5px 12px' }}>
+                      {pwRules.map(r => (
+                        <div key={r.label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 600, color: r.ok ? '#2E7D55' : '#9AA1AD' }}>
+                          <span style={{ width: 15, height: 15, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: r.ok ? '#2E7D55' : '#E1E6EC', color: '#fff', fontSize: 9, fontWeight: 800 }}>{r.ok ? '✓' : ''}</span>
+                          {r.label}
+                        </div>
+                      ))}
+                    </div>
+                    <label style={{ display: 'block', marginBottom: 16 }}>
+                      <span style={{ display: 'block', fontSize: 12.5, fontWeight: 700, color: '#4A5161', marginBottom: 7 }}>Confirm password</span>
+                      <input type={pwVisible ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Re-enter password" onKeyDown={e => { if (e.key === 'Enter') handlePasswordSubmit(); }} style={{ ...inputStyle, borderColor: confirmPw ? (confirmOk ? '#B7DCC6' : '#E0A99B') : '#E1E6EC' }} />
+                      {confirmPw && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11.5, fontWeight: 600, color: confirmOk ? '#2E7D55' : '#C7553B' }}>
+                          <span style={{ width: 15, height: 15, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: confirmOk ? '#2E7D55' : '#E0A99B', color: '#fff', fontSize: 9, fontWeight: 800 }}>{confirmOk ? '✓' : '✕'}</span>
+                          {confirmOk ? 'Passwords match' : "Passwords don't match"}
+                        </div>
+                      )}
+                    </label>
+                  </>
+                )}
+
+                {/* consent (signup) */}
+                {isSignup && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, marginBottom: 20 }}>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={acceptTos} onChange={e => setAcceptTos(e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, accentColor: ACCENT, cursor: 'pointer' }} />
+                      <span style={{ fontSize: 12.5, color: '#5A6172', lineHeight: 1.45 }}>
+                        I agree to Dwell's <span style={{ color: ACCENT, textDecoration: 'underline' }}>Terms</span> &amp; <span style={{ color: ACCENT, textDecoration: 'underline' }}>Privacy Policy</span>.
+                      </span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: 9, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={marketing} onChange={e => setMarketing(e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, accentColor: ACCENT, cursor: 'pointer' }} />
+                      <span style={{ fontSize: 12.5, color: '#5A6172', lineHeight: 1.45 }}>
+                        Send me listing alerts &amp; updates by email and SMS. (optional)
+                      </span>
+                    </label>
+                  </div>
+                )}
               </>
             )}
 
@@ -389,8 +536,8 @@ function AuthPageInner() {
 
             <button
               onClick={handleSubmit}
-              disabled={loading}
-              style={{ width: '100%', height: 50, background: ACCENT, color: '#fff', border: 'none', borderRadius: 13, fontFamily: 'inherit', fontSize: 15.5, fontWeight: 700, cursor: loading ? 'default' : 'pointer', opacity: loading ? 0.7 : 1, boxShadow: '0 12px 24px -10px rgba(30,58,92,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
+              disabled={submitDisabled}
+              style={{ width: '100%', height: 50, background: ACCENT, color: '#fff', border: 'none', borderRadius: 13, fontFamily: 'inherit', fontSize: 15.5, fontWeight: 700, cursor: submitDisabled ? 'not-allowed' : 'pointer', opacity: submitDisabled ? 0.55 : 1, boxShadow: '0 12px 24px -10px rgba(30,58,92,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9 }}
             >
               {ctaLabel}
               {!loading && <svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="#fff" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" /></svg>}
@@ -405,12 +552,14 @@ function AuthPageInner() {
               </p>
             )}
 
-            <p style={{ textAlign: 'center', fontSize: 11.5, color: '#A2A8B2', lineHeight: 1.5, margin: '26px 0 0' }}>
-              By continuing you agree to Dwell's{' '}
-              <span style={{ color: '#6A7180', textDecoration: 'underline', cursor: 'pointer' }}>Terms</span>{' '}
-              &amp;{' '}
-              <span style={{ color: '#6A7180', textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</span>.
-            </p>
+            {!isSignup && !isForgot && (
+              <p style={{ textAlign: 'center', fontSize: 11.5, color: '#A2A8B2', lineHeight: 1.5, margin: '26px 0 0' }}>
+                By continuing you agree to Dwell's{' '}
+                <span style={{ color: '#6A7180', textDecoration: 'underline', cursor: 'pointer' }}>Terms</span>{' '}
+                &amp;{' '}
+                <span style={{ color: '#6A7180', textDecoration: 'underline', cursor: 'pointer' }}>Privacy Policy</span>.
+              </p>
+            )}
           </div>
         </div>
       </div>

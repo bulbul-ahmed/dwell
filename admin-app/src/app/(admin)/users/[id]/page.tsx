@@ -1,4 +1,4 @@
-import { db, users, listings } from '@/db';
+import { db, users, listings, owners } from '@/db';
 import { eq, count } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
@@ -22,6 +22,12 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
     .from(listings)
     .leftJoin(users, eq(listings.ownerId, users.id))
     .where(eq(users.id, parseInt(id)));
+
+  // Owner profile (type + verification) for owner accounts.
+  const [ownerProfile] = user.role === 'owner'
+    ? await db.select({ type: owners.type, status: owners.status, address: owners.address })
+        .from(owners).where(eq(owners.userId, user.id)).limit(1)
+    : [undefined];
 
   const adminInitials = initials(session.name);
   const userIni = initials(user.name);
@@ -133,6 +139,13 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
                 { k: 'Email', v: user.email },
                 { k: 'Phone', v: user.phone ?? '—' },
                 { k: 'Role', v: user.role },
+                { k: 'Marketing consent', v: user.marketingConsent ? 'Yes' : 'No' },
+                { k: 'Terms accepted', v: user.tosAcceptedAt ? new Date(user.tosAcceptedAt).toLocaleDateString() : '—' },
+                ...(ownerProfile ? [
+                  { k: 'Owner type', v: ownerProfile.type },
+                  { k: 'Verification', v: ownerProfile.status.replace(/_/g, ' ') },
+                  { k: 'Owner address', v: ownerProfile.address ?? '—' },
+                ] : []),
                 { k: 'User ID', v: `#${user.id}` },
                 { k: 'Created', v: new Date(user.createdAt).toLocaleString() },
               ].map(f => (

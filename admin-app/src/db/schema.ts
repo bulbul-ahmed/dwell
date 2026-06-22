@@ -28,6 +28,8 @@ export const users = pgTable('users', {
   avatarUrl:    text('avatar_url'),
   passwordHash: text('password_hash'),
   role:         userRoleEnum('role').default('renter').notNull(),
+  marketingConsent: boolean('marketing_consent').notNull().default(false),
+  tosAcceptedAt:    timestamp('tos_accepted_at'),
   createdAt:    timestamp('created_at').defaultNow().notNull(),
 });
 

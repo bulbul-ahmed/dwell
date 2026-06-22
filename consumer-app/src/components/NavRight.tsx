@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useDwellStore } from '@/lib/store';
 import HeartIcon from '@/components/HeartIcon';
+import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
 
@@ -15,7 +16,15 @@ export default function NavRight() {
   const loadSaves = useDwellStore(s => s.loadSaves);
   const savedCount = Object.values(saved).filter(Boolean).length;
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [listSheet, setListSheet] = useState(false);
   const router = useRouter();
+
+  // "List your property": renters verify (phone+address) first, then the wizard.
+  const onListProperty = () => {
+    if (!user) { router.push('/auth?next=/list'); return; }
+    if (user.role === 'owner') { router.push('/list'); return; }
+    setListSheet(true);
+  };
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -176,9 +185,11 @@ export default function NavRight() {
       )}
 
       {/* List your property */}
-      <Link href="/list" style={{ fontSize: 14.5, fontWeight: 600, color: '#15243B', textDecoration: 'none' }}>
+      <button onClick={onListProperty} style={{ fontSize: 14.5, fontWeight: 600, color: '#15243B', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>
         List your property
-      </Link>
+      </button>
+
+      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/list" />}
 
       {/* Auth area */}
       {user ? (

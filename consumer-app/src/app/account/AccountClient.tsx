@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Footer from '@/components/Footer';
 import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
-const PROVIDER_URL = process.env.NEXT_PUBLIC_PROVIDER_URL ?? '';
 
 const NOTIF_PREFS = [
   { label: 'Visit confirmations', sub: 'When an owner confirms or changes your visit' },
@@ -52,7 +51,11 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
   };
 
   // Owners jump straight to the provider dashboard (shared cookie = SSO).
-  const goToDashboard = () => { window.location.href = PROVIDER_URL || '/'; };
+  // Brief branded transition so the cross-app jump feels intentional, not a reload.
+  const goToDashboard = () => {
+    setSwitching(true);
+    setTimeout(() => { window.location.href = '/dashboard'; }, 3500);
+  };
 
   const savePassword = async () => {
     setPwError(''); setPwSuccess('');
@@ -86,31 +89,15 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
   };
 
   const isOwner = user?.role === 'owner';
-
-  type MyListing = {
-    id: number; cat: string; title: string; area: string;
-    price: number; cover: string; verified: boolean; beds: number; floor: string;
-    moderationStatus: string; rejectionReason: string | null;
-    createdAt: string;
-  };
-  const [myListings, setMyListings]       = useState<MyListing[]>([]);
-  const [listingsLoading, setListingsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!isOwner) return;
-    setListingsLoading(true);
-    fetch('/api/listings/mine')
-      .then(r => r.json())
-      .then(({ listings }: { listings: MyListing[] }) => setMyListings(listings ?? []))
-      .catch(() => {})
-      .finally(() => setListingsLoading(false));
-  }, [isOwner]);
+  const [switching, setSwitching] = useState(false);
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <style>{`
         .acct-link:hover { background: #F4F6F9 !important; border-color: #D0D5DE !important; }
         @keyframes bvfade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+        @keyframes acctspin { to { transform: rotate(360deg); } }
+        @keyframes acctover { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
       <main className="pg-md" style={{ animation: 'bvfade .4s ease both' }}>
         <h1 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400, fontSize: 34, margin: '0 0 26px', color: '#15243B' }}>Account</h1>
@@ -136,12 +123,9 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'nowrap' }}>
                   <h2 style={{ fontSize: 20, fontWeight: 800, color: '#15243B', margin: 0, whiteSpace: 'nowrap' }}>{user.name}</h2>
-                  <span style={{ fontSize: 11.5, fontWeight: 800, color: isOwner ? '#7C4D1A' : '#2E7D55', background: isOwner ? '#FFF0E0' : '#EAF1ED', padding: '4px 10px', borderRadius: 999 }}>
-                    {isOwner ? '🏢 Owner' : '✓ Renter'}
-                  </span>
                 </div>
                 <div style={{ fontSize: 13.5, color: '#6A7180', marginTop: 5 }}>
-                  {user.role} · joined {new Date(user.createdAt).toLocaleDateString('en', { month: 'short', year: 'numeric' })}
+                  Joined {new Date(user.createdAt).toLocaleDateString('en', { month: 'short', year: 'numeric' })}
                 </div>
 
                 {/* Stats */}
@@ -175,74 +159,6 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
                 </Link>
               </div>
             </div>
-
-            {/* My Properties */}
-            {isOwner && (
-              <div style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 22, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                  <h3 style={{ fontSize: 15, fontWeight: 800, color: '#15243B', margin: 0 }}>My Properties</h3>
-                  <Link href="/list" style={{ height: 32, padding: '0 13px', borderRadius: 9, background: ACCENT, color: '#fff', fontSize: 12.5, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    + List new
-                  </Link>
-                </div>
-
-                {listingsLoading ? (
-                  <div style={{ padding: '22px 0', textAlign: 'center', fontSize: 13, color: '#9AA6B6' }}>Loading…</div>
-                ) : myListings.length === 0 ? (
-                  <div style={{ padding: '22px 14px', textAlign: 'center', background: '#F8FAFC', borderRadius: 14, border: '1px dashed #D0D7E0' }}>
-                    <div style={{ fontSize: 26, marginBottom: 8 }}>🏠</div>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B', marginBottom: 4 }}>No properties yet</div>
-                    <div style={{ fontSize: 12, color: '#9AA6B6', marginBottom: 12 }}>Your listings appear here after submission.</div>
-                    <Link href="/list" style={{ fontSize: 13, fontWeight: 700, color: ACCENT, textDecoration: 'none' }}>List your first property →</Link>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {myListings.map(l => {
-                      const status = l.moderationStatus ?? (l.verified ? 'active' : 'pending');
-                      const isRejected = status === 'rejected';
-                      const isLive     = status === 'active';
-
-                      const badgeBg    = isRejected ? '#FDF1EF' : isLive ? '#EAF1ED' : '#FFF8E7';
-                      const badgeFg    = isRejected ? '#B4402B' : isLive ? '#2E7D55' : '#A06D1A';
-                      const badgeLabel = isRejected ? '✕ Rejected' : isLive ? '✓ Live' : '⏳ Pending review';
-
-                      return (
-                        <Link key={l.id} href={`/listings/${l.id}/status`} style={{
-                          display: 'block', textDecoration: 'none',
-                          padding: '10px 12px', background: isRejected ? '#FFFAF9' : '#F8FAFC',
-                          borderRadius: 13, border: isRejected ? '1px solid #F0D9D2' : '1px solid #ECEEF1',
-                        }}>
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            {/* Thumbnail */}
-                            <div style={{ width: 58, height: 48, borderRadius: 9, overflow: 'hidden', flexShrink: 0, background: '#DDD3C5' }}>
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={l.cover} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </div>
-                            {/* Info */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.title}</div>
-                              <div style={{ fontSize: 11.5, color: '#8893A4', marginTop: 2 }}>{l.area} · ৳{l.price.toLocaleString('en')}/mo</div>
-                              <span style={{ display: 'inline-block', marginTop: 5, fontSize: 10.5, fontWeight: 800, borderRadius: 999, padding: '2px 9px', background: badgeBg, color: badgeFg }}>
-                                {badgeLabel}
-                              </span>
-                            </div>
-                            {/* Chevron */}
-                            <div style={{ flexShrink: 0, color: '#B6BFCC', fontSize: 18, fontWeight: 700 }}>›</div>
-                          </div>
-                          {/* Rejection reason banner */}
-                          {isRejected && l.rejectionReason && (
-                            <div style={{ marginTop: 10, padding: '8px 12px', background: '#FDF1EF', borderRadius: 9, border: '1px solid #F0D9D2' }}>
-                              <span style={{ fontSize: 11.5, fontWeight: 700, color: '#B4402B' }}>Reason: </span>
-                              <span style={{ fontSize: 11.5, color: '#B4402B' }}>{l.rejectionReason}</span>
-                            </div>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Owner mode → provider dashboard */}
             <div style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 22, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
@@ -381,6 +297,24 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
         <button onClick={signOut} style={{ width: '100%', marginTop: 22, padding: '14px 0', borderRadius: 14, border: '1px solid #F2D0CC', background: '#FFF8F7', color: '#C0392B', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
       </main>
       {showOwnerSheet && <BecomeOwnerSheet onClose={() => setShowOwnerSheet(false)} />}
+
+      {/* Cross-app transition splash → owner dashboard */}
+      {switching && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 2000,
+          background: 'linear-gradient(150deg, #16273F, #2C557F)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 22, animation: 'acctover .25s ease both',
+        }}>
+          <div style={{ width: 62, height: 62, borderRadius: 18, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>🏢</div>
+          <div style={{ textAlign: 'center', color: '#fff' }}>
+            <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.3 }}>Opening your Owner Dashboard</div>
+            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,.7)', marginTop: 5 }}>Signing you in to Dwell for Owners…</div>
+          </div>
+          <div style={{ width: 30, height: 30, borderRadius: '50%', border: '3px solid rgba(255,255,255,.25)', borderTopColor: '#fff', animation: 'acctspin .8s linear infinite' }} />
+        </div>
+      )}
+
       <Footer />
     </div>
   );

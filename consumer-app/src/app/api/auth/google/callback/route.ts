@@ -49,11 +49,13 @@ export async function GET(request: NextRequest) {
   // Upsert user
   let [user] = await db.select().from(users).where(eq(users.email, profile.email)).limit(1);
   if (!user) {
+    // New Google signups are renters; ToS acceptance is implied at the auth screen.
     [user] = await db.insert(users).values({
-      name:      profile.name ?? profile.email.split('@')[0],
-      email:     profile.email,
-      avatarUrl: profile.picture,
-      role:      'renter',
+      name:          profile.name ?? profile.email.split('@')[0],
+      email:         profile.email,
+      avatarUrl:     profile.picture,
+      role:          'renter',
+      tosAcceptedAt: new Date(),
     }).returning();
   } else if (profile.picture && !user.avatarUrl) {
     [user] = await db.update(users)
