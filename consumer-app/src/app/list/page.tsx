@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Footer from '@/components/Footer';
+import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 import { GoogleMap, Polygon, Autocomplete, useJsApiLoader } from '@react-google-maps/api';
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 
@@ -259,11 +260,14 @@ export default function ListPage() {
   const [advance, setAdvance]               = useState('2');
   const [serviceCharge, setServiceCharge]   = useState('');
   const [negotiable, setNegotiable]         = useState(false);
+  const [availMode, setAvailMode]           = useState<'immediate' | 'date'>('immediate');
+  const [availDate, setAvailDate]           = useState('');
   const [hostelAmen, setHostelAmen]         = useState<Set<string>>(new Set(['Bed & mattress','WiFi']));
   const [mealsIncluded, setMealsIncluded]   = useState(false);
   const [meals, setMeals]                   = useState<Set<string>>(new Set());
 
   const [submitting, setSubmitting] = useState(false);
+  const [verifyGate, setVerifyGate] = useState(false);
 
   // ── Edit mode ──────────────────────────────────────────────────────────────
   const [editId, setEditId]               = useState<number | null>(null);
@@ -300,6 +304,7 @@ export default function ListPage() {
         setPrice(l.price ? l.price.toLocaleString('en') : '');
         setAdvance(String(l.adv ?? 2));
         setServiceCharge(l.service ? String(l.service) : '');
+        if (l.availableFrom && l.availableFrom !== 'immediate') { setAvailMode('date'); setAvailDate(l.availableFrom); }
         if (l.landmark) {
           const parts = l.landmark.split(' · ');
           setAddress(parts[0] ?? '');
@@ -486,6 +491,7 @@ export default function ListPage() {
         negotiable,
         advance:     isBuy ? 0 : parseInt(advance) || 2,
         service:     parseInt(serviceCharge) || undefined,
+        availableFrom: availMode === 'date' && availDate ? availDate : 'immediate',
         amenities:   isHostel ? [...hostelAmen] : [...amenities],
         shots,
         shotCats,
@@ -508,6 +514,8 @@ export default function ListPage() {
         body: JSON.stringify(body),
       });
       if (res.status === 401) { router.replace(`/auth?next=/list${isEdit ? `?edit=${editId}` : ''}`); return; }
+      // Unverified owner — gate publishing behind phone + address, then return here.
+      if (res.status === 403) { setVerifyGate(true); setSubmitting(false); return; }
       if (res.ok) {
         if (isEdit) { router.push(`/listings/${editId}/status`); return; }
         const { id } = (await res.json()) as { id: number };
@@ -1062,6 +1070,21 @@ export default function ListPage() {
                     <span style={{ fontSize: 14, fontWeight: 600, color: '#15243B' }}>Price is negotiable</span>
                     <Toggle on={negotiable} onChange={() => setNegotiable(n => !n)} />
                   </label>
+
+                  <div style={{ marginTop: 18 }}>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#15243B', marginBottom: 8 }}>{isBuy ? 'Possession' : 'Available from'}</label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {([['immediate', isBuy ? 'Ready now' : 'Immediately'], ['date', 'From a date']] as const).map(([m, lbl]) => {
+                        const on = availMode === m;
+                        return (
+                          <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>
+                        );
+                      })}
+                    </div>
+                    {availMode === 'date' && (
+                      <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -1148,6 +1171,7 @@ export default function ListPage() {
           </aside>
         </div>
       </main>
+      {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} redirectTo="/list" />}
       <Footer />
     </div>
   );

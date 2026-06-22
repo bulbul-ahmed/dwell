@@ -40,6 +40,7 @@ function mapListing(row: { listing: typeof listings.$inferSelect; owner: typeof 
     desc: row.listing.description ?? '',
     propertyType: row.listing.propertyType ?? null,
     availableFrom: row.listing.availableFrom ?? null,
+    createdAt: row.listing.createdAt ? row.listing.createdAt.toISOString() : null,
     landmark: row.listing.landmark ?? null,
     facing: row.listing.facing ?? null,
     balconies: row.listing.balconies ?? null,
@@ -114,6 +115,7 @@ export async function POST(request: NextRequest) {
     amenities?: string[]; shots?: string[]; shotCats?: string[];
     videos?: string[]; meta?: Record<string, unknown>;
     mapLat?: number; mapLng?: number; zoneId?: number;
+    availableFrom?: string;
     action?: 'draft' | 'submit';
   };
 
@@ -167,6 +169,7 @@ export async function POST(request: NextRequest) {
     pref:         body.pref ?? 'Any',
     advance:      body.advance ?? 2,
     service:      body.service ?? Math.round(body.price * 0.06),
+    availableFrom: body.availableFrom ?? 'immediate',
     verified:     false,
     moderationStatus: action === 'draft' ? 'draft' : 'pending',
     sale:         body.cat === 'buy',

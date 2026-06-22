@@ -158,7 +158,7 @@ export default function DetailClient() {
   const isSaved = !!saved[sel.id];
   const priceLabel = fmtPrice(sel);
   const isOwnListing = currentUserId !== null && sel.ownerUserId === currentUserId;
-  const providerUrl = (process.env.NEXT_PUBLIC_PROVIDER_URL ?? '') + `/listings/${sel.id}`;
+  const providerUrl = `/dashboard/listings/${sel.id}`;
 
   // Category tab logic — only shown when ≥2 distinct labeled categories exist
   const shotCats = sel.shotCats ?? [];
@@ -462,7 +462,16 @@ export default function DetailClient() {
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
                 <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, color: '#15243B' }}>{priceLabel}</span>
               </div>
-              <div style={{ fontSize: 13, color: '#8B93A1', marginBottom: 20 }}>{sel.furnishing} · Available now</div>
+              <div style={{ fontSize: 13, color: '#8B93A1', marginBottom: 6 }}>
+                {sel.furnishing} · {sel.availableFrom && sel.availableFrom !== 'immediate'
+                  ? `Available ${new Date(sel.availableFrom).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                  : 'Available now'}
+              </div>
+              {sel.createdAt && (() => {
+                const d = Math.floor((Date.now() - new Date(sel.createdAt).getTime()) / 86400000);
+                const label = d <= 0 ? 'Listed today' : d === 1 ? 'Listed yesterday' : d < 30 ? `Listed ${d} days ago` : `Listed ${Math.floor(d / 30)} month${d < 60 ? '' : 's'} ago`;
+                return <div style={{ fontSize: 12.5, color: '#9AA6B6', marginBottom: 18 }}>{d <= 7 && <span style={{ color: '#2E7D55', fontWeight: 700 }}>New · </span>}{label}</div>;
+              })()}
 
               <div style={{ background: '#F4F6F9', borderRadius: 13, padding: '15px 16px', marginBottom: 18 }}>
                 {costRows.map(r => (
@@ -492,7 +501,7 @@ export default function DetailClient() {
                   </a>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <a
-                      href={(process.env.NEXT_PUBLIC_PROVIDER_URL ?? '') + '/leads'}
+                      href={'/dashboard/leads'}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ flex: 1, textAlign: 'center', background: '#fff', color: '#15243B', border: '1px solid #D3D9E0', borderRadius: 12, padding: '11px 0', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
@@ -500,7 +509,7 @@ export default function DetailClient() {
                       View leads
                     </a>
                     <a
-                      href={(process.env.NEXT_PUBLIC_PROVIDER_URL ?? '') + '/analytics'}
+                      href={'/dashboard/analytics'}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{ flex: 1, textAlign: 'center', background: '#fff', color: '#15243B', border: '1px solid #D3D9E0', borderRadius: 12, padding: '11px 0', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}

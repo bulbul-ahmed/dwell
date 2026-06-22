@@ -55,6 +55,7 @@ export interface Listing {
   shotUrls: string[];
   propertyType?: string | null;
   availableFrom?: string | null;
+  createdAt?: string | null;
   landmark?: string | null;
   facing?: string | null;
   balconies?: number | null;

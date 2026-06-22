@@ -28,6 +28,12 @@ const ListingCard = forwardRef<HTMLAnchorElement, Props>(function ListingCard(
   const priceLabel = fmtPrice(c);
   const sizeLabel = `${c.size} sqft`;
 
+  const daysSince = c.createdAt ? Math.floor((Date.now() - new Date(c.createdAt).getTime()) / 86400000) : null;
+  const isNew = daysSince !== null && daysSince <= 7;
+  const availLabel = c.availableFrom && c.availableFrom !== 'immediate'
+    ? `Available ${new Date(c.availableFrom).toLocaleDateString('en', { day: 'numeric', month: 'short' })}`
+    : 'Available now';
+
   // Category-aware specs — hostels show gender, offices show size, not beds/baths.
   const specs: string[] =
     c.cat === 'student'
@@ -66,6 +72,9 @@ const ListingCard = forwardRef<HTMLAnchorElement, Props>(function ListingCard(
         >
           <HeartIcon saved={saved} size={17} />
         </button>
+        {isNew && (
+          <div style={{ position: 'absolute', top: 12, left: 12, background: '#2E7D55', color: '#fff', borderRadius: 999, padding: '5px 11px', fontSize: 11.5, fontWeight: 700 }}>New</div>
+        )}
         {c.verified && (
           <div style={{ position: 'absolute', bottom: 12, left: 12, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(21,36,59,0.86)', color: '#fff', borderRadius: 999, padding: '5px 11px', fontSize: 11.5, fontWeight: 600 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
@@ -89,7 +98,8 @@ const ListingCard = forwardRef<HTMLAnchorElement, Props>(function ListingCard(
           <div style={{ display: 'flex', alignItems: 'center', gap: 11, paddingTop: 12, borderTop: '1px solid #EDF0F4', fontSize: 12.5, color: '#5A6172', fontWeight: 500 }}>
             {renderSpecs()}
           </div>
-          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, color: '#15243B', marginTop: 12 }}>{priceLabel}</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: availLabel === 'Available now' ? '#2E7D55' : '#8A6D1F', marginTop: 9 }}>{availLabel}</div>
+          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 22, color: '#15243B', marginTop: 10 }}>{priceLabel}</div>
         </div>
       ) : (
         <div style={{ padding: '16px 17px 18px' }}>
@@ -104,7 +114,8 @@ const ListingCard = forwardRef<HTMLAnchorElement, Props>(function ListingCard(
           <div style={{ display: 'flex', alignItems: 'center', gap: 13, paddingTop: 13, borderTop: '1px solid #EDF0F4', fontSize: 13, color: '#5A6172', fontWeight: 500 }}>
             {renderSpecs()}
           </div>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 14 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: availLabel === 'Available now' ? '#2E7D55' : '#8A6D1F', marginTop: 10 }}>{availLabel}</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 12 }}>
             <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 24, color: '#15243B' }}>{priceLabel}</div>
             <div style={{ fontSize: 12.5, color: '#8B93A1', fontWeight: 500 }}>{c.furnishing}</div>
           </div>
