@@ -10,14 +10,20 @@ async function getPendingCounts() {
   const [mod] = await db.execute(
     sql`SELECT COUNT(*) as count FROM listings WHERE verified = false`
   );
-  return { pendingMod: Number((mod as { count: string }).count) };
+  const [kyc] = await db.execute(
+    sql`SELECT COUNT(*) as count FROM owners WHERE verified_at IS NULL AND (status = 'agency_pending' OR nid_number IS NOT NULL)`
+  );
+  return {
+    pendingMod: Number((mod as { count: string }).count),
+    pendingKyc: Number((kyc as { count: string }).count),
+  };
 }
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getAdminSession();
   if (!session) redirect('/login');
 
-  const { pendingMod } = await getPendingCounts();
+  const { pendingMod, pendingKyc } = await getPendingCounts();
   const initials = session.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
@@ -26,6 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         adminName={session.name}
         adminRole="Lead Moderator"
         pendingMod={pendingMod}
+        pendingKyc={pendingKyc}
       />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {children}

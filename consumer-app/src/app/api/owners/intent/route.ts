@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
   const userId = await getSession();
   if (!userId) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
 
-  const { address } = await req.json().catch(() => ({})) as { address?: string };
+  const { address, type } = await req.json().catch(() => ({})) as { address?: string; type?: string };
+  const ownerType: 'Owner' | 'Agency' = type === 'Agency' ? 'Agency' : 'Owner';
 
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -23,14 +24,19 @@ export async function POST(req: NextRequest) {
   if (!owner) {
     [owner] = await db.insert(owners).values({
       name:         user.name,
-      type:         'Owner',
+      type:         ownerType,
       responseTime: 'New',
       status:       'unverified',
       address:      address ?? null,
       userId,
     }).returning();
-  } else if (address) {
-    [owner] = await db.update(owners).set({ address }).where(eq(owners.id, owner.id)).returning();
+  } else {
+    const set: Partial<typeof owners.$inferInsert> = {};
+    if (address) set.address = address;
+    if (type === 'Owner' || type === 'Agency') set.type = ownerType;
+    if (Object.keys(set).length) {
+      [owner] = await db.update(owners).set(set).where(eq(owners.id, owner.id)).returning();
+    }
   }
 
   const res = NextResponse.json({

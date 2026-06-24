@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { db, users, saves, bookings, reviews } from '@/db';
+import { db, users, saves, bookings, reviews, owners } from '@/db';
 import { eq, count } from 'drizzle-orm';
 import { getSession } from '@/lib/session';
 import { signToken, COOKIE_NAME } from '@/lib/jwt';
@@ -56,6 +56,22 @@ export async function PATCH(request: NextRequest) {
   }
 
   const [updated] = await db.update(users).set(updates).where(eq(users.id, userId)).returning();
+
+  // Promoting to owner must never leave the account without an owners profile —
+  // getProviderSession requires that row, so a role flip alone would lock the
+  // user out of Provider Studio (redirect to login). Ensure it exists.
+  if (updates.role === 'owner') {
+    const [owner] = await db.select({ id: owners.id }).from(owners).where(eq(owners.userId, userId)).limit(1);
+    if (!owner) {
+      await db.insert(owners).values({
+        name:         updated.name,
+        type:         'Owner',
+        responseTime: 'New',
+        status:       'unverified',
+        userId,
+      });
+    }
+  }
 
   if (updates.role) {
     const token = await signToken({ sub: String(updated.id), name: updated.name, email: updated.email, role: updated.role });

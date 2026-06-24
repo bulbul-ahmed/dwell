@@ -5,9 +5,11 @@ import { eq } from 'drizzle-orm';
 import { getSession } from '@/lib/session';
 
 // POST /api/owners/verify-kyc
-//   { nidNumber, nidDocUrl }  → submit identity docs for admin review.
-// Stores NID, leaves status at 'phone_verified'. Admin approval flips to
-// 'kyc_verified'. Review queue = owners where nid_number is set and verified_at is null.
+//   Individual: { nidNumber, nidDocUrl }
+//   Agency:     { businessName, tradeLicense, businessDocUrl }
+// Submits docs for manual admin review. Sets status to a *_pending state and
+// clears verifiedAt/By. Admin approval flips to kyc_verified / agency_verified.
+// Review queue = owners with docs set and verified_at null.
 export async function POST(request: NextRequest) {
   const userId = await getSession();
   if (!userId) return NextResponse.json({ error: 'Unauthorised' }, { status: 401 });
@@ -19,14 +21,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Verify phone first', needs: 'phone_verification' }, { status: 409 });
   }
 
-  const { nidNumber, nidDocUrl } = await request.json() as { nidNumber?: string; nidDocUrl?: string };
-  if (!nidNumber || !nidDocUrl) {
-    return NextResponse.json({ error: 'nidNumber and nidDocUrl required' }, { status: 400 });
-  }
+  const body = await request.json() as {
+    nidNumber?: string; nidDocUrl?: string;
+    businessName?: string; tradeLicense?: string; businessDocUrl?: string;
+  };
 
-  await db.update(owners)
-    .set({ nidNumber, nidDocUrl, verifiedAt: null, verifiedBy: null })
-    .where(eq(owners.id, owner.id));
+  const isAgency = owner.type === 'Agency';
+
+  if (isAgency) {
+    if (!body.businessName || !body.tradeLicense || !body.businessDocUrl) {
+      return NextResponse.json({ error: 'businessName, tradeLicense and businessDocUrl required' }, { status: 400 });
+    }
+    await db.update(owners)
+      .set({
+        businessName:   body.businessName,
+        tradeLicense:   body.tradeLicense,
+        businessDocUrl: body.businessDocUrl,
+        status:         'agency_pending',
+        verifiedAt: null, verifiedBy: null,
+      })
+      .where(eq(owners.id, owner.id));
+  } else {
+    if (!body.nidNumber || !body.nidDocUrl) {
+      return NextResponse.json({ error: 'nidNumber and nidDocUrl required' }, { status: 400 });
+    }
+    await db.update(owners)
+      .set({ nidNumber: body.nidNumber, nidDocUrl: body.nidDocUrl, verifiedAt: null, verifiedBy: null })
+      .where(eq(owners.id, owner.id));
+  }
 
   return NextResponse.json({ ok: true, status: 'pending_review' }, { status: 202 });
 }

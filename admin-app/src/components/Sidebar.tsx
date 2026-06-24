@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard, Shield, Flag, Building2, Users,
-  BarChart2, SlidersHorizontal, List, Settings, Home, LogOut, MapPin,
+  BarChart2, SlidersHorizontal, List, Settings, Home, LogOut, MapPin, BadgeCheck,
 } from 'lucide-react';
 
 import type { LucideProps } from 'lucide-react';
@@ -21,6 +21,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Trust & Safety',
     items: [
       { id: '/moderation', label: 'Moderation', Icon: Shield, badge: 'mod' },
+      { id: '/verification', label: 'Verification', Icon: BadgeCheck, badge: 'kyc' },
       { id: '/reports', label: 'Reports', Icon: Flag, badge: 'rep' },
     ],
   },
@@ -51,9 +52,10 @@ interface Props {
   adminRole: string;
   pendingMod?: number;
   pendingRep?: number;
+  pendingKyc?: number;
 }
 
-export default function Sidebar({ adminName, adminRole, pendingMod = 0, pendingRep = 0 }: Props) {
+export default function Sidebar({ adminName, adminRole, pendingMod = 0, pendingRep = 0, pendingKyc = 0 }: Props) {
   const pathname = usePathname();
 
   function isActive(id: string) {
@@ -61,7 +63,7 @@ export default function Sidebar({ adminName, adminRole, pendingMod = 0, pendingR
     return pathname.startsWith(id);
   }
 
-  const badgeCounts: Record<string, number> = { mod: pendingMod, rep: pendingRep };
+  const badgeCounts: Record<string, number> = { mod: pendingMod, rep: pendingRep, kyc: pendingKyc };
   const initials = adminName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
   return (
