@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     } else {
       console.log(`\n[DWELL PHONE OTP] ${key} → ${otp}\n`);
     }
-    return NextResponse.json({ ok: true, sent: true });
+    return NextResponse.json({ ok: true, sent: true, expiresAt: expiresAt.toISOString() });
   }
 
   // ── Verify step ──

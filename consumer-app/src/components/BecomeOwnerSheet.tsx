@@ -1,20 +1,27 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const ACCENT = '#1E3A5C';
+const RESEND_COOLDOWN = 30; // seconds
 
 type OwnerType = 'Owner' | 'Agency';
 type Step = 'type' | 'phone' | 'verify' | 'kyc';
 
-// Bangladesh mobile: 11 digits starting 01[3-9], optionally +880 / 880 prefixed.
-function normalizeBdPhone(raw: string): string | null {
-  const d = raw.replace(/[\s-]/g, '');
-  let m = d.match(/^(?:\+?880)?(01[3-9]\d{8})$/);
-  if (m) return '+880' + m[1].slice(1);          // 01XXXXXXXXX → +880 1XXXXXXXXX
-  m = d.match(/^(?:\+?880)(1[3-9]\d{8})$/);
-  if (m) return '+880' + m[1];
-  return null;
+// The input holds the LOCAL part only (10 digits, starting 1[3-9]); the +880
+// country code is fixed by the prefix chip. Strip any code the user pastes in.
+function toLocal(raw: string): string {
+  let d = raw.replace(/\D/g, '');
+  if (d.startsWith('880')) d = d.slice(3);
+  if (d.startsWith('0'))   d = d.slice(1);
+  return d.slice(0, 10);
+}
+function isValidLocal(local: string): boolean {
+  return /^1[3-9]\d{8}$/.test(local);
+}
+function maskFull(local: string): string {
+  // +880 1723-79••17
+  return `+880 ${local.slice(0, 4)}-${local.slice(4, 6)}••${local.slice(8)}`;
 }
 
 // Become-owner onboarding wizard: type → phone (OTP) → verify+address →
@@ -24,11 +31,33 @@ export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () 
   const dest = redirectTo || '/dashboard';
   const [step, setStep]       = useState<Step>('type');
   const [type, setType]       = useState<OwnerType>('Owner');
-  const [phone, setPhone]     = useState('');
+  const [phone, setPhone]     = useState('');   // local part, 10 digits
   const [code, setCode]       = useState('');
   const [address, setAddress] = useState('');
   const [busy, setBusy]       = useState(false);
   const [error, setError]     = useState('');
+
+  // OTP timing
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [secsLeft, setSecsLeft]   = useState(0);   // until code expiry
+  const [resendIn, setResendIn]   = useState(0);   // resend cooldown
+
+  const fullPhone = '+880' + phone;
+
+  // 1s ticker while on the verify step — drives expiry countdown + resend cooldown.
+  useEffect(() => {
+    if (step !== 'verify') return;
+    const t = setInterval(() => {
+      setSecsLeft(expiresAt ? Math.max(0, Math.round((expiresAt - Date.now()) / 1000)) : 0);
+      setResendIn(v => (v > 0 ? v - 1 : 0));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [step, expiresAt]);
+
+  function fmtClock(s: number) {
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+  }
 
   // KYC fields
   const [nidNumber, setNidNumber]       = useState('');
@@ -54,26 +83,44 @@ export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () 
     } finally { setBusy(false); }
   }
 
+  async function requestOtp() {
+    const res = await fetch('/api/owners/verify-phone', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone: fullPhone }),
+    });
+    if (!res.ok) throw new Error();
+    const { expiresAt: exp } = await res.json().catch(() => ({})) as { expiresAt?: string };
+    const ms = exp ? new Date(exp).getTime() : Date.now() + 10 * 60 * 1000;
+    setExpiresAt(ms);
+    setSecsLeft(Math.max(0, Math.round((ms - Date.now()) / 1000)));
+    setResendIn(RESEND_COOLDOWN);
+  }
+
   async function sendCode() {
     setError('');
-    const norm = normalizeBdPhone(phone);
-    if (!norm) { setError('Enter a valid Bangladeshi mobile number (e.g. 01711XXXXXX).'); return; }
+    if (!isValidLocal(phone)) { setError('Enter a valid Bangladeshi mobile number (e.g. 1711 234567).'); return; }
     setBusy(true);
     try {
-      const res = await fetch('/api/owners/verify-phone', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: norm }),
-      });
-      if (!res.ok) throw new Error();
-      setPhone(norm);
+      await requestOtp();
       setStep('verify');
     } catch {
       setError('Could not send code. Try again.');
     } finally { setBusy(false); }
   }
 
+  async function resend() {
+    if (resendIn > 0 || busy) return;
+    setError(''); setCode(''); setBusy(true);
+    try {
+      await requestOtp();
+    } catch {
+      setError('Could not resend code. Try again.');
+    } finally { setBusy(false); }
+  }
+
   async function verify() {
     setError('');
+    if (secsLeft <= 0) { setError('Code expired. Tap resend for a new one.'); return; }
     if (!/^\d{4,6}$/.test(code.trim())) { setError('Enter the numeric code sent to your phone.'); return; }
     if (!address.trim()) { setError('Enter your address.'); return; }
     setBusy(true);
@@ -84,7 +131,7 @@ export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () 
       });
       const res = await fetch('/api/owners/verify-phone', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: code.trim() }),
+        body: JSON.stringify({ phone: fullPhone, code: code.trim() }),
       });
       if (!res.ok) throw new Error();
       setStep('kyc'); // phone verified — can publish now; KYC optional
@@ -158,7 +205,7 @@ export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () 
   const subByStep: Record<Step, string> = {
     type:   'List and manage properties on Dwell. First, tell us who you are.',
     phone:  'We’ll text a code to confirm your number. This lets you publish listings.',
-    verify: `Enter the code sent to ${phone} and your address.`,
+    verify: `Enter the code sent to ${maskFull(phone)} and your address.`,
     kyc:    'Optional — submit documents to earn a “Verified” badge. You can skip and do this later.',
   };
 
@@ -189,24 +236,50 @@ export default function BecomeOwnerSheet({ onClose, redirectTo }: { onClose: () 
 
         {/* ── Step: phone ── */}
         {step === 'phone' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, border: '1px solid #DCE2EA', borderRadius: 12, overflow: 'hidden' }}>
-            <span style={{ padding: '0 12px', height: 44, display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 700, color: '#5A6172', background: '#F4F6F9', borderRight: '1px solid #DCE2EA' }}>🇧🇩 +880</span>
-            <input
-              type="tel" inputMode="numeric" autoComplete="tel" maxLength={14}
-              style={{ ...inputStyle, border: 'none', borderRadius: 0 }}
-              placeholder="1711 234567"
-              value={phone}
-              onChange={e => setPhone(e.target.value.replace(/[^\d+\s-]/g, ''))}
-              onKeyDown={e => { if (e.key === 'Enter') sendCode(); }}
-            />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'stretch', border: `1px solid ${phone && !isValidLocal(phone) ? '#E0A8A0' : '#DCE2EA'}`, borderRadius: 12, overflow: 'hidden' }}>
+              <span style={{ padding: '0 14px', display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 700, color: '#5A6172', background: '#F4F6F9', borderRight: '1px solid #DCE2EA' }}>+880</span>
+              <input
+                type="tel" inputMode="numeric" autoComplete="tel" autoFocus maxLength={12}
+                style={{ ...inputStyle, border: 'none', borderRadius: 0, letterSpacing: 0.5 }}
+                placeholder="1711 234567"
+                value={phone}
+                onChange={e => setPhone(toLocal(e.target.value))}
+                onKeyDown={e => { if (e.key === 'Enter') sendCode(); }}
+              />
+            </div>
+            {phone.length > 0 && !isValidLocal(phone) && (
+              <div style={{ marginTop: 7, fontSize: 12, color: '#B4402B' }}>Bangladeshi mobile: 10 digits starting 1[3–9] (e.g. 1711234567).</div>
+            )}
           </div>
         )}
 
         {/* ── Step: verify ── */}
         {step === 'verify' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input type="tel" inputMode="numeric" maxLength={6} style={inputStyle} placeholder="6-digit code" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
+            <input
+              type="tel" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={6}
+              style={{ ...inputStyle, letterSpacing: 4, fontWeight: 700, fontSize: 16 }}
+              placeholder="6-digit code" value={code}
+              onChange={e => setCode(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={e => { if (e.key === 'Enter') verify(); }}
+            />
+            {/* expiry + resend row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontSize: 12.5, color: secsLeft <= 30 ? '#B4402B' : '#8893A4' }}>
+                {secsLeft > 0 ? `Code expires in ${fmtClock(secsLeft)}` : 'Code expired'}
+              </span>
+              <button onClick={resend} disabled={resendIn > 0 || busy}
+                style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700,
+                  color: resendIn > 0 ? '#A8AEB9' : ACCENT, cursor: resendIn > 0 || busy ? 'default' : 'pointer' }}>
+                {resendIn > 0 ? `Resend in ${resendIn}s` : 'Resend code'}
+              </button>
+            </div>
             <input style={inputStyle} placeholder="Address (house, road, area)" value={address} onChange={e => setAddress(e.target.value)} />
+            <button onClick={() => { setStep('phone'); setCode(''); setError(''); }}
+              style={{ alignSelf: 'flex-start', background: 'none', border: 'none', padding: 0, fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#5A6172', cursor: 'pointer' }}>
+              ← Change number
+            </button>
           </div>
         )}
 
