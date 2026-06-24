@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { badge } from '@/lib/provider/badge';
 import { bdGroup } from '@/lib/provider/formatters';
 import { useToastStore } from '@/lib/provider/toast-store';
@@ -22,6 +23,12 @@ export interface ListingRow {
   saveCount: number;
 }
 
+const MENU_ITEM: React.CSSProperties = {
+  width: '100%', textAlign: 'left', padding: '9px 11px', borderRadius: 8,
+  border: 'none', background: 'transparent', cursor: 'pointer',
+  fontFamily: 'inherit', fontSize: 13, fontWeight: 600, color: '#3C4A63',
+};
+
 type Filter = 'all' | 'Active' | 'Pending';
 const FILTERS: { key: Filter; label: string }[] = [
   { key: 'all',     label: 'All'     },
@@ -31,7 +38,30 @@ const FILTERS: { key: Filter; label: string }[] = [
 
 export default function ListingsClient({ listings }: { listings: ListingRow[] }) {
   const [filter, setFilter] = useState<Filter>('all');
+  const [menuId, setMenuId] = useState<number | null>(null);
   const notify = useToastStore(s => s.notify);
+  const router = useRouter();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close the action menu on outside click / Escape.
+  useEffect(() => {
+    if (menuId === null) return;
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuId(null);
+    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuId(null); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDown); document.removeEventListener('keydown', onKey); };
+  }, [menuId]);
+
+  const copyShare = (id: number) => {
+    navigator.clipboard.writeText(`${window.location.origin}/listings/${id}`).then(
+      () => notify('Link copied', 'Public listing URL copied to clipboard.', 'success'),
+      () => notify('Copy failed', 'Could not copy to clipboard.', 'info'),
+    );
+    setMenuId(null);
+  };
 
   const rows = filter === 'all'
     ? listings
@@ -59,7 +89,7 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
           ))}
         </div>
         <button
-          onClick={() => notify('Opening listing wizard', 'The 5-step listing flow lives in the main app.', 'info')}
+          onClick={() => router.push('/dashboard/listings/new')}
           className="bv-press"
           style={{
             height: 42, padding: '0 18px', borderRadius: 12, border: 'none',
@@ -113,9 +143,26 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
                         ★ Boost
                       </button>
                     </Link>
-                    <button onClick={() => notify('Quick actions', 'Edit, pause, or mark rented.', 'info')} className="bv-press bv-fill" style={{ '--fill': '#EEF0F3', width: 38, height: 38, borderRadius: 10, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', color: '#8893A4' } as React.CSSProperties}>
-                      ⋯
-                    </button>
+                    <div style={{ position: 'relative' }} ref={menuId === l.id ? menuRef : undefined}>
+                      <button
+                        onClick={() => setMenuId(menuId === l.id ? null : l.id)}
+                        aria-haspopup="menu"
+                        aria-expanded={menuId === l.id}
+                        aria-label="More actions"
+                        className="bv-press bv-fill"
+                        style={{ '--fill': '#EEF0F3', width: 38, height: 38, borderRadius: 10, border: `1px solid ${menuId === l.id ? '#B9CFE2' : '#E2E7EE'}`, background: menuId === l.id ? '#F4F8FC' : '#fff', cursor: 'pointer', color: '#8893A4', fontSize: 17, lineHeight: 1 } as React.CSSProperties}
+                      >
+                        ⋯
+                      </button>
+                      {menuId === l.id && (
+                        <div role="menu" style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 6px)', width: 184, background: '#fff', border: '1px solid #E6E9EE', borderRadius: 12, boxShadow: '0 16px 40px -12px rgba(20,40,70,.28)', padding: 6, zIndex: 30 }}>
+                          <button role="menuitem" onClick={() => { setMenuId(null); router.push(`/dashboard/listings/new?edit=${l.id}`); }} className="bv-press" style={MENU_ITEM}>Edit listing</button>
+                          <button role="menuitem" onClick={() => { setMenuId(null); router.push(`/dashboard/listings/${l.id}/status`); }} className="bv-press" style={MENU_ITEM}>Pause / mark rented</button>
+                          <a role="menuitem" href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer" onClick={() => setMenuId(null)} style={{ ...MENU_ITEM, display: 'block', textDecoration: 'none' }}>View public page ↗</a>
+                          <button role="menuitem" onClick={() => copyShare(l.id)} className="bv-press" style={MENU_ITEM}>Copy share link</button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

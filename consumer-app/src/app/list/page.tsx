@@ -174,7 +174,7 @@ const inp: React.CSSProperties = { width: '100%', border: '1.6px solid #DBE0E6',
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-export default function ListPage() {
+export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boolean }) {
   const router = useRouter();
   const [step, setStep] = useState(1);
 
@@ -517,9 +517,9 @@ export default function ListPage() {
       // Unverified owner — gate publishing behind phone + address, then return here.
       if (res.status === 403) { setVerifyGate(true); setSubmitting(false); return; }
       if (res.ok) {
-        if (isEdit) { router.push(`/listings/${editId}/status`); return; }
+        if (isEdit) { router.push(fromDashboard ? '/dashboard/listings' : `/listings/${editId}/status`); return; }
         const { id } = (await res.json()) as { id: number };
-        router.push(`/list/success?id=${id}`);
+        router.push(fromDashboard ? '/dashboard/listings' : `/list/success?id=${id}`);
         return;
       }
       setSubmitting(false);
@@ -572,12 +572,11 @@ export default function ListPage() {
 
   // ── Render ────────────────────────────────────────────────────────────────
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      <main className="pg-md">
-        <Link href="/" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 600, color: '#6A7180', marginBottom: 18, textDecoration: 'none' }}>
+  const inner = (
+    <main className="pg-md">
+        <Link href={fromDashboard ? '/dashboard/listings' : '/'} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 600, color: '#6A7180', marginBottom: 18, textDecoration: 'none' }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="#6A7180" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Cancel
+          {fromDashboard ? 'Back to listings' : 'Cancel'}
         </Link>
 
         <h1 style={{ fontWeight: 400, fontSize: 34, margin: '0 0 6px', color: '#15243B' }}>{isEdit ? 'Edit listing' : 'List your property'}</h1>
@@ -1171,8 +1170,26 @@ export default function ListPage() {
           </aside>
         </div>
       </main>
+  );
+
+  if (fromDashboard) {
+    return (
+      <>
+        {inner}
+        {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} redirectTo="/dashboard/listings/new" />}
+      </>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      {inner}
       {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} redirectTo="/list" />}
       <Footer />
     </div>
   );
+}
+
+export default function ListPage() {
+  return <ListingWizard fromDashboard={false} />;
 }

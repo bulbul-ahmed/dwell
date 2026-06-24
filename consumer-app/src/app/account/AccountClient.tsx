@@ -38,6 +38,35 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
   const [pwError,       setPwError]       = useState('');
   const [pwSuccess,     setPwSuccess]     = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoErr,  setPhotoErr]  = useState('');
+
+  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking same file
+    if (!file) return;
+    setPhotoErr('');
+    if (!file.type.startsWith('image/')) { setPhotoErr('Please choose an image file.'); return; }
+    if (file.size > 5 * 1024 * 1024)     { setPhotoErr('Image must be under 5 MB.'); return; }
+    setPhotoBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append('files', file);
+      const up = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (!up.ok) throw new Error('upload');
+      const { urls } = await up.json() as { urls: string[] };
+      const url = urls?.[0];
+      if (!url) throw new Error('no url');
+      const save = await fetch('/api/users/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ avatarUrl: url }) });
+      const { user: u } = await save.json();
+      if (!save.ok || !u) throw new Error('save');
+      setUser(u);
+    } catch {
+      setPhotoErr('Could not update photo. Try again.');
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
 
   const cancelEdit = () => { setName(user.name); setPhone(user.phone ?? ''); setEditing(false); };
   const saveEdit = async () => {
@@ -112,14 +141,20 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
               <div style={{ height: 78, background: 'linear-gradient(120deg, #16273F, #2C557F)' }} />
               <div style={{ padding: '0 22px 22px' }}>
                 <div style={{ position: 'relative', width: 78, marginTop: -39 }}>
-                  <div style={{ width: 78, height: 78, borderRadius: 22, background: '#15243B', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, border: '4px solid #fff' }}>
-                    {user.name.charAt(0).toUpperCase()}
+                  <div style={{ width: 78, height: 78, borderRadius: 22, backgroundColor: user.avatarUrl ? '#E7EAEE' : '#15243B', backgroundImage: user.avatarUrl ? `url('${user.avatarUrl}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 30, border: '4px solid #fff' }}>
+                    {!user.avatarUrl && user.name.charAt(0).toUpperCase()}
                   </div>
-                  <button onClick={() => fileRef.current?.click()} title="Change photo" style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: ACCENT, border: '2.5px solid #fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  <button onClick={() => !photoBusy && fileRef.current?.click()} title="Change photo" style={{ position: 'absolute', bottom: 0, right: 0, width: 26, height: 26, borderRadius: '50%', background: ACCENT, border: '2.5px solid #fff', cursor: photoBusy ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {photoBusy ? (
+                      <span style={{ width: 11, height: 11, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', display: 'block', animation: 'spin .7s linear infinite' }} />
+                    ) : (
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4 12.5-12.5z" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    )}
                   </button>
-                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={() => {}} />
+                  <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickPhoto} />
+                  <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
                 </div>
+                {photoErr && <div style={{ fontSize: 12, color: '#C0392B', marginTop: 8 }}>{photoErr}</div>}
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, flexWrap: 'nowrap' }}>
                   <h2 style={{ fontSize: 20, fontWeight: 800, color: '#15243B', margin: 0, whiteSpace: 'nowrap' }}>{user.name}</h2>

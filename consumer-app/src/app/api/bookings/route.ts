@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         type: 'visit',
         title: `New visit request — ${listing.title}`,
         body: `Someone requested a visit to ${listing.title}, ${listing.area}${when}. Review and approve.`,
-        href: '/visits',
+        href: '/dashboard/visits',
       }).catch(() => {});
     }
   }

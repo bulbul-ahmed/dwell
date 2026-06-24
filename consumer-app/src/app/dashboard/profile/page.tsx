@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { TEAM, NOTIF_PREFS } from '@/lib/provider/data';
 import { useToastStore } from '@/lib/provider/toast-store';
@@ -8,12 +8,67 @@ import { useToastStore } from '@/lib/provider/toast-store';
 type Lang = 'en' | 'bn';
 type NotifState = Record<string, boolean>;
 
+const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
+
 export default function ProfilePage() {
   const [lang, setLang] = useState<Lang>('en');
   const [notif, setNotif] = useState<NotifState>(() =>
     Object.fromEntries(NOTIF_PREFS.map(p => [p.key, p.def]))
   );
   const notify = useToastStore(s => s.notify);
+
+  // ── Current user (for avatar + name) ──────────────────────────────────────
+  const [name, setName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch('/api/users/me')
+      .then(r => r.json())
+      .then(({ user }) => { if (user) { setName(user.name ?? ''); setAvatarUrl(user.avatarUrl ?? null); } })
+      .catch(() => {});
+  }, []);
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-picking the same file
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      notify('Invalid file', 'Please choose an image file.', 'error');
+      return;
+    }
+    if (file.size > MAX_AVATAR_BYTES) {
+      notify('Image too large', 'Maximum size is 5 MB.', 'error');
+      return;
+    }
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('files', file);
+      const up = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (!up.ok) throw new Error('upload');
+      const { urls } = await up.json() as { urls: string[] };
+      const url = urls?.[0];
+      if (!url) throw new Error('no url');
+
+      const save = await fetch('/api/users/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ avatarUrl: url }),
+      });
+      if (!save.ok) throw new Error('save');
+
+      setAvatarUrl(url);
+      notify('Photo updated', 'Your profile photo has been saved.', 'success');
+    } catch {
+      notify('Upload failed', 'Could not update your photo. Try again.', 'error');
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  const initial = (name.trim()[0] ?? 'R').toUpperCase();
 
   return (
     <div className="animate-bvfade">
@@ -24,17 +79,36 @@ export default function ProfilePage() {
           <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, overflow: 'hidden', boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
             <div style={{ height: 80, background: 'linear-gradient(120deg, #16273F, #2C557F)' }} />
             <div style={{ padding: '0 24px 22px' }}>
-              <div style={{
-                width: 76, height: 76, borderRadius: 20,
-                background: 'linear-gradient(140deg, #3C6E9E, #2C557F)',
-                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: 28, marginTop: -38,
-                border: '4px solid #fff', boxShadow: '0 8px 20px -8px rgba(20,40,70,.4)',
-              }}>
-                R
-              </div>
+              <input ref={fileRef} type="file" accept="image/*" onChange={onPickPhoto} style={{ display: 'none' }} />
+              <button
+                type="button"
+                onClick={() => !uploading && fileRef.current?.click()}
+                aria-label="Change profile photo"
+                style={{
+                  position: 'relative', padding: 0, marginTop: -38,
+                  width: 76, height: 76, borderRadius: 20,
+                  backgroundColor: '#2C557F',
+                  backgroundImage: avatarUrl ? `url('${avatarUrl}')` : 'linear-gradient(140deg, #3C6E9E, #2C557F)',
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontWeight: 800, fontSize: 28,
+                  border: '4px solid #fff', boxShadow: '0 8px 20px -8px rgba(20,40,70,.4)',
+                  cursor: uploading ? 'wait' : 'pointer', overflow: 'hidden',
+                }}
+              >
+                {!avatarUrl && initial}
+                {/* camera badge */}
+                <span style={{ position: 'absolute', right: -2, bottom: -2, width: 26, height: 26, borderRadius: '50%', background: '#1E3A5C', border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {uploading ? (
+                    <span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,.4)', borderTopColor: '#fff', borderRadius: '50%', display: 'block', animation: 'spin .7s linear infinite' }} />
+                  ) : (
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 8h3l1.5-2h7L17 8h3v11H4V8z" stroke="#fff" strokeWidth="1.8" strokeLinejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="#fff" strokeWidth="1.8"/></svg>
+                  )}
+                </span>
+              </button>
+              <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
               <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12 }}>
-                <h2 style={{ fontSize: 21, fontWeight: 800, color: '#15243B', margin: 0 }}>Rahima Properties</h2>
+                <h2 style={{ fontSize: 21, fontWeight: 800, color: '#15243B', margin: 0 }}>{name || 'Rahima Properties'}</h2>
                 <span style={{ fontSize: 12, fontWeight: 800, color: '#2E7D55', background: '#E7F1EC', padding: '4px 11px', borderRadius: 999 }}>✓ Verified agency</span>
               </div>
               <p style={{ fontSize: 13.5, lineHeight: 1.6, color: '#8893A4', margin: '10px 0 0' }}>

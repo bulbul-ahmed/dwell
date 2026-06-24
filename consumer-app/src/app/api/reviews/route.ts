@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { db, reviews, users, listings } from '@/db';
+import { db, reviews, users, listings, owners } from '@/db';
 import { eq, desc } from 'drizzle-orm';
 import { getSession } from '@/lib/session';
 import { createNotification } from '@/lib/notifications';
@@ -45,12 +45,14 @@ export async function POST(request: NextRequest) {
     .returning();
 
   const [listing] = await db
-    .select({ title: listings.title })
+    .select({ title: listings.title, ownerUserId: owners.userId })
     .from(listings)
+    .innerJoin(owners, eq(listings.ownerId, owners.id))
     .where(eq(listings.id, listingId))
     .limit(1);
 
   if (listing) {
+    // Notify reviewer
     createNotification({
       userId,
       type:  'review',
@@ -58,6 +60,17 @@ export async function POST(request: NextRequest) {
       body:  `Your review for ${listing.title} is now live and visible to other renters.`,
       href:  `/listings/${listingId}`,
     }).catch(() => {});
+
+    // Notify listing owner
+    if (listing.ownerUserId && listing.ownerUserId !== userId) {
+      createNotification({
+        userId: listing.ownerUserId,
+        type:   'review',
+        title:  `New ${rating}-star review — ${listing.title}`,
+        body:   `A renter left a ${rating}-star review on ${listing.title}.`,
+        href:   '/dashboard/reviews',
+      }).catch(() => {});
+    }
   }
 
   return NextResponse.json({ review: inserted }, { status: 201 });

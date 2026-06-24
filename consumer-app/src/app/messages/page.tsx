@@ -15,6 +15,7 @@ interface ThreadRow {
   listingTitle: string;
   listingCover: string;
   ownerName: string;
+  counterpartyAvatar: string | null;
   lastMessage: string | null;
   lastAt: string;
 }
@@ -253,8 +254,8 @@ function MessagesInner() {
                         onClick={() => switchThread(t)}
                         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 18px', cursor: 'pointer', background: active ? '#F4F6F9' : '#fff', borderLeft: `3px solid ${active ? ACCENT : 'transparent'}`, transition: 'background .15s' }}
                       >
-                        <div style={{ width: 46, height: 46, borderRadius: 12, background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, fontWeight: 700, flexShrink: 0 }}>
-                          {t.ownerName.charAt(0)}
+                        <div style={{ width: 46, height: 46, borderRadius: 12, backgroundColor: t.counterpartyAvatar ? '#E7EAEE' : ACCENT, backgroundImage: t.counterpartyAvatar ? `url('${t.counterpartyAvatar}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, fontWeight: 700, flexShrink: 0 }}>
+                          {!t.counterpartyAvatar && t.ownerName.charAt(0)}
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
@@ -278,8 +279,8 @@ function MessagesInner() {
               <>
                 {/* Chat header */}
                 <div style={{ padding: '14px 20px', borderBottom: '1px solid #E7EAEE', display: 'flex', alignItems: 'center', gap: 12, background: '#fff' }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 11, background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
-                    {activeThread.ownerName.charAt(0)}
+                  <div style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: activeThread.counterpartyAvatar ? '#E7EAEE' : ACCENT, backgroundImage: activeThread.counterpartyAvatar ? `url('${activeThread.counterpartyAvatar}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 700 }}>
+                    {!activeThread.counterpartyAvatar && activeThread.ownerName.charAt(0)}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: '#15243B' }}>{activeThread.ownerName}</div>

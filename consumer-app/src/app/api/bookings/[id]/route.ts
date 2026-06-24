@@ -63,7 +63,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = status === 'confirmed'
       ? `${actor} confirmed the visit for ${row.title}, ${row.area}${when}.`
       : `${actor} cancelled the visit for ${row.title}, ${row.area}${when}.`;
-    createNotification({ userId: recipient, type: 'visit', title, body, href: '/visits' }).catch(() => {});
+    const href = isRenter ? '/dashboard/visits' : '/visits';
+    createNotification({ userId: recipient, type: 'visit', title, body, href }).catch(() => {});
   }
 
   return NextResponse.json({ booking: updated });

@@ -46,7 +46,7 @@ function StepRow({ state, label, sub, last }: { state: StepState; label: string;
   );
 }
 
-export default function StatusClient() {
+export default function StatusClient({ fromDashboard = false }: { fromDashboard?: boolean }) {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
 
@@ -71,7 +71,7 @@ export default function StatusClient() {
     setWithdrawing(true);
     try {
       const r = await fetch(`/api/listings/${id}/status`, { method: 'DELETE' });
-      if (r.ok) { router.push('/account'); return; }
+      if (r.ok) { router.push(fromDashboard ? '/dashboard/listings' : '/account'); return; }
     } catch { /* fall through */ }
     setWithdrawing(false);
     setConfirmWd(false);
@@ -105,7 +105,9 @@ export default function StatusClient() {
   return (
     <>
     <div style={{ maxWidth: 620, margin: '0 auto', padding: '20px 18px 40px' }}>
-      <Link href="/account" style={{ fontSize: 13, fontWeight: 700, color: '#8893A4', textDecoration: 'none' }}>← Back to account</Link>
+      {!fromDashboard && (
+        <Link href="/account" style={{ fontSize: 13, fontWeight: 700, color: '#8893A4', textDecoration: 'none' }}>← Back to account</Link>
+      )}
 
       {/* Header card */}
       <div style={{ marginTop: 16, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 18, padding: 18, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
@@ -160,12 +162,12 @@ export default function StatusClient() {
           </Link>
         )}
         {isRejected && (
-          <Link href={`/list?edit=${listing.id}`} style={{ height: 46, borderRadius: 12, background: '#B4402B', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Link href={fromDashboard ? `/dashboard/listings/new?edit=${listing.id}` : `/list?edit=${listing.id}`} style={{ height: 46, borderRadius: 12, background: '#B4402B', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             Edit &amp; resubmit
           </Link>
         )}
         {(isPending || isLive) && (
-          <Link href={`/list?edit=${listing.id}`} style={{ height: 46, borderRadius: 12, background: '#fff', color: ACCENT, border: `1.5px solid ${ACCENT}`, fontSize: 14, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Link href={fromDashboard ? `/dashboard/listings/new?edit=${listing.id}` : `/list?edit=${listing.id}`} style={{ height: 46, borderRadius: 12, background: '#fff', color: ACCENT, border: `1.5px solid ${ACCENT}`, fontSize: 14, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             Edit listing
           </Link>
         )}
@@ -191,7 +193,7 @@ export default function StatusClient() {
       </div>
 
     </div>
-    <div style={{ marginTop: 40 }}><Footer /></div>
+    {!fromDashboard && <div style={{ marginTop: 40 }}><Footer /></div>}
     </>
   );
 }

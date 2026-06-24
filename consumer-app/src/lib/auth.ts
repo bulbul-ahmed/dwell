@@ -8,6 +8,7 @@ export interface ProviderSession extends SessionPayload {
   ownerName: string;
   ownerType: string;
   ownerStatus: string;
+  avatarUrl: string | null;
 }
 
 export async function getProviderSession(): Promise<ProviderSession | null> {
@@ -19,7 +20,7 @@ export async function getProviderSession(): Promise<ProviderSession | null> {
   if (!session || session.role !== 'owner') return null;
 
   const [owner] = await db
-    .select({ id: owners.id, name: owners.name, type: owners.type, status: owners.status })
+    .select({ id: owners.id, name: owners.name, type: owners.type, status: owners.status, avatarUrl: users.avatarUrl })
     .from(owners)
     .innerJoin(users, eq(owners.userId, users.id))
     .where(eq(users.id, Number(session.sub)))
@@ -33,5 +34,6 @@ export async function getProviderSession(): Promise<ProviderSession | null> {
     ownerName: owner.name,
     ownerType: owner.type,
     ownerStatus: owner.status,
+    avatarUrl: owner.avatarUrl,
   };
 }

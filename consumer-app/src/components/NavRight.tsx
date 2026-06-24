@@ -9,7 +9,7 @@ import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
 
-interface SessionUser { name: string; email: string; role: string }
+interface SessionUser { name: string; email: string; role: string; avatarUrl?: string | null }
 
 export default function NavRight() {
   const saved = useDwellStore(s => s.saved);
@@ -21,8 +21,8 @@ export default function NavRight() {
 
   // "List your property": renters verify (phone+address) first, then the wizard.
   const onListProperty = () => {
-    if (!user) { router.push('/auth?next=/list'); return; }
-    if (user.role === 'owner') { router.push('/list'); return; }
+    if (!user) { router.push('/auth?next=/dashboard/listings/new'); return; }
+    if (user.role === 'owner') { router.push('/dashboard/listings/new'); return; }
     setListSheet(true);
   };
 
@@ -189,7 +189,7 @@ export default function NavRight() {
         List your property
       </button>
 
-      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/list" />}
+      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/dashboard/listings/new" />}
 
       {/* Auth area */}
       {user ? (
@@ -200,8 +200,8 @@ export default function NavRight() {
             style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${open ? '#B0BBC8' : '#D3D9E0'}`, borderRadius: 999, padding: '5px 6px 5px 14px', cursor: 'pointer', background: open ? '#F4F6F9' : '#fff', fontFamily: 'inherit' }}
           >
             <span style={{ fontSize: 14, fontWeight: 600, color: '#15243B' }}>{displayName}</span>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#15243B', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
-              {initials}
+            <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: user.avatarUrl ? '#E7EAEE' : '#15243B', backgroundImage: user.avatarUrl ? `url('${user.avatarUrl}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+              {!user.avatarUrl && initials}
             </div>
           </button>
 
@@ -216,13 +216,36 @@ export default function NavRight() {
             pointerEvents: open ? 'all' : 'none',
           }}>
             {/* Header */}
-            <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #F2F4F7' }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#15243B' }}>{user.name}</div>
-              <div style={{ fontSize: 12, color: '#8893A4', marginTop: 2 }}>{user.email}</div>
+            <div style={{ padding: '16px 18px 12px', borderBottom: '1px solid #F2F4F7', display: 'flex', alignItems: 'center', gap: 11 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', flexShrink: 0, backgroundColor: user.avatarUrl ? '#E7EAEE' : '#15243B', backgroundImage: user.avatarUrl ? `url('${user.avatarUrl}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700 }}>
+                {!user.avatarUrl && initials}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
+                <div style={{ fontSize: 12, color: '#8893A4', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
+              </div>
             </div>
 
             {/* Links */}
             <div style={{ padding: '8px 0' }}>
+              {user?.role === 'owner' && (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setOpen(false)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 18px', textDecoration: 'none', color: '#1E3A5C', fontSize: 13.5, fontWeight: 700, borderBottom: '1px solid #F2F4F7', marginBottom: 4 }}
+                  className="nav-dd-item"
+                >
+                  <span style={{ width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="3" width="7" height="7" rx="2" fill="#1E3A5C"/>
+                      <rect x="14" y="3" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
+                      <rect x="3" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
+                      <rect x="14" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.3"/>
+                    </svg>
+                  </span>
+                  Provider Studio
+                </Link>
+              )}
               {[
                 {
                   href: '/account', label: 'Account settings',

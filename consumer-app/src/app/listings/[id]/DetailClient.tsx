@@ -654,7 +654,7 @@ export default function DetailClient() {
           {heroItem.type === 'video' ? (
             <video key={heroItem.url} src={heroItem.url} controls autoPlay playsInline onClick={e => e.stopPropagation()} style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, background: '#000', objectFit: 'contain' }} />
           ) : (
-            <div style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', background: '#1A2433', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+            <div style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', backgroundColor: '#1A2433', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -667,7 +667,7 @@ export default function DetailClient() {
                 <div
                   key={m.idx}
                   onClick={e => { e.stopPropagation(); setGallery(m.idx); }}
-                  style={{ position: 'relative', width: 78, height: 56, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, border: `2.5px solid ${clampedGallery === m.idx ? '#fff' : 'transparent'}`, opacity: clampedGallery === m.idx ? 1 : 0.6, background: m.type === 'video' ? '#000' : undefined, backgroundImage: m.type === 'photo' ? `url('${m.url}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
+                  style={{ position: 'relative', width: 78, height: 56, borderRadius: 9, overflow: 'hidden', cursor: 'pointer', flexShrink: 0, border: `2.5px solid ${clampedGallery === m.idx ? '#fff' : 'transparent'}`, opacity: clampedGallery === m.idx ? 1 : 0.6, backgroundColor: m.type === 'video' ? '#000' : 'transparent', backgroundImage: m.type === 'photo' ? `url('${m.url}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
                 >
                   {m.type === 'video' && (
                     <>

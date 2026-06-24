@@ -10,10 +10,11 @@ interface Props {
   ownerName?: string;
   ownerType?: string;
   ownerStatus: string;
+  avatarUrl?: string | null;
   children: React.ReactNode;
 }
 
-export default function DashboardShell({ ownerName, ownerType, ownerStatus, children }: Props) {
+export default function DashboardShell({ ownerName, ownerType, ownerStatus, avatarUrl, children }: Props) {
   const [navOpen, setNavOpen] = useState(false);
 
   return (
@@ -21,6 +22,7 @@ export default function DashboardShell({ ownerName, ownerType, ownerStatus, chil
       <Sidebar
         ownerName={ownerName}
         ownerType={ownerType}
+        avatarUrl={avatarUrl}
         open={navOpen}
         onClose={() => setNavOpen(false)}
       />
@@ -35,7 +37,7 @@ export default function DashboardShell({ ownerName, ownerType, ownerStatus, chil
       )}
 
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-        <Header onMenu={() => setNavOpen(true)} />
+        <Header onMenu={() => setNavOpen(true)} avatarUrl={avatarUrl} />
         <OwnerVerifyBanner status={ownerStatus} />
         <main className="px-4 py-5 lg:px-[34px] lg:pt-7 lg:pb-14" style={{ flex: 1, minWidth: 0 }}>
           {children}

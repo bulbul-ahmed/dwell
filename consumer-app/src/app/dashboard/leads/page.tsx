@@ -50,7 +50,10 @@ export default async function LeadsPage() {
           lastMessage: threads.lastMessage,
           lastAt: threads.lastAt,
           userName: users.name,
+          userAvatar: users.avatarUrl,
+          listingId: listings.id,
           listingTitle: listings.title,
+          listingCover: listings.cover,
         })
         .from(threads)
         .innerJoin(listings, eq(threads.listingId, listings.id))
@@ -62,9 +65,13 @@ export default async function LeadsPage() {
   const data: LeadRow[] = rows.map(r => ({
     id: r.id,
     userName: r.userName,
+    userAvatar: r.userAvatar,
+    listingId: r.listingId,
     listingTitle: r.listingTitle,
+    listingCover: r.listingCover,
     lastMessage: r.lastMessage,
     timeAgo: timeAgo(new Date(r.lastAt)),
+    lastAtMs: new Date(r.lastAt).getTime(),
   }));
 
   return <LeadsClient leads={data} />;

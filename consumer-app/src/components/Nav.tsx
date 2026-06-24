@@ -5,6 +5,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter, usePathname } from 'next/navigation';
 import InsightsLink from '@/components/InsightsLink';
+import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
 
@@ -17,6 +18,16 @@ export default function Nav() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [listSheet, setListSheet] = useState(false);
+
+  // "List your property": owners go straight to the studio wizard; renters verify
+  // (phone+address) first; logged-out users sign in then land on the wizard.
+  const onListProperty = () => {
+    setMenuOpen(false);
+    if (!user) { router.push('/auth?next=/dashboard/listings/new'); return; }
+    if (user.role === 'owner') { router.push('/dashboard/listings/new'); return; }
+    setListSheet(true);
+  };
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -141,11 +152,22 @@ export default function Nav() {
         <div style={{ height: 1, background: '#F0F2F5', margin: '12px 0' }} />
 
         <Link href="/insights" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14.5, fontWeight: 600, color: '#15243B', textDecoration: 'none' }}>Market Insights</Link>
-        <Link href="/list" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14.5, fontWeight: 600, color: '#15243B', textDecoration: 'none' }}>List your property</Link>
+        <button onClick={onListProperty} style={{ display: 'block', width: '100%', textAlign: 'left', padding: '11px 12px', borderRadius: 10, fontSize: 14.5, fontWeight: 600, color: '#15243B', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>List your property</button>
 
         {user && (
           <>
             <div style={{ height: 1, background: '#F0F2F5', margin: '12px 0' }} />
+            {user.role === 'owner' && (
+              <Link href="/dashboard" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#1E3A5C', textDecoration: 'none', marginBottom: 4 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="7" rx="2" fill="#1E3A5C"/>
+                  <rect x="14" y="3" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
+                  <rect x="3" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
+                  <rect x="14" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.3"/>
+                </svg>
+                Provider Studio
+              </Link>
+            )}
             <Link href="/saved" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 500, color: '#41495A', textDecoration: 'none' }}>Saved homes</Link>
             <Link href="/messages" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 500, color: '#41495A', textDecoration: 'none' }}>Messages</Link>
             <Link href="/visits" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 500, color: '#41495A', textDecoration: 'none' }}>Visits</Link>
@@ -165,6 +187,8 @@ export default function Nav() {
           )}
         </div>
       </div>
+
+      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/dashboard/listings/new" />}
     </>
   );
 }

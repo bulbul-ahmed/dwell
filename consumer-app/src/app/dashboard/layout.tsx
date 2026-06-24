@@ -11,6 +11,7 @@ export default async function ProviderLayout({ children }: { children: React.Rea
       ownerName={session.ownerName}
       ownerType={session.ownerType}
       ownerStatus={session.ownerStatus}
+      avatarUrl={session.avatarUrl}
     >
       {children}
     </DashboardShell>

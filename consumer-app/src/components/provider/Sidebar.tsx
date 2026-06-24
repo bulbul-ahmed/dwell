@@ -1,13 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutGrid, Building2, Inbox, Calendar, Star,
   Zap, BarChart2, Settings, Home, X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { useToastStore } from '@/lib/provider/toast-store';
 
 interface NavItem {
   id: string;
@@ -46,13 +45,14 @@ const NAV_GROUPS: NavGroup[] = [
 interface SidebarProps {
   ownerName?: string;
   ownerType?: string;
+  avatarUrl?: string | null;
   open?: boolean;
   onClose?: () => void;
 }
 
-export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = 'Agency', open = false, onClose }: SidebarProps) {
+export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = 'Agency', avatarUrl, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const notify = useToastStore(s => s.notify);
+  const router = useRouter();
 
   const BASE = '/dashboard';
   const hrefFor = (id: string) => id === '/' ? BASE : BASE + id;
@@ -108,7 +108,7 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
       {/* List a property CTA */}
       <div style={{ padding: '4px 14px 8px' }}>
         <button
-          onClick={() => notify('Opening listing wizard', 'The 5-step listing flow lives in the main app.', 'info')}
+          onClick={() => { onClose?.(); router.push('/dashboard/listings/new'); }}
           className="bv-press"
           style={{
             width: '100%', height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
@@ -191,11 +191,13 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
           >
             <div style={{
               width: 36, height: 36, borderRadius: 10,
-              background: 'linear-gradient(140deg, #3C6E9E, #2C557F)',
+              backgroundColor: '#2C557F',
+              backgroundImage: avatarUrl ? `url('${avatarUrl}')` : 'linear-gradient(140deg, #3C6E9E, #2C557F)',
+              backgroundSize: 'cover', backgroundPosition: 'center',
               color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontWeight: 800, fontSize: 14, flexShrink: 0,
             }}>
-              {ownerName.charAt(0).toUpperCase()}
+              {!avatarUrl && ownerName.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{

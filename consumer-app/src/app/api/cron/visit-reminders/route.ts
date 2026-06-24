@@ -89,7 +89,7 @@ async function run(req: NextRequest) {
         userId: c.ownerUserId, type: 'visit',
         title: `Reminder — visit soon: ${c.title}`,
         body: `${c.renterName} is visiting ${c.title}, ${c.area} — ${when}.`,
-        href: '/visits',
+        href: '/dashboard/visits',
       }).catch(() => {});
     }
     if (c.ownerPhone) sendSMS(c.ownerPhone, `Dwell: Reminder — ${c.renterName} visits ${c.title} at ${when}.`).catch(() => {});
