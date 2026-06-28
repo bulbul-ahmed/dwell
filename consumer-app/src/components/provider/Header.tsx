@@ -38,7 +38,8 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
         .catch(() => {});
     };
     load();
-    const t = setInterval(load, 15000);
+    // No SSE on this header — poll, but at a calmer cadence than before.
+    const t = setInterval(load, 30000);
     return () => { cancelled = true; clearInterval(t); };
   }, [pathname]);
 
@@ -58,10 +59,10 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
       className="px-4 lg:px-[34px]"
       style={{
         position: 'sticky', top: 0, zIndex: 30,
-        background: 'rgba(244,246,249,0.82)',
+        background: 'rgba(255,255,255,0.88)',
         backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid #E6E9EE',
-        height: 70,
+        borderBottom: '1px solid #ECEEF1',
+        height: 66,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}
     >
@@ -72,7 +73,7 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
           className="bv-press flex items-center justify-center lg:hidden"
           style={{
             width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-            border: '1px solid #E2E7EE', background: '#fff',
+            border: '1px solid #ECEEF1', background: '#fff',
             cursor: 'pointer',
           }}
         >
@@ -86,7 +87,7 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
               '--fill': '#EEF2F7',
               display: 'flex', alignItems: 'center', gap: 7,
               height: 36, padding: '0 13px', borderRadius: 10,
-              border: '1px solid #E2E7EE', background: '#fff',
+              border: '1px solid #ECEEF1', background: '#fff',
               cursor: 'pointer', fontFamily: 'inherit',
               fontSize: 13, fontWeight: 700, color: '#44506A',
             } as React.CSSProperties}
@@ -104,19 +105,37 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Switch back to the consumer (seeker) app — shared cookie = SSO */}
-        <a
-          href="/"
-          className="hidden lg:inline-flex"
+        {/* Mode toggle pill — Owner / Renter */}
+        <div
+          className="hidden lg:flex"
           style={{
-            height: 40, padding: '0 14px', borderRadius: 11, border: '1px solid #E2E7EE',
-            background: '#fff', color: '#44506A', fontSize: 13, fontWeight: 700,
-            textDecoration: 'none', alignItems: 'center', gap: 7,
+            alignItems: 'center',
+            background: '#F0F2F6', borderRadius: 999,
+            padding: 3, gap: 2, border: '1px solid #ECEEF1',
           }}
         >
-          <ChevronLeft size={15} color="#44506A" strokeWidth={2} />
-          Switch to browsing
-        </a>
+          <a
+            href="/"
+            style={{
+              height: 32, padding: '0 14px', borderRadius: 999,
+              border: 'none', background: 'transparent',
+              color: '#8893A4', fontSize: 13, fontWeight: 600,
+              textDecoration: 'none', display: 'inline-flex', alignItems: 'center', cursor: 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Renter
+          </a>
+          <div style={{
+            height: 32, padding: '0 14px', borderRadius: 999,
+            background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+            color: '#C9863A', fontSize: 13, fontWeight: 700,
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}>
+            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#C9863A', display: 'inline-block' }} />
+            Owner
+          </div>
+        </div>
 
         {/* Leads notification */}
         <Link href="/dashboard/leads" style={{ textDecoration: 'none' }}>
@@ -125,7 +144,7 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
             style={{
               '--fill': '#EEF2F7',
               position: 'relative', width: 40, height: 40, borderRadius: 11,
-              border: '1px solid #E5E9EF', background: '#fff',
+              border: '1px solid #ECEEF1', background: '#fff',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             } as React.CSSProperties}
           >
@@ -154,7 +173,7 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
             style={{
               '--fill': '#EEF2F7',
               position: 'relative', width: 40, height: 40, borderRadius: 11,
-              border: '1px solid #E5E9EF', background: '#fff',
+              border: '1px solid #ECEEF1', background: '#fff',
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             } as React.CSSProperties}
           >
@@ -191,7 +210,7 @@ export default function Header({ onMenu, avatarUrl }: { onMenu?: () => void; ava
           </button>
         </Link>
 
-        <div className="hidden lg:block" style={{ width: 1, height: 26, background: '#E2E7EE' }} />
+        <div className="hidden lg:block" style={{ width: 1, height: 26, background: '#ECEEF1' }} />
 
         {/* Profile avatar */}
         <Link href="/dashboard/profile" style={{ textDecoration: 'none' }}>

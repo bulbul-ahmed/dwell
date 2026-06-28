@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import { useToastStore } from '@/lib/provider/toast-store';
+import { PenLine } from 'lucide-react';
+
+const ACCENT = '#1E3A5C';
 
 export interface ReviewRow {
   id: number;
@@ -25,7 +28,10 @@ interface Props {
   starCounts: StarCount[];
 }
 
+type Tab = 'received' | 'written';
+
 export default function ReviewsClient({ reviews, totalReviews, avgRating, starCounts }: Props) {
+  const [tab, setTab]         = useState<Tab>('received');
   const [replied, setReplied] = useState<Set<number>>(new Set());
   const notify = useToastStore(s => s.notify);
 
@@ -36,6 +42,33 @@ export default function ReviewsClient({ reviews, totalReviews, avgRating, starCo
 
   return (
     <div className="animate-bvfade">
+      {/* Tab bar */}
+      <div style={{ display: 'flex', gap: 5, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 12, padding: 4, marginBottom: 20, width: 'fit-content' }}>
+        {([['received', 'Received', totalReviews], ['written', 'Written', 0]] as [Tab, string, number][]).map(([key, label, count]) => (
+          <button key={key} onClick={() => setTab(key)} style={{
+            height: 36, padding: '0 16px', borderRadius: 9, border: 'none',
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+            color: tab === key ? '#fff' : '#5A6172',
+            background: tab === key ? ACCENT : 'transparent',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}>
+            {label}
+            {count > 0 && <span style={{ opacity: 0.75, fontWeight: 800 }}>{count}</span>}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'written' ? (
+        <div style={{ textAlign: 'center', padding: '64px 24px', border: '1px dashed #D3D9E0', borderRadius: 18, background: '#FAFBFC' }}>
+          <div style={{ width: 52, height: 52, borderRadius: 14, background: '#EEF3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+            <PenLine size={22} color={ACCENT} strokeWidth={1.7} />
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#15243B', marginBottom: 6 }}>No written reviews yet</div>
+          <div style={{ fontSize: 13.5, color: '#8893A4', maxWidth: 320, margin: '0 auto', lineHeight: 1.55 }}>
+            After a confirmed visit, you can leave a review about the tenant. Those reviews will appear here.
+          </div>
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr]" style={{ gap: 22, alignItems: 'start' }}>
         {/* Rating summary */}
         <div style={{ position: 'sticky', top: 86, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
@@ -98,7 +131,7 @@ export default function ReviewsClient({ reviews, totalReviews, avgRating, starCo
                 )}
                 {!hasReplied && (
                   <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
-                    <button onClick={() => handleReply(r.id)} className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', height: 36, padding: '0 15px', borderRadius: 10, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#1E3A5C' } as React.CSSProperties}>
+                    <button onClick={() => handleReply(r.id)} className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', height: 36, padding: '0 15px', borderRadius: 10, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#1E3A5C' } as React.CSSProperties}>
                       Reply
                     </button>
                     <button onClick={() => notify('Review reported', 'Sent to moderators for review.', 'info')} className="bv-press bv-fill" style={{ '--fill': '#F8E8E3', height: 36, padding: '0 13px', borderRadius: 10, border: '1px solid #F0D9D2', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#B4402B' } as React.CSSProperties}>
@@ -111,6 +144,7 @@ export default function ReviewsClient({ reviews, totalReviews, avgRating, starCo
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -4,9 +4,11 @@ import { eq, inArray, count } from 'drizzle-orm';
 import { getProviderSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { badge } from '@/lib/provider/badge';
-import { bdGroup } from '@/lib/provider/formatters';
 import { PERF_VIEWS, PERF_LEADS } from '@/lib/provider/data';
-import { Eye, Building2, Inbox, Calendar, Heart } from 'lucide-react';
+import { Eye, Building2, Inbox, Calendar, Heart, TrendingUp, MessageSquare, Star, PlusCircle, DollarSign } from 'lucide-react';
+
+const ACCENT = '#1E3A5C';
+const AMBER  = '#C9863A';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,34 +19,26 @@ async function getOverviewData(ownerId: number) {
     .where(eq(listings.ownerId, ownerId));
 
   const listingIds = myListings.map(l => l.id);
-
-  const [threadCount] = listingIds.length
-    ? await db.select({ count: count() }).from(threads).where(inArray(threads.listingId, listingIds))
-    : [{ count: 0 }];
-
-  const [bookingCount] = listingIds.length
-    ? await db.select({ count: count() }).from(bookings).where(inArray(bookings.listingId, listingIds))
-    : [{ count: 0 }];
-
-  const [saveCount] = listingIds.length
-    ? await db.select({ count: count() }).from(saves).where(inArray(saves.listingId, listingIds))
-    : [{ count: 0 }];
-
   const activeCount = myListings.filter(l => l.verified).length;
 
-  const todayVisits = listingIds.length
-    ? await db
-        .select({
-          id: bookings.id, slot: bookings.slot, status: bookings.status,
-          userName: users.name, listingTitle: listings.title,
-        })
-        .from(bookings)
-        .innerJoin(listings, eq(bookings.listingId, listings.id))
-        .innerJoin(users, eq(bookings.userId, users.id))
-        .where(inArray(bookings.listingId, listingIds))
-        .orderBy(bookings.createdAt)
-        .limit(3)
-    : [];
+  // The three counts + recent visits are independent — run them concurrently.
+  const [[threadCount], [bookingCount], [saveCount], todayVisits] = listingIds.length
+    ? await Promise.all([
+        db.select({ count: count() }).from(threads).where(inArray(threads.listingId, listingIds)),
+        db.select({ count: count() }).from(bookings).where(inArray(bookings.listingId, listingIds)),
+        db.select({ count: count() }).from(saves).where(inArray(saves.listingId, listingIds)),
+        db.select({
+            id: bookings.id, slot: bookings.slot, status: bookings.status,
+            userName: users.name, listingTitle: listings.title,
+          })
+          .from(bookings)
+          .innerJoin(listings, eq(bookings.listingId, listings.id))
+          .innerJoin(users, eq(bookings.userId, users.id))
+          .where(inArray(bookings.listingId, listingIds))
+          .orderBy(bookings.createdAt)
+          .limit(3),
+      ])
+    : [[{ count: 0 }], [{ count: 0 }], [{ count: 0 }], []];
 
   return {
     activeCount,
@@ -67,50 +61,82 @@ export default async function OverviewPage() {
   const firstName = session.ownerName.split(' ')[0];
 
   const KPIs = [
-    { Icon: Building2, label: 'Active listings', value: String(data.activeCount),      delta: '',       dFg: '#2E7D55', bg: '#E8EDF4', fg: '#1E3A5C' },
-    { Icon: Eye,       label: 'Total listings',  value: String(data.totalCount),        delta: '',       dFg: '#2E7D55', bg: '#E6EFF7', fg: '#2A5C8A' },
-    { Icon: Inbox,     label: 'Leads (threads)', value: String(data.threadCount),       delta: '',       dFg: '#2E7D55', bg: '#E7F1EC', fg: '#2E7D55' },
-    { Icon: Calendar,  label: 'Visits booked',   value: String(data.bookingCount),      delta: '',       dFg: '#2E7D55', bg: '#F6EFD9', fg: '#9A7B1F' },
-    { Icon: Heart,     label: 'Saves',            value: String(data.saveCount),         delta: '',       dFg: '#2E7D55', bg: '#EFE9F5', fg: '#6B4E8A' },
+    { Icon: Building2,    label: 'Active listings',  value: String(data.activeCount),  sub: `${data.totalCount} total`,  bg: '#EEF3FB', fg: ACCENT },
+    { Icon: Inbox,        label: 'Leads',            value: String(data.threadCount),   sub: 'all time',                  bg: '#E7F1EC', fg: '#2E7D55' },
+    { Icon: Calendar,     label: 'Visits booked',    value: String(data.bookingCount),  sub: 'all time',                  bg: '#FEF3E2', fg: AMBER },
+    { Icon: Heart,        label: 'Saves',            value: String(data.saveCount),     sub: 'across all listings',       bg: '#EFE9F5', fg: '#6B4E8A' },
+    { Icon: MessageSquare, label: 'Messages',        value: String(data.threadCount),   sub: 'active threads',            bg: '#E7F5EE', fg: '#246046' },
+    { Icon: Eye,          label: 'Total listings',   value: String(data.totalCount),    sub: 'incl. drafts',              bg: '#F0F4F8', fg: '#4A6580' },
+    { Icon: TrendingUp,   label: 'Occupancy rate',   value: data.activeCount ? `${Math.min(100, Math.round((data.bookingCount / Math.max(data.activeCount, 1)) * 34))}%` : '—', sub: 'est. this month', bg: '#E8EDF4', fg: ACCENT },
+  ];
+
+  const QUICK_ACTIONS = [
+    { label: 'Add listing',    href: '/dashboard/listings/new', Icon: PlusCircle,    color: ACCENT,   bg: '#EEF3FB' },
+    { label: 'View leads',     href: '/dashboard/leads',        Icon: Inbox,         color: '#2E7D55', bg: '#E7F1EC' },
+    { label: 'Availability',   href: '/dashboard/calendar',     Icon: Calendar,      color: AMBER,    bg: '#FEF3E2' },
+    { label: 'Revenue',        href: '/dashboard/revenue',      Icon: DollarSign,    color: '#6B4E8A', bg: '#EFE9F5' },
   ];
 
   return (
     <div className="animate-bvfade">
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 22, gap: 16, flexWrap: 'wrap' }}>
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
         <div>
-          <h2 style={{ fontSize: 25, fontWeight: 800, letterSpacing: -0.5, color: '#15243B', margin: 0 }}>
-            Good morning, {firstName} 👋
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '3px 10px', borderRadius: 999, background: '#FEF3E2', border: '1px solid #F5D99A', marginBottom: 8 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: AMBER, display: 'inline-block' }} />
+            <span style={{ fontSize: 11, fontWeight: 800, color: AMBER, letterSpacing: 0.4 }}>OWNER MODE</span>
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, color: '#15243B', margin: 0 }}>
+            Welcome back, {firstName}
           </h2>
-          <p style={{ fontSize: 14, color: '#8893A4', margin: '6px 0 0' }}>
-            You have <strong style={{ color: '#2E7D55' }}>{data.threadCount} leads</strong> and <strong style={{ color: '#1E3A5C' }}>{data.bookingCount} visits</strong> booked.
+          <p style={{ fontSize: 14, color: '#8893A4', margin: '5px 0 0' }}>
+            <strong style={{ color: '#2E7D55' }}>{data.threadCount} active leads</strong> · <strong style={{ color: ACCENT }}>{data.bookingCount} visits</strong> booked · <strong style={{ color: '#6B4E8A' }}>{data.saveCount} saves</strong>
           </p>
         </div>
-        <Link href="/dashboard/listings">
+        <Link href="/dashboard/listings/new">
           <button className="bv-press" style={{
-            height: 44, padding: '0 20px', borderRadius: 12, border: 'none',
-            cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
-            color: '#fff', background: '#1E3A5C', boxShadow: '0 10px 22px -10px rgba(30,58,92,.55)',
+            height: 42, padding: '0 18px', borderRadius: 11, border: 'none',
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700,
+            color: '#fff', background: ACCENT, boxShadow: '0 8px 20px -8px rgba(30,58,92,.5)',
+            display: 'flex', alignItems: 'center', gap: 7,
           }}>
-            View listings
+            <PlusCircle size={15} strokeWidth={2.2} /> Add listing
           </button>
         </Link>
       </div>
 
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4" style={{ gap: 10, marginBottom: 20 }}>
+        {QUICK_ACTIONS.map(({ label, href, Icon, color, bg }) => (
+          <Link key={label} href={href} style={{ textDecoration: 'none' }}>
+            <div className="bv-lift" style={{
+              background: '#fff', border: '1px solid #ECEEF1', borderRadius: 13,
+              padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 11, cursor: 'pointer',
+            }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, color, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Icon size={16} strokeWidth={2} />
+              </div>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#15243B' }}>{label}</span>
+            </div>
+          </Link>
+        ))}
+      </div>
+
       {/* KPIs */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5" style={{ gap: 16, marginBottom: 20 }}>
-        {KPIs.map(({ Icon, label, value, delta, dFg, bg, fg }) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" style={{ gap: 14, marginBottom: 20 }}>
+        {KPIs.slice(0, 4).map(({ Icon, label, value, sub, bg, fg }) => (
           <div key={label} className="bv-lift" style={{
             background: '#fff', border: '1px solid #ECEEF1', borderRadius: 16,
-            padding: 17, boxShadow: '0 1px 2px rgba(20,40,70,.03)',
+            padding: '16px 17px', boxShadow: '0 1px 2px rgba(20,40,70,.03)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Icon size={18} strokeWidth={1.9} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: bg, color: fg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon size={17} strokeWidth={1.9} />
               </div>
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: dFg }}>{delta}</span>
             </div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.6, color: '#15243B', marginTop: 13, lineHeight: 1 }}>{value}</div>
-            <div style={{ fontSize: 12.5, fontWeight: 600, color: '#8893A4', marginTop: 6 }}>{label}</div>
+            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.8, color: '#15243B', lineHeight: 1 }}>{value}</div>
+            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#15243B', marginTop: 5 }}>{label}</div>
+            <div style={{ fontSize: 11.5, color: '#B0BBC8', marginTop: 2 }}>{sub}</div>
           </div>
         ))}
       </div>
@@ -179,7 +205,7 @@ export default async function OverviewPage() {
                 return (
                   <div key={v.id} className="bv-rowh" style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: 11, border: '1px solid #EEF1F5', borderRadius: 13,
+                    padding: 11, border: '1px solid #ECEEF1', borderRadius: 13,
                   }}>
                     <div style={{
                       width: 46, height: 46, borderRadius: 12, background: tBg, color: tFg,
@@ -203,41 +229,112 @@ export default async function OverviewPage() {
         </div>
       </div>
 
-      {/* Listings preview */}
-      <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: '22px 24px', boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: 0 }}>Your listings</h3>
-          <Link href="/dashboard/listings">
-            <span className="bv-press" style={{ fontSize: 13, fontWeight: 700, color: '#1E3A5C', cursor: 'pointer' }}>Manage all →</span>
-          </Link>
-        </div>
-        {data.topListings.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#8893A4', fontSize: 13 }}>No listings yet</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: 16 }}>
-            {data.topListings.map(l => {
-              const statusLabel = l.verified ? 'Active' : 'Pending';
-              const b = badge(statusLabel);
-              return (
-                <Link key={l.id} href={`/dashboard/listings/${l.id}`} style={{ textDecoration: 'none' }}>
-                  <div className="bv-lift" style={{ border: '1px solid #EEF1F5', borderRadius: 15, overflow: 'hidden', cursor: 'pointer' }}>
-                    <div style={{ height: 120, backgroundImage: `url('${l.cover}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#DDD3C5', position: 'relative' }}>
-                      <span style={{ position: 'absolute', top: 9, left: 9, fontSize: 10.5, fontWeight: 800, color: b.fg, background: b.bg, padding: '3px 9px', borderRadius: 999 }}>
+      {/* Listings preview + Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr]" style={{ gap: 18, marginBottom: 0 }}>
+
+        {/* Listings */}
+        <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: '20px 22px', boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 800, color: '#15243B', margin: 0 }}>Your listings</h3>
+            <Link href="/dashboard/listings">
+              <span className="bv-press" style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT, cursor: 'pointer' }}>Manage all →</span>
+            </Link>
+          </div>
+          {data.topListings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: '#EEF3FB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <Building2 size={22} color={ACCENT} strokeWidth={1.7} />
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#15243B', marginBottom: 4 }}>No listings yet</div>
+              <div style={{ fontSize: 13, color: '#8893A4', marginBottom: 14 }}>Add your first property to start getting leads</div>
+              <Link href="/dashboard/listings/new">
+                <button style={{ height: 36, padding: '0 16px', borderRadius: 10, border: 'none', background: ACCENT, color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Add first listing
+                </button>
+              </Link>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {data.topListings.map(l => {
+                const statusLabel = l.verified ? 'Active' : 'Pending';
+                const b = badge(statusLabel);
+                return (
+                  <Link key={l.id} href={`/dashboard/listings/${l.id}`} style={{ textDecoration: 'none' }}>
+                    <div className="bv-rowh" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 10, border: '1px solid #ECEEF1', borderRadius: 13 }}>
+                      <div style={{ width: 50, height: 50, borderRadius: 11, flexShrink: 0, backgroundImage: `url('${l.cover}')`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundColor: '#DDD3C5' }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.title}</div>
+                        <div style={{ fontSize: 12, color: '#8893A4', marginTop: 3 }}>— views · — leads</div>
+                      </div>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: b.fg, background: b.bg, padding: '3px 9px', borderRadius: 999, whiteSpace: 'nowrap' }}>
                         {statusLabel}
                       </span>
                     </div>
-                    <div style={{ padding: 13 }}>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.title}</div>
-                      <div style={{ fontSize: 12, color: '#8893A4', marginTop: 6 }}>
-                        <strong style={{ color: '#15243B' }}>—</strong> views · <strong style={{ color: '#15243B' }}>—</strong> leads
-                      </div>
+                  </Link>
+                );
+              })}
+              <Link href="/dashboard/listings" style={{ textDecoration: 'none' }}>
+                <div style={{ textAlign: 'center', padding: '10px 0', fontSize: 13, fontWeight: 700, color: ACCENT, cursor: 'pointer' }}>
+                  View all {data.totalCount} listings →
+                </div>
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Activity Feed */}
+        <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: '20px 22px', boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 15.5, fontWeight: 800, color: '#15243B', margin: 0 }}>Recent activity</h3>
+            <Link href="/dashboard/leads">
+              <span className="bv-press" style={{ fontSize: 12.5, fontWeight: 700, color: ACCENT, cursor: 'pointer' }}>All leads →</span>
+            </Link>
+          </div>
+
+          {data.todayVisits.length === 0 && data.threadCount === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0' }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FEF3E2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                <Star size={22} color={AMBER} strokeWidth={1.7} />
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#15243B', marginBottom: 4 }}>No activity yet</div>
+              <div style={{ fontSize: 13, color: '#8893A4' }}>Leads and visits will appear here</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+              {data.todayVisits.map((v, i) => {
+                const statusKey = v.status === 'confirmed' ? 'Confirmed' : v.status === 'pending' ? 'Requested' : String(v.status);
+                const b = badge(statusKey);
+                return (
+                  <div key={v.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '10px 0', borderBottom: i < data.todayVisits.length - 1 ? '1px solid #F5F6F8' : 'none' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: '#FEF3E2', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      <Calendar size={15} color={AMBER} strokeWidth={2} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#15243B' }}>{v.userName}</div>
+                      <div style={{ fontSize: 12, color: '#8893A4', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Visit request · {v.listingTitle}</div>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: b.fg, background: b.bg, padding: '2px 7px', borderRadius: 999, whiteSpace: 'nowrap', marginTop: 3 }}>
+                      {statusKey}
+                    </span>
+                  </div>
+                );
+              })}
+              {data.threadCount > 0 && (
+                <Link href="/dashboard/leads" style={{ textDecoration: 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '10px 0' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: '#E7F1EC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      <MessageSquare size={15} color="#2E7D55" strokeWidth={2} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#15243B' }}>{data.threadCount} active lead thread{data.threadCount > 1 ? 's' : ''}</div>
+                      <div style={{ fontSize: 12, color: ACCENT, marginTop: 2, fontWeight: 600 }}>View all leads →</div>
                     </div>
                   </div>
                 </Link>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

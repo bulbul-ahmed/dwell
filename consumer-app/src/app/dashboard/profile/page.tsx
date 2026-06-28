@@ -7,13 +7,26 @@ import { useToastStore } from '@/lib/provider/toast-store';
 
 type Lang = 'en' | 'bn';
 type NotifState = Record<string, boolean>;
+type PayoutMethod = 'bkash' | 'bank' | 'nagad';
+
+const LISTING_DEFAULTS = [
+  { key: 'pets',       label: 'Pets allowed',      sub: 'Default for new listings' },
+  { key: 'visitors',   label: 'Visitors welcome',  sub: 'Show in listing terms'   },
+  { key: 'smoking',    label: 'No smoking',         sub: 'Enforce smoke-free rule' },
+  { key: 'shortTerm',  label: 'Short-term ok',      sub: 'Allow <6 month leases'  },
+];
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024; // 5 MB
 
 export default function ProfilePage() {
-  const [lang, setLang] = useState<Lang>('en');
-  const [notif, setNotif] = useState<NotifState>(() =>
+  const [lang, setLang]             = useState<Lang>('en');
+  const [notif, setNotif]           = useState<NotifState>(() =>
     Object.fromEntries(NOTIF_PREFS.map(p => [p.key, p.def]))
+  );
+  const [payoutMethod, setPayoutMethod] = useState<PayoutMethod>('bkash');
+  const [payoutAccount, setPayoutAccount] = useState('');
+  const [listingPrefs, setListingPrefs] = useState<NotifState>(() =>
+    Object.fromEntries(LISTING_DEFAULTS.map(p => [p.key, false]))
   );
   const notify = useToastStore(s => s.notify);
 
@@ -117,12 +130,22 @@ export default function ProfilePage() {
               <div style={{ display: 'flex', gap: 22, marginTop: 16, paddingTop: 16, borderTop: '1px solid #F2F4F7' }}>
                 <div><div style={{ fontSize: 19, fontWeight: 800, color: '#15243B' }}>14</div><div style={{ fontSize: 11.5, color: '#9AA6B6' }}>Listings</div></div>
                 <div><div style={{ fontSize: 19, fontWeight: 800, color: '#15243B' }}>4.8★</div><div style={{ fontSize: 11.5, color: '#9AA6B6' }}>Rating</div></div>
-                <div><div style={{ fontSize: 19, fontWeight: 800, color: '#15243B' }}>96%</div><div style={{ fontSize: 11.5, color: '#9AA6B6' }}>Response</div></div>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ fontSize: 19, fontWeight: 800, color: '#2E7D55' }}>96%</div>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: '#2E7D55', background: '#E7F1EC', padding: '2px 6px', borderRadius: 999 }}>Excellent</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: '#9AA6B6' }}>Response rate</div>
+                </div>
+              </div>
+              <div style={{ marginTop: 12, padding: '10px 13px', borderRadius: 12, background: '#F0FBF5', border: '1px solid #C0E4D0', display: 'flex', alignItems: 'center', gap: 9 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#2E7D55" strokeWidth="1.8"/><path d="M9 12l2 2 4-4" stroke="#2E7D55" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                <span style={{ fontSize: 12.5, color: '#2E7D55', fontWeight: 700 }}>Top responder · You reply within ~15 min on average</span>
               </div>
               <button
                 onClick={() => notify('Opening profile editor', 'Edit your public agency profile.', 'info')}
                 className="bv-press bv-fill"
-                style={{ '--fill': '#EEF2F7', marginTop: 16, width: '100%', height: 42, borderRadius: 12, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700, color: '#44506A' } as React.CSSProperties}
+                style={{ '--fill': '#EEF2F7', marginTop: 16, width: '100%', height: 42, borderRadius: 12, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700, color: '#44506A' } as React.CSSProperties}
               >
                 Edit public profile
               </button>
@@ -134,7 +157,7 @@ export default function ProfilePage() {
             <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 16px' }}>Team seats</h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {TEAM.map(t => (
-                <div key={t.initial} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 11px', border: '1px solid #EEF1F5', borderRadius: 12 }}>
+                <div key={t.initial} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 11px', border: '1px solid #ECEEF1', borderRadius: 12 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: t.avBg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 13 }}>
                     {t.initial}
                   </div>
@@ -161,7 +184,7 @@ export default function ProfilePage() {
                 <div style={{ fontSize: 11.5, color: '#8893A4', marginTop: 3 }}>Current mode</div>
               </div>
               <Link href="http://localhost:3001" target="_blank" style={{ textDecoration: 'none' }}>
-                <div className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', padding: 14, borderRadius: 13, border: '1.5px solid #E2E7EE', background: '#fff', cursor: 'pointer' } as React.CSSProperties}>
+                <div className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', padding: 14, borderRadius: 13, border: '1.5px solid #ECEEF1', background: '#fff', cursor: 'pointer' } as React.CSSProperties}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#44506A' }}>🔑 Seeker</div>
                   <div style={{ fontSize: 11.5, color: '#8893A4', marginTop: 3 }}>Browse &amp; rent</div>
                 </div>
@@ -183,7 +206,7 @@ export default function ProfilePage() {
                     className="bv-press"
                     style={{
                       flex: 1, height: 44, borderRadius: 12,
-                      border: `1.5px solid ${on ? '#1E3A5C' : '#E2E7EE'}`,
+                      border: `1.5px solid ${on ? '#1E3A5C' : '#ECEEF1'}`,
                       background: on ? 'rgba(30,58,92,0.05)' : '#fff',
                       cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
                       color: on ? '#1E3A5C' : '#44506A',
@@ -191,6 +214,73 @@ export default function ProfilePage() {
                   >
                     {k === 'en' ? 'English' : 'বাংলা'}
                   </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Payout preferences */}
+          <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 4px' }}>Payout preferences</h3>
+            <p style={{ fontSize: 12.5, color: '#8893A4', margin: '0 0 16px' }}>Where we send your rental income.</p>
+            <div style={{ display: 'flex', gap: 7, marginBottom: 14 }}>
+              {([['bkash', 'bKash'], ['nagad', 'Nagad'], ['bank', 'Bank']] as [PayoutMethod, string][]).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setPayoutMethod(key)}
+                  style={{
+                    flex: 1, height: 40, borderRadius: 10,
+                    border: payoutMethod === key ? '2px solid #1E3A5C' : '1px solid #ECEEF1',
+                    background: payoutMethod === key ? '#EEF3FB' : '#fff',
+                    color: payoutMethod === key ? '#1E3A5C' : '#5A6172',
+                    fontSize: 13, fontWeight: payoutMethod === key ? 800 : 600,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ fontSize: 12, fontWeight: 700, color: '#41495A', display: 'block', marginBottom: 6 }}>
+                {payoutMethod === 'bank' ? 'Bank account number' : `${payoutMethod === 'bkash' ? 'bKash' : 'Nagad'} number`}
+              </label>
+              <input
+                type="text"
+                value={payoutAccount}
+                onChange={e => setPayoutAccount(e.target.value)}
+                placeholder={payoutMethod === 'bank' ? 'Account number' : '01XXXXXXXXX'}
+                style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid #ECEEF1', padding: '0 13px', fontSize: 13.5, fontFamily: 'inherit', color: '#15243B', outline: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+            <button
+              onClick={() => notify('Payout preferences saved', 'We will send your next payout to this account.', 'success')}
+              style={{ height: 38, padding: '0 18px', borderRadius: 10, border: 'none', background: '#1E3A5C', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              Save payout info
+            </button>
+          </div>
+
+          {/* Listing defaults */}
+          <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 4px' }}>Listing defaults</h3>
+            <p style={{ fontSize: 12.5, color: '#8893A4', margin: '0 0 14px' }}>Pre-fill these when you create a new listing.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {LISTING_DEFAULTS.map(p => {
+                const on = listingPrefs[p.key] ?? false;
+                return (
+                  <div key={p.key} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F2F4F7' }}>
+                    <div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B' }}>{p.label}</div>
+                      <div style={{ fontSize: 12, color: '#8893A4', marginTop: 1 }}>{p.sub}</div>
+                    </div>
+                    <button
+                      onClick={() => setListingPrefs(prev => ({ ...prev, [p.key]: !on }))}
+                      style={{ width: 46, height: 27, borderRadius: 999, border: 'none', background: on ? '#2E7D55' : '#CCD3DB', cursor: 'pointer', position: 'relative', flexShrink: 0, transition: 'background .25s' }}
+                    >
+                      <span style={{ position: 'absolute', top: 2.5, left: on ? 21 : 2.5, width: 22, height: 22, borderRadius: '50%', background: '#fff', boxShadow: '0 2px 5px rgba(0,0,0,.25)', transition: 'left .25s cubic-bezier(.34,1.56,.64,1)', display: 'block' }} />
+                    </button>
+                  </div>
                 );
               })}
             </div>

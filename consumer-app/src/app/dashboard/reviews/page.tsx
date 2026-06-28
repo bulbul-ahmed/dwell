@@ -3,19 +3,12 @@ import { eq, inArray, count } from 'drizzle-orm';
 import { getProviderSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import ReviewsClient, { type ReviewRow } from '@/components/provider/ReviewsClient';
+import { timeAgo } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
 
 function starsStr(n: number) {
   return '★'.repeat(Math.min(n, 5));
-}
-
-function timeAgo(date: Date): string {
-  const diff = Date.now() - date.getTime();
-  const days = Math.floor(diff / 86400000);
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  return `${Math.floor(days / 30)}mo ago`;
 }
 
 export default async function ReviewsPage() {

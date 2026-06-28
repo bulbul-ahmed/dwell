@@ -98,7 +98,10 @@ export async function GET(request: NextRequest) {
                : sort === 'new'  ? filtered.orderBy(desc(listings.createdAt))
                :                   filtered;
 
-  const rows = limit ? await sorted.limit(parseInt(limit, 10)) : await sorted;
+  // Always bound the result set — default 60, hard cap 100 (prevents unbounded scans).
+  const reqLimit = limit ? parseInt(limit, 10) : NaN;
+  const lim = Math.min(Number.isFinite(reqLimit) && reqLimit > 0 ? reqLimit : 60, 100);
+  const rows = await sorted.limit(lim);
 
   return NextResponse.json({ listings: rows.map(mapListing) });
 }
@@ -114,6 +117,7 @@ export async function POST(request: NextRequest) {
     price: number; advance?: number; service?: number; negotiable?: boolean;
     amenities?: string[]; shots?: string[]; shotCats?: string[];
     videos?: string[]; meta?: Record<string, unknown>;
+    description?: string;
     mapLat?: number; mapLng?: number; zoneId?: number;
     availableFrom?: string;
     action?: 'draft' | 'submit';
@@ -182,7 +186,7 @@ export async function POST(request: NextRequest) {
     totalFloors:  body.totalFloors ?? null,
     videos:       body.videos ?? null,
     meta:         body.meta ?? null,
-    description:  '',
+    description:  body.description ?? '',
     mapLat:       body.mapLat ?? null,
     mapLng:       body.mapLng ?? null,
     zoneId:       body.zoneId ?? null,

@@ -13,6 +13,23 @@ import ChatDrawer from '@/components/ChatDrawer';
 
 const ACCENT = '#1E3A5C';
 
+// Small muted icons for the facts band (Bedrooms / Bathrooms / Size / Floor / Move-in).
+const FACT_ICON_SRC: Record<string, string> = {
+  Bedrooms: '/icons/bed.svg', Bathrooms: '/icons/bath.svg', Size: '/icons/area-sqft.svg',
+};
+function FactIcon({ label }: { label: string }) {
+  const src = FACT_ICON_SRC[label];
+  if (src) return <img src={src} alt="" width={14} height={14} style={{ flexShrink: 0, opacity: 0.6 }} />;
+  const p = { width: 14, height: 14, viewBox: '0 0 24 24', fill: 'none' as const, style: { flexShrink: 0 } };
+  if (label === 'Floor') return (
+    <svg {...p}><path d="M4 8l8-4 8 4-8 4-8-4zM4 12l8 4 8-4M4 16l8 4 8-4" stroke="#9AA2AF" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+  );
+  // Move-in — calendar
+  return (
+    <svg {...p}><rect x="3.5" y="5" width="17" height="16" rx="2" stroke="#9AA2AF" strokeWidth="1.7" /><path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" stroke="#9AA2AF" strokeWidth="1.7" strokeLinecap="round" /></svg>
+  );
+}
+
 // Fallback icons for legacy labels not yet in the admin-managed amenities table.
 const AMEN_ICONS_FALLBACK: Record<string, string> = {
   'lift': '🛗', '2 lifts': '🛗', 'generator backup': '⚡', 'parking': '🅿️', '2 parking': '🅿️', '3 parking': '🅿️',
@@ -59,6 +76,7 @@ export default function DetailClient() {
   const [amenIcons, setAmenIcons] = useState<Record<string, string>>({});
 
   const [gallery, setGallery] = useState(0);
+  const mediaCountRef = useRef(0);
   const [photoTab, setPhotoTab] = useState('All');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -72,6 +90,7 @@ export default function DetailClient() {
   const [reportDetails, setReportDetails] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+  const [payTooltip, setPayTooltip] = useState<string | null>(null);
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState(1);
   const [pickedDate, setPickedDate] = useState<Date | null>(null);
@@ -103,6 +122,9 @@ export default function DetailClient() {
   }, []);
 
   useEffect(() => {
+    // Navigating between listings (e.g. "Similar homes") keeps this same dynamic
+    // route mounted, so reset scroll to the top of the new listing.
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, left: 0 });
     setLoading(true);
     fetch(`/api/listings/${id}`)
       .then(r => r.json())
@@ -110,11 +132,11 @@ export default function DetailClient() {
         setListing(l);
         setCoords({ lat: edit?.mapLat ?? null, lng: edit?.mapLng ?? null });
         setGallery(0);
-        return fetch(`/api/listings?cat=${l.cat}&limit=4`);
+        return fetch(`/api/listings?cat=${l.cat}&limit=10`);
       })
       .then(r => r.json())
       .then(({ listings: ls }: { listings: import('@/types').Listing[] }) => {
-        setSimilar(ls.filter(l => l.id !== Number(id)).slice(0, 3));
+        setSimilar(ls.filter(l => l.id !== Number(id)).slice(0, 9));
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -129,6 +151,18 @@ export default function DetailClient() {
       .then(d => { if (d?.views != null) setViewCount(d.views); })
       .catch(() => {});
   }, [id]);
+
+  // Lightbox keyboard navigation (arrow keys + Escape)
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const handle = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') setGallery(g => Math.min(g + 1, mediaCountRef.current - 1));
+      if (e.key === 'ArrowLeft')  setGallery(g => Math.max(g - 1, 0));
+      if (e.key === 'Escape')     setLightboxOpen(false);
+    };
+    window.addEventListener('keydown', handle);
+    return () => window.removeEventListener('keydown', handle);
+  }, [lightboxOpen]);
 
   // Deep-link from the provider page: /listings/<id>?chat=1 opens the message drawer
   useEffect(() => {
@@ -183,6 +217,7 @@ export default function DetailClient() {
   const detailMedia = mediaItems.map((m, i) => ({ ...m, ring: clampedGallery === i ? ACCENT : 'transparent', idx: i }));
   const photoCount = filteredShots.length;
   const views = viewCount ?? sel.views ?? 0;
+  mediaCountRef.current = mediaItems.length;
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -291,11 +326,16 @@ export default function DetailClient() {
     { n: '1', t: 'Pick a date' },
     { n: '2', t: 'Add a note' },
     { n: '3', t: 'Confirmed' },
-  ].map((s, i) => ({
-    ...s,
-    circleBg: bookingStep > i + 1 ? ACCENT : bookingStep === i + 1 ? ACCENT : '#F0F2F5',
-    circleFg: bookingStep >= i + 1 ? '#fff' : '#8B93A1',
-  }));
+  ].map((s, i) => {
+    const done    = bookingStep > i + 1;
+    const current = bookingStep === i + 1;
+    return {
+      ...s,
+      done, current,
+      circleBg: done ? '#2E7D55' : current ? ACCENT : '#F0F2F5',
+      circleFg: done || current ? '#fff' : '#8B93A1',
+    };
+  });
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -315,36 +355,76 @@ export default function DetailClient() {
           {/* LEFT */}
           <div>
 
-            {/* ===== GALLERY ===== */}
+            {/* ===== GALLERY — hero left + 2×2 grid right ===== */}
             <div
-              style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', aspectRatio: '16/10', background: heroItem.type === 'video' ? '#000' : '#DDD3C5', cursor: heroItem.type === 'video' ? 'default' : 'zoom-in', marginBottom: 12 }}
-              onClick={() => { if (heroItem.type === 'photo') setLightboxOpen(true); }}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: mediaItems.length > 1 ? '3fr 2fr' : '1fr',
+                gap: 6,
+                borderRadius: 18,
+                overflow: 'hidden',
+                height: 360,
+                marginBottom: 20,
+                background: '#DDD3C5',
+              }}
             >
-              {heroItem.type === 'video' ? (
-                <video
-                  key={heroItem.url}
-                  src={heroItem.url}
-                  controls
-                  playsInline
-                  onClick={e => e.stopPropagation()}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
-                />
-              ) : (
-                <div style={{ width: '100%', height: '100%', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              )}
-              {heroItem.type === 'photo' && photoCount > 1 && (
-                <div style={{ position: 'absolute', right: 14, bottom: 14, display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(21,36,59,0.78)', color: '#fff', borderRadius: 999, padding: '8px 14px', fontSize: 13, fontWeight: 700, backdropFilter: 'blur(4px)' }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="3" width="18" height="18" rx="3" stroke="#fff" strokeWidth="1.8" />
-                    <circle cx="8.5" cy="8.5" r="1.6" fill="#fff" />
-                    <path d="M21 15l-5-5L5 21" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  View all {photoCount} photos
+              {/* Hero (left) */}
+              <div
+                style={{ position: 'relative', height: '100%', cursor: heroItem.type === 'video' ? 'default' : 'zoom-in', overflow: 'hidden' }}
+                onClick={() => { if (heroItem.type === 'photo') { setGallery(0); setLightboxOpen(true); } }}
+              >
+                {heroItem.type === 'video' ? (
+                  <video
+                    key={heroItem.url}
+                    src={heroItem.url}
+                    controls
+                    playsInline
+                    onClick={e => e.stopPropagation()}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
+                  />
+                ) : (
+                  <div style={{ width: '100%', height: '100%', backgroundImage: `url('${mediaItems[0]?.url ?? sel.coverUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                )}
+              </div>
+
+              {/* Right 2×2 grid */}
+              {mediaItems.length > 1 && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 6 }}>
+                  {[1, 2, 3, 4].map(idx => {
+                    const m = mediaItems[idx];
+                    const isLast = idx === 4 || idx === mediaItems.length - 1 + (mediaItems.length < 5 ? 4 - mediaItems.length + 1 : 0);
+                    const showOverlay = idx === 4 && mediaItems.length > 5;
+                    if (!m) {
+                      return <div key={idx} style={{ background: '#C8CAD0' }} />;
+                    }
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => { setGallery(idx); setLightboxOpen(true); }}
+                        style={{ position: 'relative', overflow: 'hidden', cursor: 'zoom-in' }}
+                      >
+                        {m.type === 'video' ? (
+                          <>
+                            <video src={m.url} muted preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.28)', color: '#fff', fontSize: 22 }}>▶</span>
+                          </>
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', backgroundImage: `url('${m.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                        )}
+                        {showOverlay && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(12,20,33,0.58)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 5 }}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#fff" strokeWidth="1.8"/><circle cx="8.5" cy="8.5" r="1.6" fill="#fff"/><path d="M21 15l-5-5L5 21" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#fff' }}>+{mediaItems.length - 4} more</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
 
-            {/* Category tabs — only when ≥2 labeled categories */}
+            {/* Category tabs — under the gallery, with the photo controls */}
             {showTabs && (
               <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
                 {allTabs.map(tab => {
@@ -362,27 +442,27 @@ export default function DetailClient() {
               </div>
             )}
 
-            {/* Thumbnail strip (photos + videos) */}
-            {detailMedia.length > 1 && (
-              <div style={{ display: 'flex', gap: 10, marginBottom: 30, flexWrap: 'wrap' }}>
-                {detailMedia.map(m => (
-                  <div
-                    key={m.idx}
-                    onClick={() => setGallery(m.idx)}
-                    style={{ position: 'relative', width: 84, height: 60, borderRadius: 11, overflow: 'hidden', background: m.type === 'video' ? '#000' : '#DDD3C5', cursor: 'pointer', border: `2.5px solid ${m.ring}`, flexShrink: 0 }}
-                  >
-                    {m.type === 'video' ? (
-                      <>
-                        <video src={m.url} muted preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.28)', color: '#fff', fontSize: 18 }}>▶</span>
-                      </>
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', backgroundImage: `url('${m.url}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* "View all N photos" link below grid */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
+              {photoCount > 1 && (
+                <button
+                  onClick={() => { setGallery(0); setLightboxOpen(true); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid #D3D9E0', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 700, color: '#41495A', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#41495A" strokeWidth="1.8"/><circle cx="8.5" cy="8.5" r="1.6" fill="#41495A"/><path d="M21 15l-5-5L5 21" stroke="#41495A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  View all {photoCount} photos
+                </button>
+              )}
+              {(sel.videos?.length ?? 0) > 0 && (
+                <button
+                  onClick={() => { setGallery(filteredShots.length); setLightboxOpen(true); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#F0EEF8', border: 'none', borderRadius: 10, padding: '7px 14px', fontSize: 13, fontWeight: 700, color: '#4A3880', cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#4A3880"/></svg>
+                  Virtual tour · {sel.videos!.length} video{sel.videos!.length > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               {sel.verified && (
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#EAF1ED', color: '#3C7A58', borderRadius: 999, padding: '5px 11px', fontSize: 12, fontWeight: 700 }}>
@@ -392,47 +472,106 @@ export default function DetailClient() {
                   Verified listing
                 </span>
               )}
-              <span style={{ fontSize: 12.5, color: '#8B93A1', fontWeight: 600 }}>{sel.furnishing} · For {sel.pref}</span>
+              <span style={{ fontSize: 12.5, color: '#8B93A1', fontWeight: 600 }}>{sel.furnishing}</span>
             </div>
-            <h1 className="font-sans font-normal leading-[1.12] m-0 mb-2 text-accent-dark text-[clamp(26px,6.5vw,36px)]">{sel.title}</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+              <h1 className="font-sans font-normal leading-[1.12] m-0 text-accent-dark text-[clamp(26px,6.5vw,36px)]">{sel.title}</h1>
+              {sel.createdAt && (() => {
+                const d = Math.floor((Date.now() - new Date(sel.createdAt).getTime()) / 86400000);
+                if (d > 30) return null;
+                const label = d <= 0 ? 'Listed today' : d === 1 ? 'Listed yesterday' : `Listed ${d} days ago`;
+                return (
+                  <span style={{ fontSize: 11.5, fontWeight: 700, color: d <= 7 ? '#1E6B3A' : '#7A5A12', background: d <= 7 ? '#E8F5EE' : '#FEF3CD', borderRadius: 6, padding: '3px 9px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    {d <= 7 ? '✦ New · ' : ''}{label}
+                  </span>
+                );
+              })()}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14.5, color: '#6A7180', marginBottom: 24 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
                 <path d="M12 21s7-5.6 7-11a7 7 0 10-14 0c0 5.4 7 11 7 11z" stroke="#A8AEB9" strokeWidth="1.8" />
                 <circle cx="12" cy="10" r="2.4" stroke="#A8AEB9" strokeWidth="1.8" />
               </svg>
               {sel.area}
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 4, color: '#8B93A1' }}>
-                <span style={{ color: '#D3D9E0' }}>·</span>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                  <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#A8AEB9" strokeWidth="1.8" />
-                  <circle cx="12" cy="12" r="3" stroke="#A8AEB9" strokeWidth="1.8" />
-                </svg>
-                {views.toLocaleString()} {views === 1 ? 'view' : 'views'}
-              </span>
+              {views >= 50 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: 4, color: '#8B93A1' }}>
+                  <span style={{ color: '#D3D9E0' }}>·</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" stroke="#A8AEB9" strokeWidth="1.8" />
+                    <circle cx="12" cy="12" r="3" stroke="#A8AEB9" strokeWidth="1.8" />
+                  </svg>
+                  {views.toLocaleString()} views
+                </span>
+              )}
+              {(sel.savesCount ?? 0) > 0 && (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginLeft: views >= 50 ? 0 : 4, color: '#8B93A1' }}>
+                  <span style={{ color: '#D3D9E0' }}>·</span>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 21C12 21 3 14 3 8a5 5 0 0110 0 5 5 0 0110 0c0 6-9 13-11 13z" fill="#F0B8C0" stroke="#C5303A" strokeWidth="1.6"/></svg>
+                  {sel.savesCount} {sel.savesCount === 1 ? 'person saved' : 'people saved this'}
+                </span>
+              )}
             </div>
 
             {/* Facts band */}
-            <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4" style={{ padding: 20, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 16, marginBottom: 30 }}>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-5" style={{ padding: 20, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 16, marginBottom: 30 }}>
               <div>
-                <div style={{ fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}>Bedrooms</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}><FactIcon label="Bedrooms" />Bedrooms</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#15243B' }}>{sel.beds}</div>
               </div>
               <div style={{ borderLeft: '1px solid #EDF0F4', paddingLeft: 16 }}>
-                <div style={{ fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}>Bathrooms</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}><FactIcon label="Bathrooms" />Bathrooms</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#15243B' }}>{sel.baths}</div>
               </div>
               <div style={{ borderLeft: '1px solid #EDF0F4', paddingLeft: 16 }}>
-                <div style={{ fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}>Size</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}><FactIcon label="Size" />Size</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#15243B' }}>{sel.size} sqft</div>
               </div>
               <div style={{ borderLeft: '1px solid #EDF0F4', paddingLeft: 16 }}>
-                <div style={{ fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}>Floor</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}><FactIcon label="Floor" />Floor</div>
                 <div style={{ fontSize: 18, fontWeight: 700, color: '#15243B' }}>{sel.floor}</div>
+              </div>
+              <div style={{ borderLeft: '1px solid #EDF0F4', paddingLeft: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#8B93A1', fontWeight: 600, marginBottom: 4 }}><FactIcon label="Move-in" />Move-in</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: (() => { const d = sel.availableFrom ? new Date(sel.availableFrom) : null; const past = !d || isNaN(d.getTime()) || d <= new Date(); return past ? '#1E6B3A' : '#7A5A12'; })() }}>
+                  {(() => {
+                    const d = sel.availableFrom ? new Date(sel.availableFrom) : null;
+                    if (!d || isNaN(d.getTime())) return 'Now';
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    if (d <= today) return 'Now';
+                    return d.toLocaleDateString('en', { day: 'numeric', month: 'short' });
+                  })()}
+                </div>
               </div>
             </div>
 
             <h3 style={{ fontSize: 19, fontWeight: 700, margin: '0 0 12px', color: '#15243B' }}>About this home</h3>
             <p style={{ fontSize: 15.5, lineHeight: 1.7, color: '#51596A', margin: '0 0 32px' }}>{sel.desc}</p>
+
+            {!!(sel.meta?.floorPlan) && (() => {
+              const fp = sel.meta!.floorPlan as string;
+              return (
+                <div style={{ marginBottom: 32 }}>
+                  <h3 style={{ fontSize: 19, fontWeight: 700, margin: '0 0 14px', color: '#15243B' }}>Floor plan</h3>
+                  <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid #E7EAEE', background: '#F8FAFC', textAlign: 'center', padding: 12 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={fp}
+                      alt="Floor plan"
+                      style={{ maxWidth: '100%', maxHeight: 420, objectFit: 'contain', display: 'block', margin: '0 auto', borderRadius: 8 }}
+                    />
+                  </div>
+                  <a
+                    href={fp}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 10, fontSize: 13, fontWeight: 600, color: ACCENT, textDecoration: 'none' }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    View larger
+                  </a>
+                </div>
+              );
+            })()}
 
             <h3 style={{ fontSize: 19, fontWeight: 700, margin: '0 0 16px', color: '#15243B' }}>Amenities</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px 24px', marginBottom: 34 }}>
@@ -459,27 +598,69 @@ export default function DetailClient() {
           <aside className="detail-sticky-aside">
             {/* Booking card */}
             <div style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 24, boxShadow: '0 1px 2px rgba(21,36,59,0.06), 0 12px 28px rgba(21,36,59,0.10), 0 28px 60px rgba(21,36,59,0.10)' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 4 }}>
-                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, color: '#15243B' }}>{priceLabel}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                <span style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 32, color: '#15243B', lineHeight: 1 }}>{priceLabel}</span>
+                {sel.priceContext && (() => {
+                  const { label, pctDiff } = sel.priceContext;
+                  const isBelow = pctDiff <= -10, isAbove = pctDiff >= 10;
+                  const color = isBelow ? '#1E6B3A' : isAbove ? '#9A2E35' : '#7A5A12';
+                  const bg = isBelow ? '#E8F5EE' : isAbove ? '#FEF0F0' : '#FEF3CD';
+                  const icon = isBelow ? '↓' : isAbove ? '↑' : '≈';
+                  return (
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color, background: bg, borderRadius: 6, padding: '4px 9px' }}>
+                      {icon} {label} {Math.abs(pctDiff) >= 5 ? `(${Math.abs(pctDiff)}%)` : ''}
+                    </span>
+                  );
+                })()}
               </div>
-              <div style={{ fontSize: 13, color: '#8B93A1', marginBottom: 6 }}>
-                {sel.furnishing} · {sel.availableFrom && sel.availableFrom !== 'immediate'
-                  ? `Available ${new Date(sel.availableFrom).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                  : 'Available now'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: '#8B93A1' }}>{sel.furnishing}</span>
+                {(() => {
+                  const d = sel.availableFrom ? new Date(sel.availableFrom) : null;
+                  const today = new Date(); today.setHours(0, 0, 0, 0);
+                  const past = !d || isNaN(d.getTime()) || d <= today;
+                  const label = past ? 'Available now' : `Available ${d!.toLocaleDateString('en', { day: 'numeric', month: 'short' })}`;
+                  return (
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: past ? '#1E6B3A' : '#7A5A12', background: past ? '#E8F5EE' : '#FEF3CD', borderRadius: 6, padding: '3px 8px' }}>
+                      {label}
+                    </span>
+                  );
+                })()}
               </div>
-              {sel.createdAt && (() => {
-                const d = Math.floor((Date.now() - new Date(sel.createdAt).getTime()) / 86400000);
-                const label = d <= 0 ? 'Listed today' : d === 1 ? 'Listed yesterday' : d < 30 ? `Listed ${d} days ago` : `Listed ${Math.floor(d / 30)} month${d < 60 ? '' : 's'} ago`;
-                return <div style={{ fontSize: 12.5, color: '#9AA6B6', marginBottom: 18 }}>{d <= 7 && <span style={{ color: '#2E7D55', fontWeight: 700 }}>New · </span>}{label}</div>;
-              })()}
-
-              <div style={{ background: '#F4F6F9', borderRadius: 13, padding: '15px 16px', marginBottom: 18 }}>
-                {costRows.map(r => (
-                  <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', fontSize: 13.5 }}>
-                    <span style={{ color: '#6A7180' }}>{r.k}</span>
-                    <span style={{ color: '#15243B', fontWeight: 700 }}>{r.v}</span>
-                  </div>
-                ))}
+              <div style={{ background: '#F4F6F9', borderRadius: 13, padding: '15px 16px', marginBottom: 18, position: 'relative' }}>
+                {costRows.map(r => {
+                  const tooltipKey = r.k === 'Advance' ? 'advance' : r.k === 'Total move-in' ? 'movein' : null;
+                  const tooltipText = tooltipKey === 'advance'
+                    ? `Security deposit held by landlord. Returned at end of tenancy, minus any damages. Typically ${sel.adv} months' rent in Dhaka.`
+                    : tooltipKey === 'movein'
+                    ? `First month's rent + service charge + full advance deposit. This is your total upfront payment to move in.`
+                    : null;
+                  return (
+                    <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '5px 0', fontSize: 13.5 }}>
+                      <span style={{ color: '#6A7180', display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {r.k}
+                        {tooltipText && (
+                          <span style={{ position: 'relative', display: 'inline-flex' }}>
+                            <button
+                              onClick={() => setPayTooltip(payTooltip === tooltipKey ? null : tooltipKey)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#A8AEB9', display: 'flex', lineHeight: 1 }}
+                              aria-label={`More info about ${r.k}`}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9.5" stroke="#A8AEB9" strokeWidth="1.7"/><path d="M12 8v1M12 11v5" stroke="#A8AEB9" strokeWidth="1.7" strokeLinecap="round"/></svg>
+                            </button>
+                            {payTooltip === tooltipKey && (
+                              <div style={{ position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)', marginBottom: 8, width: 220, background: '#15243B', color: '#fff', fontSize: 12, lineHeight: 1.55, borderRadius: 10, padding: '10px 13px', zIndex: 20, pointerEvents: 'none', boxShadow: '0 8px 24px rgba(21,36,59,0.35)' }}>
+                                {tooltipText}
+                                <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '6px solid #15243B' }} />
+                              </div>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                      <span style={{ color: '#15243B', fontWeight: 700 }}>{r.v}</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {isOwnListing ? (
@@ -582,14 +763,23 @@ export default function DetailClient() {
               style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 20, marginTop: 16, cursor: 'pointer', transition: 'background .25s, border-color .25s', display: 'block', textDecoration: 'none' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 13 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 13, background: '#15243B', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20 }}>
-                  {sel.owner.name.charAt(0)}
-                </div>
-                <div style={{ flex: 1 }}>
+                {sel.owner.avatarUrl ? (
+                  <img src={sel.owner.avatarUrl} alt={sel.owner.name} style={{ width: 48, height: 48, borderRadius: 13, objectFit: 'cover', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 48, height: 48, borderRadius: 13, background: '#15243B', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 20, flexShrink: 0 }}>
+                    {sel.owner.name.charAt(0)}
+                  </div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: '#15243B' }}>{sel.owner.name}</div>
-                  <div style={{ fontSize: 12.5, color: '#8A8F9C' }}>{sel.owner.type} · ★ {sel.owner.rating.toFixed(1)} · View profile</div>
+                  <div style={{ fontSize: 12.5, color: '#8A8F9C' }}>
+                    {sel.owner.type}
+                    {(sel.owner.listingCount ?? 0) > 0 && <span> · {sel.owner.listingCount} listing{sel.owner.listingCount === 1 ? '' : 's'}</span>}
+                    <span> · ★ {sel.owner.rating.toFixed(1)}</span>
+                    <span style={{ color: ACCENT, fontWeight: 600 }}> · View profile</span>
+                  </div>
                 </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
                   <path d="M9 6l6 6-6 6" stroke="#AEB8C6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
@@ -605,19 +795,29 @@ export default function DetailClient() {
         </div>
 
         {/* ===== SIMILAR HOMES ===== */}
-        <div style={{ marginTop: 56 }}>
-          <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400, fontSize: 28, margin: '0 0 20px', color: '#15243B' }}>Similar homes nearby</h2>
-          <div className="g3-22">
-            {similar.map(c => (
-              <ListingCard
-                key={c.id}
-                listing={c}
-                saved={!!saved[c.id]}
-                onSave={e => { e.preventDefault(); toggleSave(c.id); }}
-              />
-            ))}
+        {similar.length > 0 && (
+          <div style={{ marginTop: 56 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, marginBottom: 20 }}>
+              <h2 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontWeight: 400, fontSize: 28, margin: 0, color: '#15243B' }}>Similar homes nearby</h2>
+              <Link
+                href={`/search?cat=${sel.cat}&beds=${sel.beds}`}
+                style={{ fontSize: 13.5, fontWeight: 700, color: ACCENT, textDecoration: 'none', whiteSpace: 'nowrap' }}
+              >
+                See all similar →
+              </Link>
+            </div>
+            <div className="g3-22">
+              {similar.map(c => (
+                <ListingCard
+                  key={c.id}
+                  listing={c}
+                  saved={!!saved[c.id]}
+                  onSave={e => { e.preventDefault(); toggleSave(c.id); }}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </main>
 
       <div className="detail-mobile-spacer" />
@@ -643,24 +843,53 @@ export default function DetailClient() {
       {lightboxOpen && (
         <div
           onClick={e => { if (e.target === e.currentTarget) setLightboxOpen(false); }}
-          style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(12,20,33,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, gap: 18 }}
+          className="px-2 py-14 sm:px-[60px] sm:py-6"
+          style={{ position: 'fixed', inset: 0, zIndex: 70, background: 'rgba(12,20,33,0.92)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14 }}
         >
+          {/* Close */}
           <button
             onClick={() => setLightboxOpen(false)}
-            aria-label="Close"
+            aria-label="Close gallery"
             style={{ position: 'absolute', top: 20, right: 22, width: 42, height: 42, borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: 22, cursor: 'pointer', lineHeight: 1 }}
           >✕</button>
 
-          {heroItem.type === 'video' ? (
-            <video key={heroItem.url} src={heroItem.url} controls autoPlay playsInline onClick={e => e.stopPropagation()} style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, background: '#000', objectFit: 'contain' }} />
-          ) : (
-            <div style={{ width: 'min(1040px, 92vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', backgroundColor: '#1A2433', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
-          )}
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600 }}>{clampedGallery + 1} / {mediaItems.length}</span>
+          {/* Counter */}
+          <div style={{ position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600 }}>
+            {clampedGallery + 1} / {mediaItems.length}
           </div>
 
+          {/* Prev button */}
+          {clampedGallery > 0 && (
+            <button
+              onClick={e => { e.stopPropagation(); setGallery(g => Math.max(g - 1, 0)); }}
+              aria-label="Previous photo"
+              className="left-2 sm:left-4"
+              style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.16)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          )}
+
+          {/* Main image / video */}
+          {heroItem.type === 'video' ? (
+            <video key={heroItem.url} src={heroItem.url} controls autoPlay playsInline onClick={e => e.stopPropagation()} style={{ width: 'min(1040px, 94vw)', aspectRatio: '16/10', borderRadius: 16, background: '#000', objectFit: 'contain' }} />
+          ) : (
+            <div style={{ width: 'min(1040px, 94vw)', aspectRatio: '16/10', borderRadius: 16, overflow: 'hidden', backgroundColor: '#1A2433', backgroundImage: `url('${heroItem.url}')`, backgroundSize: 'contain', backgroundRepeat: 'no-repeat', backgroundPosition: 'center' }} />
+          )}
+
+          {/* Next button */}
+          {clampedGallery < mediaItems.length - 1 && (
+            <button
+              onClick={e => { e.stopPropagation(); setGallery(g => Math.min(g + 1, mediaCountRef.current - 1)); }}
+              aria-label="Next photo"
+              className="right-2 sm:right-4"
+              style={{ position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: 999, border: 'none', background: 'rgba(255,255,255,0.16)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          )}
+
+          {/* Thumbnail strip */}
           {detailMedia.length > 1 && (
             <div style={{ display: 'flex', gap: 9, maxWidth: '92vw', overflowX: 'auto', paddingBottom: 4 }}>
               {detailMedia.map(m => (
@@ -706,10 +935,21 @@ export default function DetailClient() {
             {/* Stepper */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '20px 26px 4px' }}>
               {steps.map((s, i) => (
-                <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: s.circleBg, color: s.circleFg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700 }}>{s.n}</div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#51596A' }}>{s.t}</span>
-                  {i < steps.length - 1 && <div style={{ width: 24, height: 1, background: '#E7EAEE', margin: '0 4px' }} />}
+                <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{
+                    width: 26, height: 26, minWidth: 26, borderRadius: '50%',
+                    background: s.circleBg, color: s.circleFg,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12.5, fontWeight: 700, flexShrink: 0,
+                    boxShadow: s.current ? `0 0 0 2px #fff, 0 0 0 4px ${ACCENT}` : 'none',
+                  }}>
+                    {s.done
+                      ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M5 12l5 5L19 7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      : s.n
+                    }
+                  </div>
+                  <span style={{ fontSize: 12.5, fontWeight: s.current ? 700 : 500, color: s.current ? ACCENT : s.done ? '#2E7D55' : '#8B93A1' }}>{s.t}</span>
+                  {i < steps.length - 1 && <div style={{ width: 20, height: 1.5, background: s.done ? '#2E7D55' : '#E7EAEE', margin: '0 2px', borderRadius: 1 }} />}
                 </div>
               ))}
             </div>

@@ -32,16 +32,24 @@ export async function POST(request: NextRequest) {
   const userId = await getSession();
   if (!userId) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
 
-  const { listingId, rating, subRatings, comment } = await request.json() as {
-    listingId: number;
-    rating: number;
+  const { listingId, rating, subRatings, comment } = await request.json().catch(() => ({})) as {
+    listingId?: number;
+    rating?: number;
     subRatings?: object;
     comment?: string;
   };
 
+  if (!Number.isInteger(listingId)) return NextResponse.json({ error: 'Invalid listingId' }, { status: 400 });
+  if (!Number.isFinite(rating) || (rating as number) < 1 || (rating as number) > 5) {
+    return NextResponse.json({ error: 'Rating must be 1-5' }, { status: 400 });
+  }
+  // Confirm the listing exists before writing a review against it.
+  const [exists] = await db.select({ id: listings.id }).from(listings).where(eq(listings.id, listingId as number)).limit(1);
+  if (!exists) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+
   const [inserted] = await db
     .insert(reviews)
-    .values({ listingId, userId, rating, subRatings, comment })
+    .values({ listingId: listingId as number, userId, rating: rating as number, subRatings, comment })
     .returning();
 
   const [listing] = await db

@@ -11,7 +11,9 @@ const ACCENT = '#1E3A5C';
 
 const NavRight = dynamic(() => import('@/components/NavRight'), { ssr: false });
 
-interface SessionUser { name: string; email: string; role: string }
+const AMBER = '#C9863A';
+
+interface SessionUser { name: string; email: string; role: string; avatarUrl?: string | null }
 
 export default function Nav() {
   const router = useRouter();
@@ -19,6 +21,7 @@ export default function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<SessionUser | null>(null);
   const [listSheet, setListSheet] = useState(false);
+  const [switching, setSwitching] = useState(false);
 
   // "List your property": owners go straight to the studio wizard; renters verify
   // (phone+address) first; logged-out users sign in then land on the wizard.
@@ -47,6 +50,14 @@ export default function Nav() {
     router.push('/');
     router.refresh();
   }
+
+  const handleSwitchToOwner = async () => {
+    if (switching) return;
+    setSwitching(true);
+    await new Promise(r => setTimeout(r, 420));
+    router.push('/dashboard');
+    setSwitching(false);
+  };
 
   // Owner dashboard has its own chrome (Sidebar/Header) — hide the seeker nav there.
   if (pathname?.startsWith('/dashboard')) return null;
@@ -84,6 +95,54 @@ export default function Nav() {
 
         {/* ---- RIGHT ---- */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* Owner mode toggle — desktop only, visible only to owners */}
+          {user?.role === 'owner' && (
+            <div className="nav-main-links" style={{ alignItems: 'center' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center',
+                background: '#F0F2F6', borderRadius: 999,
+                padding: 3, border: '1px solid #E2E7EE',
+                opacity: switching ? 0.6 : 1,
+                transition: 'opacity 0.3s ease',
+              }}>
+                {/* Renter tab — active */}
+                <div style={{
+                  height: 30, padding: '0 13px', borderRadius: 999,
+                  background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.10)',
+                  color: ACCENT, fontSize: 13, fontWeight: 700,
+                  display: 'inline-flex', alignItems: 'center',
+                  transition: 'all 0.35s cubic-bezier(.22,1,.36,1)',
+                }}>
+                  Renter
+                </div>
+                {/* Owner tab */}
+                <button
+                  onClick={handleSwitchToOwner}
+                  disabled={switching}
+                  style={{
+                    height: 30, padding: '0 13px', borderRadius: 999,
+                    background: 'transparent', border: 'none',
+                    color: switching ? AMBER : '#8893A4',
+                    fontSize: 13, fontWeight: 600,
+                    cursor: switching ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    transition: 'all 0.35s cubic-bezier(.22,1,.36,1)',
+                  }}
+                >
+                  {switching && <span style={{ width: 6, height: 6, borderRadius: '50%', background: AMBER, display: 'inline-block', animation: 'dwell-pulse 0.8s ease-in-out infinite' }} />}
+                  Owner
+                </button>
+              </div>
+              <style>{`
+                @keyframes dwell-pulse {
+                  0%, 100% { opacity: 1; transform: scale(1); }
+                  50% { opacity: 0.4; transform: scale(0.7); }
+                }
+              `}</style>
+            </div>
+          )}
+
           <div className="nav-main-links">
             <NavRight />
           </div>
@@ -128,7 +187,7 @@ export default function Nav() {
             onClick={() => setMenuOpen(false)}
             style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, marginBottom: 14, borderRadius: 14, background: '#F4F6F9', textDecoration: 'none' }}
           >
-            <div style={{ width: 42, height: 42, borderRadius: '50%', background: ACCENT, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>{initials}</div>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', backgroundColor: user.avatarUrl ? '#E7EAEE' : ACCENT, backgroundImage: user.avatarUrl ? `url('${user.avatarUrl}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, flexShrink: 0 }}>{!user.avatarUrl && initials}</div>
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 14.5, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</div>
               <div style={{ fontSize: 12, color: '#8893A4', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.email}</div>
@@ -157,16 +216,39 @@ export default function Nav() {
         {user && (
           <>
             <div style={{ height: 1, background: '#F0F2F5', margin: '12px 0' }} />
+
+            {/* Mode toggle — mobile */}
             {user.role === 'owner' && (
-              <Link href="/dashboard" onClick={() => setMenuOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#1E3A5C', textDecoration: 'none', marginBottom: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="7" height="7" rx="2" fill="#1E3A5C"/>
-                  <rect x="14" y="3" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
-                  <rect x="3" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
-                  <rect x="14" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.3"/>
-                </svg>
-                Provider Studio
-              </Link>
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#B0BBC8', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 8, padding: '0 4px' }}>Mode</div>
+                <div style={{
+                  display: 'flex', gap: 6, padding: 4,
+                  background: '#F0F2F6', borderRadius: 14, border: '1px solid #E2E7EE',
+                }}>
+                  {/* Renter — active in consumer app */}
+                  <div style={{
+                    flex: 1, height: 38, borderRadius: 10,
+                    background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.09)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 13.5, fontWeight: 700, color: ACCENT,
+                  }}>
+                    Renter
+                  </div>
+                  {/* Owner */}
+                  <button
+                    onClick={() => { setMenuOpen(false); handleSwitchToOwner(); }}
+                    style={{
+                      flex: 1, height: 38, borderRadius: 10, border: 'none',
+                      background: 'transparent', cursor: 'pointer', fontFamily: 'inherit',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      fontSize: 13.5, fontWeight: 600, color: '#8893A4',
+                    }}
+                  >
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: AMBER, display: 'inline-block', opacity: 0.6 }} />
+                    Owner
+                  </button>
+                </div>
+              </div>
             )}
             <Link href="/saved" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 500, color: '#41495A', textDecoration: 'none' }}>Saved homes</Link>
             <Link href="/messages" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '11px 12px', borderRadius: 10, fontSize: 14, fontWeight: 500, color: '#41495A', textDecoration: 'none' }}>Messages</Link>
@@ -188,7 +270,7 @@ export default function Nav() {
         </div>
       </div>
 
-      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/dashboard/listings/new" />}
+      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} />}
     </>
   );
 }

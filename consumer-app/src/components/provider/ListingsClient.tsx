@@ -70,7 +70,7 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
   return (
     <div className="animate-bvfade">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18, gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', gap: 6, background: '#fff', border: '1px solid #E6E9EE', borderRadius: 12, padding: 5 }}>
+        <div style={{ display: 'flex', gap: 6, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 12, padding: 5 }}>
           {FILTERS.map(f => (
             <button
               key={f.key}
@@ -134,7 +134,7 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <Link href={`/dashboard/listings/${l.id}`} style={{ flex: 1, textDecoration: 'none' }}>
-                      <button className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', width: '100%', height: 38, borderRadius: 10, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#1E3A5C' } as React.CSSProperties}>
+                      <button className="bv-press bv-fill" style={{ '--fill': '#EEF2F7', width: '100%', height: 38, borderRadius: 10, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#1E3A5C' } as React.CSSProperties}>
                         Stats
                       </button>
                     </Link>
@@ -150,12 +150,12 @@ export default function ListingsClient({ listings }: { listings: ListingRow[] })
                         aria-expanded={menuId === l.id}
                         aria-label="More actions"
                         className="bv-press bv-fill"
-                        style={{ '--fill': '#EEF0F3', width: 38, height: 38, borderRadius: 10, border: `1px solid ${menuId === l.id ? '#B9CFE2' : '#E2E7EE'}`, background: menuId === l.id ? '#F4F8FC' : '#fff', cursor: 'pointer', color: '#8893A4', fontSize: 17, lineHeight: 1 } as React.CSSProperties}
+                        style={{ '--fill': '#EEF0F3', width: 38, height: 38, borderRadius: 10, border: `1px solid ${menuId === l.id ? '#B9CFE2' : '#ECEEF1'}`, background: menuId === l.id ? '#F4F8FC' : '#fff', cursor: 'pointer', color: '#8893A4', fontSize: 17, lineHeight: 1 } as React.CSSProperties}
                       >
                         ⋯
                       </button>
                       {menuId === l.id && (
-                        <div role="menu" style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 6px)', width: 184, background: '#fff', border: '1px solid #E6E9EE', borderRadius: 12, boxShadow: '0 16px 40px -12px rgba(20,40,70,.28)', padding: 6, zIndex: 30 }}>
+                        <div role="menu" style={{ position: 'absolute', right: 0, bottom: 'calc(100% + 6px)', width: 184, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 12, boxShadow: '0 16px 40px -12px rgba(20,40,70,.28)', padding: 6, zIndex: 30 }}>
                           <button role="menuitem" onClick={() => { setMenuId(null); router.push(`/dashboard/listings/new?edit=${l.id}`); }} className="bv-press" style={MENU_ITEM}>Edit listing</button>
                           <button role="menuitem" onClick={() => { setMenuId(null); router.push(`/dashboard/listings/${l.id}/status`); }} className="bv-press" style={MENU_ITEM}>Pause / mark rented</button>
                           <a role="menuitem" href={`/listings/${l.id}`} target="_blank" rel="noopener noreferrer" onClick={() => setMenuId(null)} style={{ ...MENU_ITEM, display: 'block', textDecoration: 'none' }}>View public page ↗</a>

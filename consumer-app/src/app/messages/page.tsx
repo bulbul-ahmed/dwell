@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { fmtPrice } from '@/data/listings';
 import Footer from '@/components/Footer';
 
 const ACCENT = '#1E3A5C';
+const AMBER  = '#C9863A';
 
 // ─── API types ────────────────────────────────────────────────────────────────
 interface ThreadRow {
@@ -78,10 +79,30 @@ function MessagesInner() {
   const [draft,         setDraft]         = useState('');
   const [loading,       setLoading]       = useState(true);
   const [sending,       setSending]       = useState(false);
+  const [userRole,      setUserRole]      = useState<string | null>(null);
+  const [ownerUnread,   setOwnerUnread]   = useState(0);
+  const [nudgeDismissed, setNudgeDismissed] = useState(false);
   const msgsRef = useRef<HTMLDivElement>(null);
   const seenIds = useRef(new Set<number>());
   const search = useSearchParams();
+  const router = useRouter();
   const wantThreadId = Number(search?.get('thread') ?? '') || null;
+
+  // ── Fetch user role + owner unread count for nudge ───────────────────────
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(({ user }) => {
+        if (user?.role === 'owner') {
+          setUserRole('owner');
+          fetch('/api/notifications/unread', { cache: 'no-store' })
+            .then(r => r.json())
+            .then(d => setOwnerUnread(Number(d.messages) || 0))
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // ── Load thread list + mark message notifications read ───────────────────
   useEffect(() => {
@@ -96,12 +117,14 @@ function MessagesInner() {
       .catch(() => {})
       .finally(() => setLoading(false));
 
+    // Active thread updates arrive via per-thread SSE; this only refreshes the
+    // thread-list (new threads / last-message previews), so a slower cadence is fine.
     const refresh = setInterval(() => {
       fetch('/api/threads')
         .then(r => r.json())
         .then(({ threads: rows }: { threads: ThreadRow[] }) => setThreads(rows))
         .catch(() => {});
-    }, 10000);
+    }, 30000);
     return () => clearInterval(refresh);
   }, []);
 
@@ -206,7 +229,21 @@ function MessagesInner() {
     return (
       <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
         <main className="pg">
-          <h1 style={{ fontWeight: 400, fontSize: 30, margin: '0 0 18px', color: '#15243B' }}>Messages</h1>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
+            <h1 style={{ fontWeight: 400, fontSize: 30, margin: 0, color: '#15243B' }}>Messages</h1>
+            <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: '#EEF3FB', color: ACCENT }}>Renter</span>
+          </div>
+          <p style={{ fontSize: 14, color: '#8893A4', margin: '0 0 18px' }}>Your conversations with property owners</p>
+          {userRole === 'owner' && ownerUnread > 0 && !nudgeDismissed && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 13, background: '#FFFBF4', border: '1px solid #F5D99A', marginBottom: 16 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: AMBER, display: 'inline-block', flexShrink: 0 }} />
+              <div style={{ flex: 1, fontSize: 13.5, color: '#41495A' }}>
+                <strong style={{ color: '#15243B' }}>{ownerUnread} message{ownerUnread > 1 ? 's' : ''}</strong> from renters in Owner Mode
+              </div>
+              <button onClick={() => router.push('/dashboard/leads')} style={{ height: 32, padding: '0 12px', borderRadius: 8, border: `1px solid ${AMBER}`, background: '#FEF3E2', color: AMBER, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Switch to Owner</button>
+              <button onClick={() => setNudgeDismissed(true)} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#8893A4', cursor: 'pointer', fontSize: 16 }}>×</button>
+            </div>
+          )}
           <div style={{ padding: '64px 24px', textAlign: 'center', border: '1px dashed #D3D9E0', borderRadius: 20, color: '#8B93A1', fontSize: 14 }}>
             No conversations yet. Start a chat from any listing page.
           </div>
@@ -219,7 +256,28 @@ function MessagesInner() {
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <main className="pg">
-        <h1 style={{ fontWeight: 400, fontSize: 30, margin: '0 0 18px', color: '#15243B' }}>Messages</h1>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6, flexWrap: 'wrap' }}>
+          <h1 style={{ fontWeight: 400, fontSize: 30, margin: 0, color: '#15243B' }}>Messages</h1>
+          <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 9px', borderRadius: 999, background: '#EEF3FB', color: ACCENT }}>Renter</span>
+        </div>
+        <p style={{ fontSize: 14, color: '#8893A4', margin: '0 0 16px' }}>Your conversations with property owners</p>
+
+        {/* Cross-mode nudge — if owner has unread messages in dashboard */}
+        {userRole === 'owner' && ownerUnread > 0 && !nudgeDismissed && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', borderRadius: 13, background: '#FFFBF4', border: '1px solid #F5D99A', marginBottom: 16 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: AMBER, display: 'inline-block', flexShrink: 0 }} />
+            <div style={{ flex: 1, fontSize: 13.5, color: '#41495A' }}>
+              <strong style={{ color: '#15243B' }}>{ownerUnread} message{ownerUnread > 1 ? 's' : ''}</strong> from renters waiting in Owner Mode
+            </div>
+            <button
+              onClick={() => router.push('/dashboard/leads')}
+              style={{ height: 32, padding: '0 12px', borderRadius: 8, border: `1px solid ${AMBER}`, background: '#FEF3E2', color: AMBER, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+            >
+              Switch to Owner
+            </button>
+            <button onClick={() => setNudgeDismissed(true)} style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#8893A4', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+          </div>
+        )}
 
         <div className="g-messages-wrap g-messages">
 

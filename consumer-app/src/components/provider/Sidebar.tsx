@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutGrid, Building2, Inbox, Calendar, Star,
-  Zap, BarChart2, Settings, Home, X,
+  Zap, BarChart2, Settings, Home, X, DollarSign, CalendarDays, Users,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+
+const ACCENT = '#1E3A5C';
+const AMBER  = '#C9863A';
 
 interface NavItem {
   id: string;
@@ -20,24 +23,27 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Workspace',
     items: [
-      { id: '/',         label: 'Overview',            Icon: LayoutGrid },
-      { id: '/listings', label: 'My Listings',          Icon: Building2  },
-      { id: '/leads',    label: 'Leads',                Icon: Inbox,     badge: 3 },
-      { id: '/visits',   label: 'Visits',               Icon: Calendar,  badge: 2 },
-      { id: '/reviews',  label: 'Reviews',              Icon: Star       },
+      { id: '/',            label: 'Dashboard',          Icon: LayoutGrid  },
+      { id: '/listings',    label: 'My Listings',        Icon: Building2   },
+      { id: '/leads',       label: 'Leads & Inquiries',  Icon: Inbox       },
+      { id: '/visits',        label: 'Visits',             Icon: Calendar    },
+      { id: '/applications', label: 'Applications',      Icon: Users       },
+      { id: '/calendar',     label: 'Availability',      Icon: CalendarDays },
+      { id: '/reviews',     label: 'Reviews',            Icon: Star        },
     ],
   },
   {
-    label: 'Growth',
+    label: 'Revenue',
     items: [
-      { id: '/boost',     label: 'Boost & Promote', Icon: Zap      },
-      { id: '/analytics', label: 'Analytics',       Icon: BarChart2 },
+      { id: '/revenue',   label: 'Revenue & Payouts', Icon: DollarSign },
+      { id: '/boost',     label: 'Boost & Promote',   Icon: Zap        },
+      { id: '/analytics', label: 'Analytics',         Icon: BarChart2  },
     ],
   },
   {
     label: 'Account',
     items: [
-      { id: '/profile', label: 'Profile & Settings', Icon: Settings },
+      { id: '/profile',       label: 'Profile & Settings', Icon: Settings },
     ],
   },
 ];
@@ -50,7 +56,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = 'Agency', avatarUrl, open = false, onClose }: SidebarProps) {
+export default function Sidebar({ ownerName = 'Owner', ownerType = 'Individual', avatarUrl, open = false, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
@@ -64,71 +70,79 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[264px] flex-col overflow-hidden transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:flex-[0_0_264px] lg:translate-x-0 ${open ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}
-      style={{ background: 'linear-gradient(176deg, #16273F 0%, #122035 58%, #0E1A2C 100%)' }}
+      className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[260px] flex-col overflow-hidden transition-transform duration-300 ease-out lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:flex-[0_0_260px] lg:translate-x-0 ${open ? 'translate-x-0 shadow-xl' : '-translate-x-full'}`}
+      style={{ background: '#fff', borderRight: '1px solid #E7EAEE' }}
     >
-      {/* glow orb */}
-      <div style={{
-        position: 'absolute', top: -90, right: -70, width: 240, height: 240,
-        borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(86,131,196,0.22), transparent 68%)',
-        pointerEvents: 'none',
-      }} />
-
       {/* Brand */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '22px 22px 18px' }}>
-        <div style={{
-          width: 38, height: 38, borderRadius: 11,
-          background: 'linear-gradient(140deg, #2C557F, #1E3A5C)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 8px 20px -6px rgba(44,85,127,0.7)', flexShrink: 0,
-        }}>
-          <Home size={18} color="#fff" strokeWidth={2.1} />
-        </div>
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', letterSpacing: 0.2, lineHeight: 1 }}>Dwell</div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 1.4, color: '#6E89AD', marginTop: 3, textTransform: 'uppercase' }}>
-            Provider Studio
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '20px 18px 16px' }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 9, textDecoration: 'none', flex: 1 }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 9,
+            background: ACCENT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(30,58,92,0.3)', flexShrink: 0,
+          }}>
+            <Home size={16} color="#fff" strokeWidth={2.2} />
           </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#15243B', lineHeight: 1 }}>Dwell</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, color: AMBER, marginTop: 2, textTransform: 'uppercase' }}>
+              Owner Mode
+            </div>
+          </div>
+        </Link>
+
+        {/* Amber "Owner" mode chip */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          padding: '3px 9px', borderRadius: 999,
+          background: '#FEF3E2', border: '1px solid #F5D99A',
+          fontSize: 10.5, fontWeight: 800, color: AMBER, letterSpacing: 0.3,
+        }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: AMBER, display: 'inline-block' }} />
+          Owner
         </div>
+
         <button
           onClick={onClose}
           aria-label="Close menu"
-          className="bv-press ml-auto flex items-center justify-center lg:hidden"
+          className="bv-press flex items-center justify-center lg:hidden"
           style={{
-            width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)',
+            width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+            border: '1px solid #E7EAEE', background: '#F7F8FA',
             cursor: 'pointer',
           }}
         >
-          <X size={17} color="#A9B9CD" strokeWidth={2} />
+          <X size={15} color="#8893A4" strokeWidth={2} />
         </button>
       </div>
 
       {/* List a property CTA */}
-      <div style={{ padding: '4px 14px 8px' }}>
+      <div style={{ padding: '0 14px 10px' }}>
         <button
           onClick={() => { onClose?.(); router.push('/dashboard/listings/new'); }}
           className="bv-press"
           style={{
-            width: '100%', height: 44, borderRadius: 12, border: 'none', cursor: 'pointer',
-            fontFamily: 'inherit', fontSize: 13.5, fontWeight: 700, color: '#fff',
-            background: 'linear-gradient(135deg, #2E7D55, #246046)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-            boxShadow: '0 10px 22px -8px rgba(46,125,85,.6)',
+            width: '100%', height: 42, borderRadius: 11, border: 'none', cursor: 'pointer',
+            fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff',
+            background: ACCENT,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            boxShadow: '0 6px 18px -6px rgba(30,58,92,0.45)',
           }}
         >
-          <span style={{ fontSize: 17, lineHeight: 1 }}>+</span> List a property
+          <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> List a property
         </button>
       </div>
 
+      <div style={{ height: 1, background: '#F0F2F5', margin: '0 14px 4px' }} />
+
       {/* Nav */}
-      <nav style={{ flex: 1, overflowY: 'auto', padding: '6px 14px 18px' }}>
+      <nav style={{ flex: 1, overflowY: 'auto', padding: '4px 10px 16px' }}>
         {NAV_GROUPS.map(group => (
-          <div key={group.label} style={{ marginTop: 16 }}>
+          <div key={group.label} style={{ marginTop: 14 }}>
             <div style={{
-              fontSize: 10, fontWeight: 800, letterSpacing: 1.3,
-              color: '#56708F', textTransform: 'uppercase', padding: '0 12px 9px',
+              fontSize: 10, fontWeight: 800, letterSpacing: 1.1,
+              color: '#B0BBC8', textTransform: 'uppercase', padding: '0 10px 7px',
             }}>
               {group.label}
             </div>
@@ -139,33 +153,32 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
                   <div
                     className="bv-nav"
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      padding: '10px 12px', marginBottom: 3, borderRadius: 11,
+                      display: 'flex', alignItems: 'center', gap: 11,
+                      padding: '9px 10px', marginBottom: 2, borderRadius: 10,
                       cursor: 'pointer',
-                      color: active ? '#fff' : '#A9B9CD',
-                      background: active ? 'rgba(110,160,224,0.14)' : 'transparent',
-                      fontSize: 13.5, fontWeight: active ? 700 : 600,
+                      color: active ? ACCENT : '#41495A',
+                      background: active ? '#EEF3FB' : 'transparent',
+                      fontSize: 13.5, fontWeight: active ? 700 : 500,
                       position: 'relative',
                     }}
                   >
                     <span style={{
                       position: 'absolute', left: 0, top: '50%',
                       transform: 'translateY(-50%)',
-                      width: 3, height: active ? 20 : 0,
-                      borderRadius: '0 3px 3px 0', background: '#6EA0E0',
-                      transition: 'height .3s cubic-bezier(.22,1,.36,1)',
+                      width: 3, height: active ? 18 : 0,
+                      borderRadius: '0 3px 3px 0', background: ACCENT,
+                      transition: 'height .28s cubic-bezier(.22,1,.36,1)',
                     }} />
-                    <span className="bv-navico" style={{ display: 'flex', position: 'relative' }}>
-                      <Icon size={18} color={active ? '#DCE8F7' : '#8AA0BC'} strokeWidth={1.9} />
+                    <span style={{ display: 'flex' }}>
+                      <Icon size={17} color={active ? ACCENT : '#8893A4'} strokeWidth={active ? 2.1 : 1.8} />
                     </span>
-                    <span style={{ flex: 1, position: 'relative' }}>{label}</span>
+                    <span style={{ flex: 1 }}>{label}</span>
                     {badgeCount && badgeCount > 0 && (
                       <span style={{
-                        minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999,
-                        background: id === '/leads' ? '#2E7D55' : '#C9A24B',
-                        color: '#fff', fontSize: 11, fontWeight: 800,
+                        minWidth: 19, height: 19, padding: '0 5px', borderRadius: 999,
+                        background: id === '/leads' ? '#2E7D55' : AMBER,
+                        color: '#fff', fontSize: 10.5, fontWeight: 800,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        position: 'relative',
                       }}>
                         {badgeCount}
                       </span>
@@ -178,39 +191,53 @@ export default function Sidebar({ ownerName = 'Rahima Properties', ownerType = '
         ))}
       </nav>
 
-      {/* User profile */}
-      <div style={{ padding: '14px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+      {/* Switch to renter mode */}
+      <div style={{ padding: '10px 14px 12px', borderTop: '1px solid #F0F2F5' }}>
+        <Link
+          href="/"
+          onClick={onClose}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 9, padding: '9px 12px',
+            borderRadius: 11, border: '1px solid #E7EAEE', background: '#F7F8FA',
+            textDecoration: 'none', marginBottom: 10,
+          }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+            <path d="M15 12H2M2 12L5.5 8.5M2 12L5.5 15.5" stroke="#8893A4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#41495A' }}>Switch to Renter</span>
+        </Link>
+
         <Link href="/dashboard/profile" onClick={onClose} style={{ textDecoration: 'none' }}>
           <div
             className="bv-fill bv-press"
             style={{
-              '--fill': 'rgba(255,255,255,.06)',
-              display: 'flex', alignItems: 'center', gap: 11,
-              padding: '9px 10px', borderRadius: 12, cursor: 'pointer',
+              '--fill': '#F4F6F9',
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '9px 10px', borderRadius: 11, cursor: 'pointer',
             } as React.CSSProperties}
           >
             <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              backgroundColor: '#2C557F',
-              backgroundImage: avatarUrl ? `url('${avatarUrl}')` : 'linear-gradient(140deg, #3C6E9E, #2C557F)',
+              width: 34, height: 34, borderRadius: 9,
+              backgroundColor: avatarUrl ? '#E7EAEE' : ACCENT,
+              backgroundImage: avatarUrl ? `url('${avatarUrl}')` : undefined,
               backgroundSize: 'cover', backgroundPosition: 'center',
               color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 14, flexShrink: 0,
+              fontWeight: 800, fontSize: 13, flexShrink: 0,
             }}>
               {!avatarUrl && ownerName.charAt(0).toUpperCase()}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{
-                fontSize: 13, fontWeight: 700, color: '#fff',
+                fontSize: 13, fontWeight: 700, color: '#15243B',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                display: 'flex', alignItems: 'center', gap: 5,
               }}>
-                {ownerName} <span style={{ color: '#6EE0A4', fontSize: 12 }}>✓</span>
+                {ownerName}
               </div>
-              <div style={{ fontSize: 11, color: '#7F97B6' }}>{ownerType} · Verified</div>
+              <div style={{ fontSize: 11, color: '#8893A4' }}>{ownerType} · Owner</div>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M8 9l4-4 4 4M8 15l4 4 4-4" stroke="#7F97B6" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d="M8 9l4-4 4 4M8 15l4 4 4-4" stroke="#B0BBC8" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </Link>

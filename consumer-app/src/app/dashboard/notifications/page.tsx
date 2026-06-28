@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { timeAgo } from '@/lib/format';
 
 interface Notif {
   id: number;
@@ -14,18 +15,6 @@ interface Notif {
   read: boolean;
   count: number;
   createdAt: string;
-}
-
-function timeAgo(iso: string) {
-  const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return 'just now';
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  if (d < 7) return `${d}d ago`;
-  return `${Math.floor(d / 7)}w ago`;
 }
 
 const TYPE_ICON: Record<string, string> = {
@@ -110,7 +99,7 @@ export default function NotificationsPage() {
               display: 'flex', alignItems: 'flex-start', gap: 14,
               padding: '14px 16px', borderRadius: 14,
               background: n.read ? '#fff' : '#F0F5FF',
-              border: `1px solid ${n.read ? '#E6E9EE' : '#C8D8F0'}`,
+              border: `1px solid ${n.read ? '#ECEEF1' : '#C8D8F0'}`,
               cursor: 'pointer', transition: 'background 0.15s',
             }}>
               <div style={{

@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3001 -H 0.0.0.0",
-    "build": "next build",
+    "dev": "NODE_OPTIONS=--max-old-space-size=4096 next dev --port 3001 -H 0.0.0.0",
+    "build": "NODE_OPTIONS=--max-old-space-size=4096 next build",
     "start": "next start",
     "db:migrate": "DATABASE_URL=postgresql://dwell:dwell@localhost:5434/dwell drizzle-kit migrate",
     "db:seed": "DATABASE_URL=postgresql://dwell:dwell@localhost:5434/dwell ./node_modules/.bin/tsx src/db/seed.ts",

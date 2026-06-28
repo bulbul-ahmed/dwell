@@ -352,9 +352,9 @@ export default function SearchClient() {
                   onMouseEnter={() => setHoverId(c.id)}
                   onMouseLeave={() => setHoverId(null)}
                   onClick={e => {
-                    // desktop: open slide-over + fly map; mobile: let the Link navigate
+                    // desktop: open slide-over + fly map; mobile list: let the Link navigate
+                    // straight to the detail page (no redundant floating preview)
                     if (isWide) { e.preventDefault(); openListing(c.id); }
-                    else setActiveId(c.id);
                   }}
                 />
               ))
@@ -456,8 +456,8 @@ export default function SearchClient() {
         />
       )}
 
-      {/* ===== MOBILE BOTTOM-SHEET PREVIEW (B) ===== */}
-      {!isWide && activeListing && (() => {
+      {/* ===== MOBILE BOTTOM-SHEET PREVIEW (B) — map view only ===== */}
+      {!isWide && mobileView === 'map' && activeListing && (() => {
         const idx = filtered.findIndex(l => l.id === activeListing.id);
         const go = (d: number) => {
           const n = filtered[(idx + d + filtered.length) % filtered.length];

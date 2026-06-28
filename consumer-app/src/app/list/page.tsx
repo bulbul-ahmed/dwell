@@ -266,6 +266,14 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
   const [mealsIncluded, setMealsIncluded]   = useState(false);
   const [meals, setMeals]                   = useState<Set<string>>(new Set());
 
+  // Task 3 — description
+  const [description, setDescription] = useState('');
+  // Task 4 — floor plan
+  const floorPlanInputRef = useRef<HTMLInputElement>(null);
+  const [floorPlanPreview, setFloorPlanPreview] = useState('');
+  const [floorPlanUrl, setFloorPlanUrl] = useState('');
+  const [floorPlanUploading, setFloorPlanUploading] = useState(false);
+
   const [submitting, setSubmitting] = useState(false);
   const [verifyGate, setVerifyGate] = useState(false);
 
@@ -292,6 +300,7 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
         setEditId(idNum);
         setWizType(l.cat);
         setTitle(l.title);
+        setDescription(l.desc ?? '');
         setBeds(String(l.beds || 2));
         setBaths(String(l.baths || 1));
         setSize(l.size ? String(l.size) : '');
@@ -321,6 +330,7 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
         setExistingVideos(d.edit?.videos ?? []);
         // hostel / office meta
         const meta = (l.meta ?? {}) as Record<string, unknown>;
+        if (typeof meta.floorPlan === 'string' && meta.floorPlan) setFloorPlanUrl(meta.floorPlan);
         if (l.cat === 'student') {
           if (meta.gender === 'girls' || meta.gender === 'boys') setGender(meta.gender);
           if (typeof meta.seatType === 'string') setSeatType(meta.seatType);
@@ -448,8 +458,31 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
 
   const removeVideo = (i: number) => setVideos(p => p.filter((_, idx) => idx !== i));
 
+  const addFloorPlan = async (file: File) => {
+    setFloorPlanPreview(URL.createObjectURL(file));
+    setFloorPlanUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append('files', file);
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      if (r.ok) {
+        const { urls } = await r.json() as { urls: string[] };
+        if (urls[0]) setFloorPlanUrl(urls[0]);
+      }
+    } catch { /* keep preview, url stays empty */ }
+    setFloorPlanUploading(false);
+  };
+
+  const removeFloorPlan = () => {
+    setFloorPlanPreview('');
+    setFloorPlanUrl('');
+  };
+
+  const descWordCount = description.trim() === '' ? 0 : description.trim().split(/\s+/).length;
+
   const handlePrimary = async () => {
     if (step === 2 && pinLat === null) return;
+    if (step === 3 && descWordCount < 60) return;
     if (step < 6) { setStep(s => s + 1); return; }
     setSubmitting(true);
     try {
@@ -496,16 +529,21 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
         shots,
         shotCats,
         videos:      finalVideos,
-        meta: isHostel ? {
-          gender, seatType,
-          totalSeats: parseInt(totalSeats) || 0,
-          curfew: hasCurfew ? curfewTime : null,
-          meals: mealsIncluded ? [...meals] : [],
-        } : isOffice ? {
-          desks: parseInt(officeDesks) || 0,
-          confRooms: officeConfRooms,
-          washrooms: officeWashrooms,
-        } : undefined,
+        description,
+        meta: (() => {
+          const m: Record<string, unknown> = isHostel ? {
+            gender, seatType,
+            totalSeats: parseInt(totalSeats) || 0,
+            curfew: hasCurfew ? curfewTime : null,
+            meals: mealsIncluded ? [...meals] : [],
+          } : isOffice ? {
+            desks: parseInt(officeDesks) || 0,
+            confRooms: officeConfRooms,
+            washrooms: officeWashrooms,
+          } : {};
+          if (floorPlanUrl) m.floorPlan = floorPlanUrl;
+          return Object.keys(m).length > 0 ? m : undefined;
+        })(),
       };
 
       const res = await fetch(isEdit ? `/api/listings/${editId}` : '/api/listings', {
@@ -541,7 +579,9 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
     { k: 'Meals',       v: mealsIncluded ? ([...meals].join(', ') || 'Included') : 'Not included' },
     { k: 'Amenities',   v: [...hostelAmen].slice(0, 4).join(', ') + (hostelAmen.size > 4 ? ` +${hostelAmen.size - 4}` : '') },
     { k: 'Curfew',      v: hasCurfew ? curfewTime : 'None' },
+    { k: 'Available',   v: availMode === 'immediate' ? 'Immediately' : (availDate ? new Date(availDate + 'T00:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD') },
     { k: 'Negotiable',  v: negotiable ? 'Yes' : 'No' },
+    { k: 'Description', v: description.length > 80 ? description.slice(0, 80) + '…' : description || '—' },
   ] : isOffice ? [
     { k: 'Type',         v: 'Office space' },
     { k: 'Location',     v: area },
@@ -552,7 +592,9 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
     { k: 'Furnishing',   v: officeFurnish },
     { k: 'Floor',        v: floor },
     { k: isBuy ? 'Sale price' : 'Rent/mo', v: previewPrice },
+    { k: 'Available',    v: availMode === 'immediate' ? 'Immediately' : (availDate ? new Date(availDate + 'T00:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD') },
     { k: 'Negotiable',   v: negotiable ? 'Yes' : 'No' },
+    { k: 'Description',  v: description.length > 80 ? description.slice(0, 80) + '…' : description || '—' },
   ] : [
     { k: 'Type',       v: WIZ_TYPES.find(t => t.k === wizType)?.label ?? '' },
     { k: 'Location',   v: area },
@@ -562,7 +604,9 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
     { k: 'Furnishing', v: furnishing },
     { k: 'Amenities',  v: amenities.size > 0 ? [...amenities].slice(0, 3).join(', ') + (amenities.size > 3 ? ` +${amenities.size - 3}` : '') : '—' },
     { k: isBuy ? 'Sale price' : 'Rent/mo', v: previewPrice },
+    { k: isBuy ? 'Possession' : 'Available', v: availMode === 'immediate' ? (isBuy ? 'Ready now' : 'Immediately') : (availDate ? new Date(availDate + 'T00:00:00').toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBD') },
     { k: 'Negotiable', v: negotiable ? 'Yes' : 'No' },
+    { k: 'Description', v: description.length > 80 ? description.slice(0, 80) + '…' : description || '—' },
   ];
 
   const primaryLabel = step < 6
@@ -810,6 +854,51 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                       {FLAT_AMEN.map(a => <CheckBox key={a.k} checked={amenities.has(a.k)} label={a.k} icon={a.icon} onChange={() => toggleAmen(a.k)} />)}
                     </div>
                   </div>
+                  {!isBuy && (
+                    <div>
+                      <LabelTag>Available from</LabelTag>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {(['immediate', 'date'] as const).map(m => {
+                          const on = availMode === m;
+                          const lbl = m === 'immediate' ? 'Immediately' : 'From a date';
+                          return <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>;
+                        })}
+                      </div>
+                      {availMode === 'date' && (
+                        <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
+                      )}
+                      <div style={{ fontSize: 12, color: '#8B93A1', marginTop: 5 }}>Renters filter by move-in date — keep this accurate.</div>
+                    </div>
+                  )}
+                  {isBuy && (
+                    <div>
+                      <LabelTag>Possession</LabelTag>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {(['immediate', 'date'] as const).map(m => {
+                          const on = availMode === m;
+                          const lbl = m === 'immediate' ? 'Ready now' : 'From a date';
+                          return <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>;
+                        })}
+                      </div>
+                      {availMode === 'date' && (
+                        <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
+                      )}
+                    </div>
+                  )}
+                  <div>
+                    <LabelTag>Description (minimum 60 words)</LabelTag>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="Describe what makes this property special — the neighbourhood, natural light, proximity to transport, nearby amenities, and anything that helps renters picture living here."
+                      rows={5}
+                      style={{ width: '100%', border: `1.6px solid ${descWordCount > 0 && descWordCount < 60 ? '#E07070' : '#DBE0E6'}`, borderRadius: 11, padding: '12px 14px', fontSize: 14.5, fontFamily: 'inherit', color: '#15243B', outline: 'none', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                    <div style={{ fontSize: 12, marginTop: 5, display: 'flex', justifyContent: 'space-between', color: descWordCount >= 60 ? '#3C7A58' : descWordCount > 0 ? '#B04040' : '#8B93A1' }}>
+                      <span>{descWordCount >= 60 ? 'Minimum met ✓' : descWordCount > 0 ? `${60 - descWordCount} more words needed` : 'At least 60 words required'}</span>
+                      <span>{descWordCount} / 60 words</span>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -831,6 +920,33 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                   </div>
                   <SegRow label="Floor" opts={FLOOR_OPTS} value={floor} onChange={setFloor} />
                   <SegRow label="Furnishing" opts={FURNISH_OFF} value={officeFurnish} onChange={setOfficeFurnish} />
+                  <div>
+                    <LabelTag>{isBuy ? 'Possession' : 'Available from'}</LabelTag>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {(['immediate', 'date'] as const).map(m => {
+                        const on = availMode === m;
+                        const lbl = m === 'immediate' ? (isBuy ? 'Ready now' : 'Immediately') : 'From a date';
+                        return <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>;
+                      })}
+                    </div>
+                    {availMode === 'date' && (
+                      <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
+                  <div>
+                    <LabelTag>Description (minimum 60 words)</LabelTag>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="Describe the office — building quality, natural light, parking, internet infrastructure, security, and what makes this workspace stand out."
+                      rows={5}
+                      style={{ width: '100%', border: `1.6px solid ${descWordCount > 0 && descWordCount < 60 ? '#E07070' : '#DBE0E6'}`, borderRadius: 11, padding: '12px 14px', fontSize: 14.5, fontFamily: 'inherit', color: '#15243B', outline: 'none', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                    <div style={{ fontSize: 12, marginTop: 5, display: 'flex', justifyContent: 'space-between', color: descWordCount >= 60 ? '#3C7A58' : descWordCount > 0 ? '#B04040' : '#8B93A1' }}>
+                      <span>{descWordCount >= 60 ? 'Minimum met ✓' : descWordCount > 0 ? `${60 - descWordCount} more words needed` : 'At least 60 words required'}</span>
+                      <span>{descWordCount} / 60 words</span>
+                    </div>
+                  </div>
                 </div>
               </>
             )}
@@ -890,6 +1006,34 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                       <Toggle on={hasCurfew} onChange={() => setHasCurfew(v => !v)} />
                     </div>
                     {hasCurfew && <input value={curfewTime} onChange={e => setCurfewTime(e.target.value)} placeholder="10:00 PM" style={inp} />}
+                  </div>
+                  <div>
+                    <LabelTag>Available from</LabelTag>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {(['immediate', 'date'] as const).map(m => {
+                        const on = availMode === m;
+                        const lbl = m === 'immediate' ? 'Immediately' : 'From a date';
+                        return <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>;
+                      })}
+                    </div>
+                    {availMode === 'date' && (
+                      <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
+                    )}
+                    <div style={{ fontSize: 12, color: '#8B93A1', marginTop: 5 }}>Shown to students looking for a seat right now.</div>
+                  </div>
+                  <div>
+                    <LabelTag>Description (minimum 60 words)</LabelTag>
+                    <textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="Describe the hostel — location relative to campus, common areas, hygiene standards, meal quality, security, and what makes this a safe and comfortable place to study."
+                      rows={5}
+                      style={{ width: '100%', border: `1.6px solid ${descWordCount > 0 && descWordCount < 60 ? '#E07070' : '#DBE0E6'}`, borderRadius: 11, padding: '12px 14px', fontSize: 14.5, fontFamily: 'inherit', color: '#15243B', outline: 'none', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                    <div style={{ fontSize: 12, marginTop: 5, display: 'flex', justifyContent: 'space-between', color: descWordCount >= 60 ? '#3C7A58' : descWordCount > 0 ? '#B04040' : '#8B93A1' }}>
+                      <span>{descWordCount >= 60 ? 'Minimum met ✓' : descWordCount > 0 ? `${60 - descWordCount} more words needed` : 'At least 60 words required'}</span>
+                      <span>{descWordCount} / 60 words</span>
+                    </div>
                   </div>
                 </div>
               </>
@@ -953,6 +1097,38 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                     })}
                   </div>
                 )}
+
+                {/* Floor plan section */}
+                <div style={{ borderTop: '1px solid #EDF0F4', paddingTop: 20, paddingBottom: 4, marginBottom: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 14.5, fontWeight: 700, color: '#15243B' }}>Floor plan</div>
+                      <div style={{ fontSize: 12, color: '#8B93A1' }}>Optional — helps renters picture the layout</div>
+                    </div>
+                    {!floorPlanPreview && !floorPlanUrl && (
+                      <button onClick={() => floorPlanInputRef.current?.click()} style={{ border: `1.5px solid ${ACCENT}`, color: ACCENT, background: '#fff', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                        + Upload
+                      </button>
+                    )}
+                    <input ref={floorPlanInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { if (e.target.files?.[0]) addFloorPlan(e.target.files[0]); e.target.value = ''; }} style={{ display: 'none' }} />
+                  </div>
+                  {!floorPlanPreview && !floorPlanUrl ? (
+                    <div onClick={() => floorPlanInputRef.current?.click()} style={{ background: '#F8FAFC', borderRadius: 12, padding: 16, textAlign: 'center', border: '1px dashed #D3D9E0', cursor: 'pointer' }}>
+                      <div style={{ fontSize: 13, color: '#8B93A1' }}>Click to upload a floor plan image (JPG / PNG)</div>
+                    </div>
+                  ) : (
+                    <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid #E7EAEE', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: 220 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={floorPlanPreview || floorPlanUrl} alt="Floor plan" style={{ maxWidth: '100%', maxHeight: 220, objectFit: 'contain', display: 'block' }} />
+                      {floorPlanUploading && (
+                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 12, color: ACCENT, fontWeight: 700 }}>Uploading…</span>
+                        </div>
+                      )}
+                      <button onClick={removeFloorPlan} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(21,36,59,0.72)', border: 'none', color: '#fff', borderRadius: 7, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>✕ Remove</button>
+                    </div>
+                  )}
+                </div>
 
                 {/* Video section */}
                 <div style={{ borderTop: '1px solid #EDF0F4', paddingTop: 20 }}>
@@ -1069,21 +1245,6 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                     <span style={{ fontSize: 14, fontWeight: 600, color: '#15243B' }}>Price is negotiable</span>
                     <Toggle on={negotiable} onChange={() => setNegotiable(n => !n)} />
                   </label>
-
-                  <div style={{ marginTop: 18 }}>
-                    <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#15243B', marginBottom: 8 }}>{isBuy ? 'Possession' : 'Available from'}</label>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      {([['immediate', isBuy ? 'Ready now' : 'Immediately'], ['date', 'From a date']] as const).map(([m, lbl]) => {
-                        const on = availMode === m;
-                        return (
-                          <button key={m} type="button" onClick={() => setAvailMode(m)} style={{ flex: 1, padding: '11px 0', borderRadius: 11, border: `1.6px solid ${on ? ACCENT : '#DBE0E6'}`, background: on ? '#EEF3F8' : '#fff', color: on ? ACCENT : '#41495A', fontWeight: 700, fontSize: 13.5, cursor: 'pointer', fontFamily: 'inherit' }}>{lbl}</button>
-                        );
-                      })}
-                    </div>
-                    {availMode === 'date' && (
-                      <input type="date" value={availDate} onChange={e => setAvailDate(e.target.value)} style={{ marginTop: 10, width: '100%', height: 46, border: '1.6px solid #DBE0E6', borderRadius: 11, padding: '0 14px', fontFamily: 'inherit', fontSize: 14, color: '#15243B', boxSizing: 'border-box' }} />
-                    )}
-                  </div>
                 </div>
               </>
             )}
@@ -1126,7 +1287,7 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
                   Back
                 </button>
               )}
-              <button onClick={handlePrimary} disabled={submitting || (step === 2 && pinLat === null)} style={{ flex: 1, background: (step === 2 && pinLat === null) ? '#C5CCD5' : ACCENT, color: '#fff', border: 'none', borderRadius: 12, padding: 13, fontSize: 15, fontWeight: 700, cursor: (submitting || (step === 2 && pinLat === null)) ? 'default' : 'pointer', fontFamily: 'inherit', opacity: submitting ? 0.7 : 1 }}>
+              <button onClick={handlePrimary} disabled={submitting || (step === 2 && pinLat === null) || (step === 3 && descWordCount < 60)} style={{ flex: 1, background: ((step === 2 && pinLat === null) || (step === 3 && descWordCount < 60)) ? '#C5CCD5' : ACCENT, color: '#fff', border: 'none', borderRadius: 12, padding: 13, fontSize: 15, fontWeight: 700, cursor: (submitting || (step === 2 && pinLat === null) || (step === 3 && descWordCount < 60)) ? 'default' : 'pointer', fontFamily: 'inherit', opacity: submitting ? 0.7 : 1 }}>
                 {primaryLabel}
               </button>
             </div>
@@ -1176,7 +1337,7 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
     return (
       <>
         {inner}
-        {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} redirectTo="/dashboard/listings/new" />}
+        {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} />}
       </>
     );
   }
@@ -1184,7 +1345,7 @@ export function ListingWizard({ fromDashboard = false }: { fromDashboard?: boole
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       {inner}
-      {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} redirectTo="/list" />}
+      {verifyGate && <BecomeOwnerSheet onClose={() => setVerifyGate(false)} />}
       <Footer />
     </div>
   );

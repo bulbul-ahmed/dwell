@@ -140,7 +140,7 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
                 primary:  { bg: '#2E7D55', fg: '#fff',    border: 'none',               fill: '#246046' },
                 suggest:  { bg: '#fff',    fg: '#2A5C8A', border: '1px solid #D6E2EF',  fill: '#E6EFF7' },
                 ghost:    { bg: '#fff',    fg: '#B4402B', border: '1px solid #F0D9D2',  fill: '#F8E8E3' },
-                neutral:  { bg: '#fff',    fg: '#44506A', border: '1px solid #E2E7EE',  fill: '#EEF2F7' },
+                neutral:  { bg: '#fff',    fg: '#44506A', border: '1px solid #ECEEF1',  fill: '#EEF2F7' },
               }[kind]);
 
               type ActionDef = { label: string; action: string; kind: BtnKind };
@@ -198,13 +198,13 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
                   </div>
 
                   {suggestFor === v.id && (
-                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #E2E7EE' }}>
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #ECEEF1' }}>
                       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#44506A', marginBottom: 10 }}>Suggest an alternative time</div>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                         <input type="date" value={suggestDate} onChange={e => setSuggestDate(e.target.value)}
-                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #ECEEF1', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
                         <input type="time" value={suggestTime} onChange={e => setSuggestTime(e.target.value)}
-                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                          style={{ padding: '10px 12px', borderRadius: 10, border: '1.5px solid #ECEEF1', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
                         <button onClick={() => act(v, 'sendSuggest')} className="bv-press" style={{ padding: '11px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: '#2A5C8A' }}>
                           Send suggestion
                         </button>
@@ -213,11 +213,11 @@ export default function VisitsClient({ bookings }: { bookings: BookingRow[] }) {
                   )}
 
                   {declineFor === v.id && (
-                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #E2E7EE' }}>
+                    <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px dashed #ECEEF1' }}>
                       <div style={{ fontSize: 12.5, fontWeight: 800, color: '#44506A', marginBottom: 10 }}>Reason for declining (optional)</div>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                         <input type="text" value={declineReason} onChange={e => setDeclineReason(e.target.value)} placeholder="e.g. Already rented"
-                          style={{ flex: 1, minWidth: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #DBE0E6', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
+                          style={{ flex: 1, minWidth: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #ECEEF1', fontFamily: 'inherit', fontSize: 13, color: '#3B4252' }} />
                         <button onClick={() => act(v, 'decline')} className="bv-press" style={{ padding: '11px 18px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#fff', background: '#B4402B' }}>
                           Confirm decline
                         </button>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, owners } from '@/db';
+import { db, owners, notifications } from '@/db';
 import { eq } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/auth';
 
@@ -34,6 +34,25 @@ export async function POST(req: NextRequest) {
   }
 
   await db.update(owners).set(set).where(eq(owners.id, id));
+
+  // Notify the owner on approval
+  if (action === 'approve-kyc' || action === 'approve-agency') {
+    const [owner] = await db.select({ userId: owners.userId, type: owners.type })
+      .from(owners).where(eq(owners.id, id)).limit(1);
+    if (owner?.userId) {
+      const isAgency = owner.type === 'Agency';
+      await db.insert(notifications).values({
+        userId: owner.userId,
+        type:   'system',
+        title:  'Your owner application is approved!',
+        body:   `You're now a verified ${isAgency ? 'agency' : 'owner'} on Dwell. Go to your dashboard to start listing.`,
+        href:   '/account',
+        icon:   '✓',
+        icoBg:  '#E8F5EE',
+        icoFg:  '#1E6B3A',
+      }).catch(() => {});
+    }
+  }
 
   return NextResponse.json({ ok: true, action });
 }

@@ -71,7 +71,7 @@ function Bubble({ me, text, time }: { me: boolean; text: string; time: string })
         maxWidth: '78%',
         background: me ? ACCENT : '#fff',
         color: me ? '#fff' : '#15243B',
-        border: me ? 'none' : '1px solid #E7EAEE',
+        border: me ? 'none' : '1px solid #ECEEF1',
         borderRadius: me ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
         padding: '10px 14px', fontSize: 14, lineHeight: 1.45,
       }}>
@@ -185,7 +185,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
       <div
         className={`${active ? 'hidden lg:flex' : 'flex'} flex-col min-h-0 lg:w-[360px] lg:flex-shrink-0`}
       >
-        <div style={{ display: 'flex', gap: 6, background: '#fff', border: '1px solid #E6E9EE', borderRadius: 12, padding: 5, width: 'fit-content', marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 6, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 12, padding: 5, width: 'fit-content', marginBottom: 14 }}>
           {FILTERS.map(f => (
             <button
               key={f.key}
@@ -214,7 +214,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
             value={query}
             onChange={e => setQuery(e.target.value)}
             placeholder="Search name, listing or message"
-            style={{ width: '100%', border: '1px solid #E6E9EE', borderRadius: 11, padding: '10px 12px 10px 34px', fontSize: 13, fontFamily: 'inherit', color: '#15243B', outline: 'none', background: '#fff' }}
+            style={{ width: '100%', border: '1px solid #ECEEF1', borderRadius: 11, padding: '10px 12px 10px 34px', fontSize: 13, fontFamily: 'inherit', color: '#15243B', outline: 'none', background: '#fff' }}
           />
           {query && (
             <button onClick={() => setQuery('')} aria-label="Clear search"
@@ -249,7 +249,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
                 >
                   <div style={{
                     width: 44, height: 44, borderRadius: 12,
-                    backgroundColor: l.userAvatar ? '#E7EAEE' : AV_COLORS[idx % AV_COLORS.length],
+                    backgroundColor: l.userAvatar ? '#ECEEF1' : AV_COLORS[idx % AV_COLORS.length],
                     backgroundImage: l.userAvatar ? `url('${l.userAvatar}')` : undefined,
                     backgroundSize: 'cover', backgroundPosition: 'center',
                     color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -284,7 +284,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
       {/* ── RIGHT: conversation pane ── */}
       <div
         className={`${active ? 'flex' : 'hidden lg:flex'} flex-col min-h-0 flex-1`}
-        style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 16, overflow: 'hidden' }}
+        style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 16, overflow: 'hidden' }}
       >
         {!active ? (
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B93A1', fontSize: 14 }}>
@@ -293,16 +293,16 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
         ) : (
           <>
             {/* Header */}
-            <div style={{ padding: '13px 16px', borderBottom: '1px solid #E7EAEE', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <div style={{ padding: '13px 16px', borderBottom: '1px solid #ECEEF1', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
               <button
                 onClick={() => setActive(null)}
                 className="lg:hidden bv-press"
                 aria-label="Back"
-                style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                style={{ width: 36, height: 36, borderRadius: 10, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="#44506A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </button>
-              <div style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: active.userAvatar ? '#E7EAEE' : ACCENT, backgroundImage: active.userAvatar ? `url('${active.userAvatar}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 11, backgroundColor: active.userAvatar ? '#ECEEF1' : ACCENT, backgroundImage: active.userAvatar ? `url('${active.userAvatar}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 800, flexShrink: 0 }}>
                 {!active.userAvatar && initials(active.userName)}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -312,7 +312,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
               <button
                 onClick={() => router.push('/dashboard/visits')}
                 className="bv-press bv-fill"
-                style={{ '--fill': '#EEF2F7', height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#44506A', flexShrink: 0 } as React.CSSProperties}
+                style={{ '--fill': '#EEF2F7', height: 36, padding: '0 14px', borderRadius: 10, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12.5, fontWeight: 700, color: '#44506A', flexShrink: 0 } as React.CSSProperties}
               >
                 View visit
               </button>
@@ -322,7 +322,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
             <div ref={msgsRef} style={{ flex: 1, overflowY: 'auto', padding: 18, display: 'flex', flexDirection: 'column', gap: 11, background: '#FAFBFC' }}>
               {/* Listing context card */}
               <a href={`/listings/${active.listingId}`} target="_blank" rel="noopener noreferrer"
-                 style={{ alignSelf: 'center', display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 14, padding: '9px 14px 9px 9px', boxShadow: '0 8px 20px -16px rgba(21,36,59,0.4)', maxWidth: 340, textDecoration: 'none', marginBottom: 4 }}>
+                 style={{ alignSelf: 'center', display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '1px solid #ECEEF1', borderRadius: 14, padding: '9px 14px 9px 9px', boxShadow: '0 8px 20px -16px rgba(21,36,59,0.4)', maxWidth: 340, textDecoration: 'none', marginBottom: 4 }}>
                 <div style={{ width: 50, height: 50, borderRadius: 10, overflow: 'hidden', backgroundColor: '#DDD3C5', flexShrink: 0, backgroundImage: active.listingCover ? `url('${active.listingCover}')` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }} />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{active.listingTitle}</div>
@@ -351,7 +351,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
                     inputRef.current?.focus();
                   }}
                   className="bv-press"
-                  style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid #DCE3EC', background: '#F7F9FC', color: '#3C4A63', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  style={{ padding: '6px 12px', borderRadius: 999, border: '1px solid #ECEEF1', background: '#F7F9FC', color: '#3C4A63', fontFamily: 'inherit', fontSize: 12, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
                 >
                   {c.label}
                 </button>
@@ -359,7 +359,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
             </div>
 
             {/* Composer */}
-            <div style={{ padding: '13px 16px', borderTop: '1px solid #E7EAEE', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div style={{ padding: '13px 16px', borderTop: '1px solid #ECEEF1', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <input
                 ref={inputRef}
                 value={draft}
@@ -367,7 +367,7 @@ export default function LeadsClient({ leads }: { leads: LeadRow[] }) {
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder={`Reply to ${active.userName.split(' ')[0]}…`}
                 disabled={sending}
-                style={{ flex: 1, border: '1px solid #DBE0E6', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', color: '#15243B', outline: 'none', background: '#fff' }}
+                style={{ flex: 1, border: '1px solid #ECEEF1', borderRadius: 12, padding: '12px 14px', fontSize: 14, fontFamily: 'inherit', color: '#15243B', outline: 'none', background: '#fff' }}
               />
               <button
                 onClick={send}

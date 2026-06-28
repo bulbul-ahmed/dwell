@@ -19,8 +19,21 @@ export interface UserData {
   role: string; createdAt: string; hasPassword: boolean; avatarUrl?: string | null;
 }
 export interface StatsData { savedCount: number; visitsCount: number; reviewsCount: number }
+export interface OwnerData {
+  id: number;
+  type: 'Owner' | 'Agency';
+  status: string;
+  verified: boolean;
+  nidDocUrl: string | null;
+  businessDocUrl: string | null;
+  phone: string | null;
+}
 
-export default function AccountClient({ initialUser, initialStats }: { initialUser: UserData; initialStats: StatsData }) {
+export default function AccountClient({
+  initialUser, initialStats, initialOwner,
+}: {
+  initialUser: UserData; initialStats: StatsData; initialOwner: OwnerData | null;
+}) {
   const router = useRouter();
   const [notifOn,       setNotifOn]       = useState([true, true, false]);
   const [user,          setUser]          = useState<UserData>(initialUser);
@@ -30,6 +43,7 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
   const [name,          setName]          = useState(initialUser.name);
   const [phone,         setPhone]         = useState(initialUser.phone ?? '');
   const [showOwnerSheet, setShowOwnerSheet] = useState(false);
+  const [ownerSheetStep, setOwnerSheetStep] = useState<'type'|'phone'|'otp'|'profile'|'docs'|'done'>('type');
   const [showChangePw,  setShowChangePw]  = useState(false);
   const [currentPw,     setCurrentPw]     = useState('');
   const [newPw,         setNewPw]         = useState('');
@@ -79,11 +93,9 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
     finally { setSaving(false); }
   };
 
-  // Owners jump straight to the provider dashboard (shared cookie = SSO).
-  // Brief branded transition so the cross-app jump feels intentional, not a reload.
   const goToDashboard = () => {
-    setSwitching(true);
-    setTimeout(() => { window.location.href = '/dashboard'; }, 3500);
+    const providerUrl = process.env.NEXT_PUBLIC_PROVIDER_URL ?? 'http://localhost:3003';
+    window.location.href = `${providerUrl}/dashboard`;
   };
 
   const savePassword = async () => {
@@ -117,8 +129,20 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
     outline: 'none', boxSizing: 'border-box', background: '#fff',
   };
 
-  const isOwner = user?.role === 'owner';
-  const [switching, setSwitching] = useState(false);
+  // Derive owner display state from server-fetched owner row
+  const owner = initialOwner;
+  const hasDocs = owner
+    ? (owner.type === 'Agency' ? !!owner.businessDocUrl : !!owner.nidDocUrl)
+    : false;
+  const ownerState: 'none'|'unverified'|'active'|'pending'|'approved'|'suspended' =
+    !owner                                                          ? 'none'
+    : owner.status === 'unverified'                                 ? 'unverified'
+    : owner.status === 'phone_verified' && !hasDocs                 ? 'active'
+    : (owner.status === 'phone_verified' && hasDocs)
+      || owner.status === 'agency_pending'                          ? 'pending'
+    : owner.status === 'kyc_verified' || owner.status === 'agency_verified' ? 'approved'
+    : owner.status === 'suspended'                                  ? 'suspended'
+    : 'active';
 
   return (
     <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -195,23 +219,13 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
               </div>
             </div>
 
-            {/* Owner mode → provider dashboard */}
-            <div style={{ background: '#fff', border: '1px solid #E7EAEE', borderRadius: 20, padding: 22, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-              <h3 style={{ fontSize: 15, fontWeight: 800, color: '#15243B', margin: '0 0 4px' }}>{isOwner ? 'Owner Dashboard' : 'Become an Owner'}</h3>
-              <p style={{ fontSize: 12.5, color: '#8893A4', margin: '0 0 14px' }}>
-                {isOwner ? 'Manage your listings, leads and visits in the owner dashboard.' : 'List your property and manage bookings as an owner.'}
-              </p>
-              <button onClick={isOwner ? goToDashboard : () => setShowOwnerSheet(true)} className="acct-link"
-                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, border: '1px solid #E7EAEE', borderRadius: 13, cursor: 'pointer', transition: 'background .25s, border-color .25s', background: '#fff', width: '100%', fontFamily: 'inherit' }}
-              >
-                <div style={{ width: 38, height: 38, borderRadius: 11, background: '#FFF0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏢</div>
-                <div style={{ flex: 1, textAlign: 'left' }}>
-                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B' }}>Switch to Owner</div>
-                  <div style={{ fontSize: 12, color: '#8893A4' }}>{isOwner ? 'Open your dashboard' : 'List & manage properties'}</div>
-                </div>
-                <span style={{ color: '#AEB8C6' }}>→</span>
-              </button>
-            </div>
+            {/* Owner status card */}
+            <OwnerCard
+              state={ownerState}
+              owner={owner}
+              onOpen={(step) => { setOwnerSheetStep(step ?? 'type'); setShowOwnerSheet(true); }}
+              onDashboard={goToDashboard}
+            />
 
           </div>
 
@@ -331,26 +345,202 @@ export default function AccountClient({ initialUser, initialStats }: { initialUs
         {/* Sign out — full width, end of page */}
         <button onClick={signOut} style={{ width: '100%', marginTop: 22, padding: '14px 0', borderRadius: 14, border: '1px solid #F2D0CC', background: '#FFF8F7', color: '#C0392B', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>Sign out</button>
       </main>
-      {showOwnerSheet && <BecomeOwnerSheet onClose={() => setShowOwnerSheet(false)} />}
-
-      {/* Cross-app transition splash → owner dashboard */}
-      {switching && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 2000,
-          background: 'linear-gradient(150deg, #16273F, #2C557F)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 22, animation: 'acctover .25s ease both',
-        }}>
-          <div style={{ width: 62, height: 62, borderRadius: 18, background: 'rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30 }}>🏢</div>
-          <div style={{ textAlign: 'center', color: '#fff' }}>
-            <div style={{ fontSize: 19, fontWeight: 800, letterSpacing: -0.3 }}>Opening your Owner Dashboard</div>
-            <div style={{ fontSize: 13.5, color: 'rgba(255,255,255,.7)', marginTop: 5 }}>Signing you in to Dwell for Owners…</div>
-          </div>
-          <div style={{ width: 30, height: 30, borderRadius: '50%', border: '3px solid rgba(255,255,255,.25)', borderTopColor: '#fff', animation: 'acctspin .8s linear infinite' }} />
-        </div>
+      {showOwnerSheet && (
+        <BecomeOwnerSheet
+          initialStep={ownerSheetStep}
+          onClose={() => setShowOwnerSheet(false)}
+        />
       )}
 
       <Footer />
+    </div>
+  );
+}
+
+// ── Owner Status Card ─────────────────────────────────────────────────────────
+
+type OwnerState = 'none'|'unverified'|'active'|'pending'|'approved'|'suspended';
+type SheetStep  = 'type'|'phone'|'otp'|'profile'|'docs'|'done';
+
+function OwnerCard({
+  state, owner, onOpen, onDashboard,
+}: {
+  state: OwnerState;
+  owner: OwnerData | null;
+  onOpen: (step?: SheetStep) => void;
+  onDashboard: () => void;
+}) {
+  const CARD: React.CSSProperties = {
+    background:'#fff', border:'1px solid #E7EAEE', borderRadius:20,
+    padding:22, boxShadow:'0 1px 2px rgba(20,40,70,.03)',
+  };
+
+  // ── none: become owner ──
+  if (state === 'none') {
+    return (
+      <div style={CARD}>
+        <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>Become an Owner</h3>
+        <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 14px' }}>
+          List your property and manage bookings as an owner.
+        </p>
+        <button onClick={() => onOpen('type')} className="acct-link" style={{
+          display:'flex', alignItems:'center', gap:12, padding:12,
+          border:'1px solid #E7EAEE', borderRadius:13, cursor:'pointer',
+          transition:'background .25s, border-color .25s', background:'#fff',
+          width:'100%', fontFamily:'inherit',
+        }}>
+          <div style={{ width:38, height:38, borderRadius:11, background:'#FFF0E0', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>🏢</div>
+          <div style={{ flex:1, textAlign:'left' }}>
+            <div style={{ fontSize:13.5, fontWeight:700, color:'#15243B' }}>Switch to Owner</div>
+            <div style={{ fontSize:12, color:'#8893A4' }}>List &amp; manage properties</div>
+          </div>
+          <span style={{ color:'#AEB8C6' }}>→</span>
+        </button>
+      </div>
+    );
+  }
+
+  // ── unverified: mid-flow, phone not yet done ──
+  if (state === 'unverified') {
+    return (
+      <div style={CARD}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#B07D1A', background:'#FEF3CD', borderRadius:6, padding:'3px 8px' }}>
+            SETUP INCOMPLETE
+          </span>
+        </div>
+        <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>Finish your owner setup</h3>
+        <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 14px' }}>
+          Verify your phone number to activate your owner profile.
+        </p>
+        <button onClick={() => onOpen('phone')} className="acct-link" style={{
+          display:'flex', alignItems:'center', gap:12, padding:12,
+          border:'1px solid #E7EAEE', borderRadius:13, cursor:'pointer',
+          background:'#fff', width:'100%', fontFamily:'inherit',
+          transition:'background .25s, border-color .25s',
+        }}>
+          <div style={{ width:38, height:38, borderRadius:11, background:'#EEF3FB', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>📱</div>
+          <div style={{ flex:1, textAlign:'left' }}>
+            <div style={{ fontSize:13.5, fontWeight:700, color:'#15243B' }}>Verify phone number</div>
+            <div style={{ fontSize:12, color:'#8893A4' }}>Continue where you left off</div>
+          </div>
+          <span style={{ color:'#AEB8C6' }}>→</span>
+        </button>
+      </div>
+    );
+  }
+
+  // ── active: phone verified, no docs (basic owner) ──
+  if (state === 'active') {
+    return (
+      <div style={CARD}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#1E6B3A', background:'#E8F5EE', borderRadius:6, padding:'3px 8px' }}>
+            OWNER ACTIVE
+          </span>
+        </div>
+        <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>
+          {owner?.type === 'Agency' ? 'Agency account active' : 'Owner account active'}
+        </h3>
+        <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 14px', lineHeight:1.5 }}>
+          You can list properties. Add documents to earn the <strong>Verified</strong> badge and get more enquiries.
+        </p>
+        <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+          <button onClick={onDashboard} style={{
+            height:40, borderRadius:11, border:'none', background:ACCENT, color:'#fff',
+            fontSize:13.5, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+          }}>
+            Go to Owner Dashboard →
+          </button>
+          <button onClick={() => onOpen('docs')} className="acct-link" style={{
+            display:'flex', alignItems:'center', gap:10, padding:'10px 12px',
+            border:'1px dashed #C7CFDA', borderRadius:11, cursor:'pointer',
+            background:'#FAFBFC', width:'100%', fontFamily:'inherit',
+            transition:'background .25s, border-color .25s',
+          }}>
+            <span style={{ fontSize:16 }}>📄</span>
+            <div style={{ textAlign:'left' }}>
+              <div style={{ fontSize:13, fontWeight:700, color:'#15243B' }}>Add verification documents</div>
+              <div style={{ fontSize:11.5, color:'#8893A4' }}>
+                {owner?.type === 'Agency' ? 'Trade license' : 'NID'} required for the Verified badge
+              </div>
+            </div>
+            <span style={{ color:'#AEB8C6', marginLeft:'auto' }}>→</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── pending: submitted docs, under admin review ──
+  if (state === 'pending') {
+    return (
+      <div style={CARD}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#92600A', background:'#FEF3CD', borderRadius:6, padding:'3px 8px' }}>
+            UNDER REVIEW
+          </span>
+        </div>
+        <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>Documents under review</h3>
+        <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 12px', lineHeight:1.5 }}>
+          Our team is reviewing your documents. You'll receive a notification once approved.
+        </p>
+        <div style={{
+          display:'flex', alignItems:'center', gap:10, padding:'10px 14px',
+          background:'#F6F8FB', borderRadius:11, fontSize:12.5, color:'#5A6880',
+        }}>
+          <span style={{ fontSize:16 }}>⏱</span>
+          <span>Usually within <strong>24 hours</strong></span>
+        </div>
+      </div>
+    );
+  }
+
+  // ── approved: verified ──
+  if (state === 'approved') {
+    return (
+      <div style={CARD}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:'#1E6B3A', background:'#E8F5EE', borderRadius:6, padding:'3px 8px' }}>
+            ✓ VERIFIED OWNER
+          </span>
+        </div>
+        <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>
+          {owner?.type === 'Agency' ? 'Verified agency' : 'Verified owner'}
+        </h3>
+        <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 14px' }}>
+          Manage your listings, leads, and visits from the owner dashboard.
+        </p>
+        <button onClick={onDashboard} style={{
+          width:'100%', height:44, borderRadius:12, border:'none',
+          background:ACCENT, color:'#fff', fontSize:14, fontWeight:700,
+          cursor:'pointer', fontFamily:'inherit',
+        }}>
+          Go to Owner Dashboard →
+        </button>
+      </div>
+    );
+  }
+
+  // ── suspended ──
+  return (
+    <div style={CARD}>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+        <span style={{ fontSize:11, fontWeight:700, color:'#991B1B', background:'#FEE2E2', borderRadius:6, padding:'3px 8px' }}>
+          ACCOUNT SUSPENDED
+        </span>
+      </div>
+      <h3 style={{ fontSize:15, fontWeight:800, color:'#15243B', margin:'0 0 4px' }}>Owner account suspended</h3>
+      <p style={{ fontSize:12.5, color:'#8893A4', margin:'0 0 14px' }}>
+        Contact Dwell support to resolve this.
+      </p>
+      <a href="mailto:support@dwell.bd" style={{
+        display:'block', textAlign:'center', height:40, lineHeight:'40px',
+        borderRadius:11, border:'1px solid #E7EAEE', background:'#F9FAFC',
+        color:'#44506A', fontSize:13.5, fontWeight:700, textDecoration:'none',
+      }}>
+        Contact support
+      </a>
     </div>
   );
 }

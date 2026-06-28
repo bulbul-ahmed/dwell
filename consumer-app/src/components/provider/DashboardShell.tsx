@@ -18,7 +18,7 @@ export default function DashboardShell({ ownerName, ownerType, ownerStatus, avat
   const [navOpen, setNavOpen] = useState(false);
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#F4F6F9' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#F7F8FA' }}>
       <Sidebar
         ownerName={ownerName}
         ownerType={ownerType}

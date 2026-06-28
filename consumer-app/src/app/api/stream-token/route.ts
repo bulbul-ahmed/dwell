@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { StreamChat } from 'stream-chat';
-
-const DEMO_USER_ID = 'user_1';
+import { getSession } from '@/lib/session';
 
 export async function GET() {
+  const userId = await getSession();
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
   const apiKey = process.env.STREAM_API_KEY;
   const secret = process.env.STREAM_API_SECRET;
 
@@ -12,6 +14,7 @@ export async function GET() {
   }
 
   const serverClient = StreamChat.getInstance(apiKey, secret);
-  const token = serverClient.createToken(DEMO_USER_ID);
-  return NextResponse.json({ token });
+  // Scope the token to the authenticated caller, not a hardcoded demo user.
+  const token = serverClient.createToken(`user_${userId}`);
+  return NextResponse.json({ token, userId: `user_${userId}` });
 }

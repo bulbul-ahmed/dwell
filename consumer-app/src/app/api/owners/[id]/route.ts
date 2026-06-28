@@ -20,9 +20,15 @@ function mapListing(row: typeof listings.$inferSelect, owner: typeof owners.$inf
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ownerId = parseInt(id, 10);
+  if (isNaN(ownerId)) return NextResponse.json({ error: 'invalid id' }, { status: 400 });
 
   const [owner] = await db.select().from(owners).where(eq(owners.id, ownerId)).limit(1);
   if (!owner) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  // Public profile — never expose KYC/PII (nidNumber, tradeLicense, phone, verifiedBy).
+  const publicOwner = {
+    id: owner.id, name: owner.name, type: owner.type, rating: owner.rating,
+    responseTime: owner.responseTime, verified: owner.verified, createdAt: owner.createdAt,
+  };
 
   const ownerListings = await db.select().from(listings).where(eq(listings.ownerId, ownerId));
 
@@ -44,7 +50,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     : [];
 
   return NextResponse.json({
-    owner,
+    owner: publicOwner,
     listings: ownerListings.map(l => mapListing(l, owner)),
     reviews: ownerReviews,
   });

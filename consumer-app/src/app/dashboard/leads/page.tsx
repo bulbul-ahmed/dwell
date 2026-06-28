@@ -3,17 +3,9 @@ import { eq, inArray, desc, and } from 'drizzle-orm';
 import { getProviderSession } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import LeadsClient, { type LeadRow } from '@/components/provider/LeadsClient';
+import { timeAgo } from '@/lib/format';
 
 export const dynamic = 'force-dynamic';
-
-function timeAgo(date: Date): string {
-  const diff = Date.now() - date.getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 export default async function LeadsPage() {
   const session = await getProviderSession();

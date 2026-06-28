@@ -8,6 +8,9 @@ html, body { margin: 0; padding: 0; overflow-x: hidden; }
 body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background: #FFFFFF; }
 ::selection { background: #DCE6F2; }
 
+/* Featured "View all listings" CTA — fill on hover for stronger affordance */
+.featured-cta:hover { background: #1E3A5C; color: #fff; }
+
 /* iOS Safari fires `click` on non-native elements (div/span with onClick) only when the
    element or an ancestor has cursor:pointer. Scoped to touch devices so desktop cursors
    are unaffected. Fixes taps on the search box, dropdown rows, toggles, etc. */
@@ -202,3 +205,4 @@ body { font-family: 'Plus Jakarta Sans', sans-serif; color: #15243B; background:
 .bv-fill { position: relative; overflow: hidden; z-index: 0; }
 .bv-fill::before { content: ''; position: absolute; inset: 0; background: var(--fill, rgba(20,40,70,.06)); transform: scaleX(0); transform-origin: right center; transition: transform .45s cubic-bezier(.22,1,.36,1); z-index: -1; }
 .bv-fill:hover::before { transform: scaleX(1); }
+@keyframes heartRipple { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.2); opacity: 0; } }

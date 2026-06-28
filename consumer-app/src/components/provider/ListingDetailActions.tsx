@@ -34,14 +34,14 @@ export default function ListingDetailActions({ listingId, statusLabel }: { listi
         <button
           onClick={() => router.push(`/dashboard/listings/new?edit=${listingId}`)}
           className="bv-press bv-fill"
-          style={{ '--fill': '#EEF2F7', height: 42, borderRadius: 12, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#44506A' } as React.CSSProperties}
+          style={{ '--fill': '#EEF2F7', height: 42, borderRadius: 12, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#44506A' } as React.CSSProperties}
         >
           Edit
         </button>
         <button
           onClick={() => router.push(`/dashboard/listings/${listingId}/status`)}
           className="bv-press bv-fill"
-          style={{ '--fill': '#EEF0F3', height: 42, borderRadius: 12, border: '1px solid #E2E7EE', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#5A6172' } as React.CSSProperties}
+          style={{ '--fill': '#EEF0F3', height: 42, borderRadius: 12, border: '1px solid #ECEEF1', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700, color: '#5A6172' } as React.CSSProperties}
         >
           Status
         </button>

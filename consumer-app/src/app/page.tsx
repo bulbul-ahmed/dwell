@@ -303,29 +303,29 @@ export default function Home() {
             <div style={heroStyle}>
               <div className="g-hero">
                 <div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#6A7180', marginBottom: 26 }}>
+                  <div className="mb-4 sm:mb-[26px]" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #E7EAEE', borderRadius: 999, padding: '7px 14px', fontSize: 12.5, fontWeight: 600, color: '#6A7180' }}>
                     <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F8A6B' }} />
                     Now live in Aftab Nagar, {CITY}
                   </div>
-                  <h1 className="font-sans font-extrabold leading-[1.04] tracking-[-0.5px] text-accent-dark m-0 mb-[22px] text-[clamp(34px,9vw,64px)]">
+                  <h1 className="font-sans font-extrabold leading-[1.06] tracking-[-0.5px] text-accent-dark m-0 mb-4 sm:mb-[22px] text-[clamp(28px,7.5vw,64px)] sm:leading-[1.04]">
                     A calmer way to find your next{' '}
                     <span style={{ fontStyle: 'italic', color: ACCENT }}>home</span>
                     {' '}in {CITY}.
                   </h1>
-                  <p className="text-[15.5px] sm:text-[17.5px]" style={{ lineHeight: 1.6, color: '#5A6172', margin: '0 0 34px', maxWidth: 460 }}>
+                  <p className="hidden sm:block text-[15.5px] sm:text-[17.5px]" style={{ lineHeight: 1.6, color: '#5A6172', margin: '0 0 34px', maxWidth: 460 }}>
                     Verified flats, offices and rooms across Aftab Nagar. Browse honest listings, chat with owners, and book a visit — no brokers, no surprises.
                   </p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
+                  <div className="flex items-center gap-5 sm:gap-[30px]">
                     {[
                       [stats ? `${stats.verifiedListings}` : '—', 'Verified listings'],
                       [stats ? `${stats.blocks}` : '—', 'Aftab Nagar blocks'],
                       [stats ? `${stats.avgRating.toFixed(1)}★` : '—', 'Avg owner rating'],
                     ].map(([n, t], i) => (
-                      <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 30 }}>
-                        {i > 0 && <div style={{ width: 1, height: 34, background: '#DBE0E6' }} />}
+                      <div key={t} className="flex items-center gap-5 sm:gap-[30px]">
+                        {i > 0 && <div className="hidden sm:block" style={{ width: 1, height: 34, background: '#DBE0E6' }} />}
                         <div>
-                          <div style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", fontSize: 30, color: '#15243B' }}>{n}</div>
-                          <div style={{ fontSize: 13, color: '#7A8090', fontWeight: 500 }}>{t}</div>
+                          <div className="text-[22px] sm:text-[30px]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: '#15243B' }}>{n}</div>
+                          <div style={{ fontSize: 12.5, color: '#7A8090', fontWeight: 500 }}>{t}</div>
                         </div>
                       </div>
                     ))}
@@ -536,17 +536,22 @@ export default function Home() {
         {/* ===== FEATURED + HOW IT WORKS ===== */}
         {!searched && (
           <>
-            <section style={{ maxWidth: 1240, margin: '0 auto', padding: '40px clamp(16px,4vw,40px) 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', marginBottom: 24 }}>
-                <div>
+            <section className="!pt-6 sm:!pt-10" style={{ maxWidth: 1240, margin: '0 auto', padding: '40px clamp(16px,4vw,40px) 16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 24 }}>
+                <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>Handpicked this week</div>
                   <h2 className="font-sans font-normal m-0 text-accent-dark text-[clamp(24px,6vw,38px)]">Featured homes for rent</h2>
                 </div>
                 <Link
                   href="/search?intent=rent"
-                  style={{ background: 'transparent', border: '1px solid #CCD3DB', borderRadius: 999, padding: '11px 22px', fontSize: 14, fontWeight: 600, color: '#15243B', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'inline-block' }}
+                  className="featured-cta"
+                  style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, whiteSpace: 'nowrap', background: '#fff', border: `1.5px solid ${ACCENT}`, borderRadius: 999, padding: '11px 20px', fontSize: 14, fontWeight: 700, color: ACCENT, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', transition: 'background .18s ease, color .18s ease' }}
                 >
-                  View all listings
+                  View all
+                  <span className="hidden sm:inline">&nbsp;listings</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </Link>
               </div>
               <div className="g3">

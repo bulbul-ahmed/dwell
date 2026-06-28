@@ -82,7 +82,15 @@ export default async function ListingDetailPage({ params }: { params: Promise<{ 
 
           {/* Funnel */}
           <div style={{ background: '#fff', border: '1px solid #ECEEF1', borderRadius: 18, padding: 24, boxShadow: '0 1px 2px rgba(20,40,70,.03)' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: '0 0 18px' }}>Funnel · all time</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+              <h3 style={{ fontSize: 16, fontWeight: 800, color: '#15243B', margin: 0 }}>Funnel · all time</h3>
+              <Link
+                href={`/dashboard/analytics?listing=${listing.id}`}
+                style={{ fontSize: 12.5, fontWeight: 700, color: '#1E3A5C', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 4, opacity: 0.8 }}
+              >
+                Full analytics →
+              </Link>
+            </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 13 }}>
               {funnel.map(f => (
                 <div key={f.label}>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { APIProvider, Map, AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
 import { useEffect } from 'react';
 import type { Listing } from '@/types';
@@ -73,6 +73,7 @@ function MapController({ active, enablePopover, onZoom, onBounds }: {
 }
 
 export default function SearchMap({ listings, activeId, hoverId, onActivate, onHover, enablePopover = true, onBoundsChange }: Props) {
+  const router = useRouter();
   const [zoom, setZoom] = useState(DEFAULT_ZOOM);
 
   const active = activeId != null ? listings.find(l => l.id === activeId) ?? null : null;
@@ -164,43 +165,55 @@ export default function SearchMap({ listings, activeId, hoverId, onActivate, onH
           if (!pos) return null;
           return (
             <AdvancedMarker position={pos} zIndex={50}>
-              <div
-                onMouseEnter={() => onHover(active.id)}
-                onMouseLeave={() => onHover(null)}
-                style={{
-                  position: 'absolute', bottom: 22, left: '50%', transform: 'translateX(-50%)',
-                  width: 232, background: '#fff', borderRadius: 14, overflow: 'hidden',
-                  boxShadow: '0 18px 40px -12px rgba(21,36,59,0.45)', fontFamily: "'Plus Jakarta Sans', sans-serif",
-                }}
-              >
-                <Link href={`/listings/${active.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-                  <div style={{ position: 'relative', aspectRatio: '16/10', background: '#DDD3C5' }}>
+              {/* Wrapper pushes card above the pin anchor without position:absolute,
+                  so the full card area stays inside the AdvancedMarker hit region */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 12 }}>
+                <div
+                  onMouseEnter={() => onHover(active.id)}
+                  onMouseLeave={() => onHover(null)}
+                  onClick={(e) => { e.stopPropagation(); router.push(`/listings/${active.id}`); }}
+                  style={{
+                    width: 240, background: '#fff', borderRadius: 16, overflow: 'hidden',
+                    boxShadow: '0 18px 40px -12px rgba(21,36,59,0.45)', fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    cursor: 'pointer',
+                  }}
+                >
+                  {/* Cover image */}
+                  <div style={{ position: 'relative', aspectRatio: '16/9', background: '#DDD3C5' }}>
                     <div style={{ width: '100%', height: '100%', backgroundImage: `url('${active.coverUrl}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                    {/* Close button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onActivate(null); }}
+                      aria-label="Close preview"
+                      style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.92)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#41495A" strokeWidth="2.4" strokeLinecap="round" /></svg>
+                    </button>
                   </div>
+
+                  {/* Content */}
                   <div style={{ padding: '10px 12px 12px' }}>
                     <div style={{ fontSize: 13.5, fontWeight: 700, color: '#15243B', lineHeight: 1.25, marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{active.title}</div>
-                    <div style={{ fontSize: 11.5, color: '#7A8090', marginBottom: 8 }}>{active.area}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#5A6172', fontWeight: 500, marginBottom: 9 }}>
+                    <div style={{ fontSize: 11.5, color: '#7A8090', marginBottom: 7 }}>{active.area}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#5A6172', fontWeight: 500, marginBottom: 10 }}>
                       <span>{active.beds} {active.beds > 1 ? 'Beds' : 'Bed'}</span>
                       <span style={{ color: '#CCD3DB' }}>·</span>
                       <span>{active.baths} {active.baths > 1 ? 'Baths' : 'Bath'}</span>
                       <span style={{ color: '#CCD3DB' }}>·</span>
                       <span>{active.size} sqft</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 16, fontWeight: 700, color: '#15243B' }}>{fmtPrice(active)}</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: ACCENT, borderRadius: 999, padding: '5px 12px' }}>View details</span>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: '#15243B', marginBottom: 10 }}>{fmtPrice(active)}</div>
+                    <div style={{
+                      width: '100%', padding: '9px 0', borderRadius: 10, border: 'none',
+                      background: ACCENT, color: '#fff', fontSize: 13, fontWeight: 700,
+                      textAlign: 'center', letterSpacing: 0.1,
+                    }}>
+                      View details →
                     </div>
                   </div>
-                </Link>
-                <button
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); onActivate(null); }}
-                  aria-label="Close preview"
-                  style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.92)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="#41495A" strokeWidth="2.4" strokeLinecap="round" /></svg>
-                </button>
-                <div style={{ position: 'absolute', bottom: -7, left: '50%', transform: 'translateX(-50%) rotate(45deg)', width: 14, height: 14, background: '#fff' }} />
+                </div>
+                {/* Caret */}
+                <div style={{ width: 14, height: 14, background: '#fff', transform: 'rotate(45deg)', marginTop: -7, boxShadow: '2px 2px 4px rgba(21,36,59,0.12)' }} />
               </div>
             </AdvancedMarker>
           );

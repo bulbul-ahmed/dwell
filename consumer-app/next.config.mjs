@@ -9,7 +9,7 @@ const nextConfig = {
       { protocol: 'http', hostname: 'dwell.bd' },
     ],
   },
-  allowedDevOrigins: ['dwell.bd', 'admin.dwell.bd', '192.168.0.177'],
+  allowedDevOrigins: ['dwell.bd', 'admin.dwell.bd', '192.168.0.177', '192.168.0.251'],
 };
 
 export default nextConfig;

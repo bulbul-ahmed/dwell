@@ -21,7 +21,7 @@ export default function OwnerVerifyBanner({ status }: { status: string }) {
           Verify now
         </button>
       </div>
-      {open && <BecomeOwnerSheet onClose={() => setOpen(false)} redirectTo="/dashboard" />}
+      {open && <BecomeOwnerSheet onClose={() => setOpen(false)} />}
     </>
   );
 }

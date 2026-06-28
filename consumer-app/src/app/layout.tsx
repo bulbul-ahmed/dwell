@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Plus_Jakarta_Sans, Instrument_Serif } from 'next/font/google';
 import Nav from '@/components/Nav';
 import './globals.css';
@@ -17,6 +17,12 @@ const instrumentSerif = Instrument_Serif({
   variable: '--font-instrument-serif',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
 
 export const metadata: Metadata = {
   title: 'Dwell — Find your home in Aftab Nagar',

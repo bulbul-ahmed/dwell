@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { db, listings, owners } from '@/db';
-import { eq } from 'drizzle-orm';
+import { db, listings, owners, saves, users, bookings } from '@/db';
+import { eq, and, count, avg, ne, inArray } from 'drizzle-orm';
 import type { Listing } from '@/types';
 import { getSession } from '@/lib/session';
 
-function mapListing(row: { listing: typeof listings.$inferSelect; owner: typeof owners.$inferSelect }): Listing {
+function mapListing(
+  row: { listing: typeof listings.$inferSelect; owner: typeof owners.$inferSelect },
+  extras?: {
+    savesCount?: number;
+    listingCount?: number;
+    avatarUrl?: string | null;
+    priceContext?: { label: string; pctDiff: number } | null;
+  },
+): Listing {
   return {
     id: row.listing.id,
     cat: row.listing.cat as Listing['cat'],
@@ -27,6 +35,8 @@ function mapListing(row: { listing: typeof listings.$inferSelect; owner: typeof 
       type: row.owner.type,
       rating: row.owner.rating,
       rt: row.owner.responseTime ?? '',
+      listingCount: extras?.listingCount,
+      avatarUrl: extras?.avatarUrl,
     },
     ownerId: row.owner.id,
     ownerUserId: row.owner.userId ?? null,
@@ -49,6 +59,8 @@ function mapListing(row: { listing: typeof listings.$inferSelect; owner: typeof 
     videos: row.listing.videos ?? null,
     meta: (row.listing.meta as Record<string, unknown>) ?? null,
     views: row.listing.views ?? 0,
+    savesCount: extras?.savesCount,
+    priceContext: extras?.priceContext ?? null,
   };
 }
 
@@ -57,21 +69,91 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const listingId = parseInt(id, 10);
+
   const rows = await db
     .select({ listing: listings, owner: owners })
     .from(listings)
     .innerJoin(owners, eq(listings.ownerId, owners.id))
-    .where(eq(listings.id, parseInt(id, 10)));
+    .where(eq(listings.id, listingId));
 
   if (rows.length === 0) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  // `edit` carries raw fields the public Listing shape omits (pin, zone) for the wizard's edit mode.
-  const l = rows[0].listing;
+  const row = rows[0];
+  const l = row.listing;
+
+  // Run enrichment queries in parallel
+  const [savesResult, listingCountResult, userRow, areaAvgResult] = await Promise.all([
+    // Task 2: saves count
+    db.select({ cnt: count() }).from(saves).where(eq(saves.listingId, listingId)),
+    // Task 5: owner listing count
+    db.select({ cnt: count() }).from(listings).where(
+      and(eq(listings.ownerId, row.owner.id), eq(listings.verified, true))
+    ),
+    // Task 5: owner's user avatar
+    row.owner.userId
+      ? db.select({ avatarUrl: users.avatarUrl }).from(users).where(eq(users.id, row.owner.userId)).limit(1)
+      : Promise.resolve([]),
+    // Task 9: area median price for same cat + similar beds (±1)
+    !l.sale
+      ? db.select({ avgPrice: avg(listings.price) }).from(listings).where(
+          and(
+            eq(listings.cat, l.cat),
+            eq(listings.verified, true),
+            ne(listings.id, listingId),
+          )
+        )
+      : Promise.resolve([]),
+  ]);
+
+  const savesCount = savesResult[0]?.cnt ?? 0;
+  const listingCount = listingCountResult[0]?.cnt ?? 0;
+  const avatarUrl = (userRow as { avatarUrl: string | null }[])[0]?.avatarUrl ?? null;
+
+  // Compute price context
+  let priceContext: { label: string; pctDiff: number } | null = null;
+  if (!l.sale && areaAvgResult.length > 0) {
+    const marketAvg = parseFloat(String(areaAvgResult[0]?.avgPrice ?? '0'));
+    if (marketAvg > 0) {
+      const pctDiff = Math.round(((l.price - marketAvg) / marketAvg) * 100);
+      const label = pctDiff <= -10 ? 'Below market' : pctDiff >= 10 ? 'Above market' : 'Fair price';
+      priceContext = { label, pctDiff };
+    }
+  }
+
+  // Exact coordinates are private until the visit is approved. Reveal them only to
+  // the listing owner or a renter with a confirmed/completed booking; everyone else
+  // gets null and the client falls back to the ~approximate (blurred) area map.
+  const viewerId = await getSession();
+  let canSeeExact = false;
+  if (viewerId) {
+    if (viewerId === row.owner.userId) {
+      canSeeExact = true;
+    } else {
+      const approved = await db
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(and(
+          eq(bookings.listingId, listingId),
+          eq(bookings.userId, viewerId),
+          inArray(bookings.status, ['confirmed', 'completed']),
+        ))
+        .limit(1);
+      canSeeExact = approved.length > 0;
+    }
+  }
+
   return NextResponse.json({
-    listing: mapListing(rows[0]),
-    edit: { mapLat: l.mapLat, mapLng: l.mapLng, zoneId: l.zoneId, area: l.area, videos: l.videos ?? [] },
+    listing: mapListing(row, { savesCount, listingCount, avatarUrl, priceContext }),
+    edit: {
+      mapLat: canSeeExact ? l.mapLat : null,
+      mapLng: canSeeExact ? l.mapLng : null,
+      zoneId: canSeeExact ? l.zoneId : null,
+      area: l.area,
+      videos: l.videos ?? [],
+    },
   });
 }
 
@@ -82,6 +164,7 @@ type ListingBody = {
   price: number; advance?: number; service?: number; negotiable?: boolean;
   amenities?: string[]; shots?: string[]; shotCats?: string[];
   videos?: string[]; meta?: Record<string, unknown>;
+  description?: string;
   mapLat?: number; mapLng?: number; zoneId?: number;
   availableFrom?: string;
 };
@@ -132,6 +215,7 @@ export async function PATCH(
     totalFloors:  body.totalFloors ?? null,
     videos:       body.videos ?? existing.videos ?? null,
     meta:         body.meta ?? null,
+    description:  body.description ?? existing.description ?? '',
     mapLat:       body.mapLat ?? existing.mapLat,
     mapLng:       body.mapLng ?? existing.mapLng,
     zoneId:       body.zoneId ?? existing.zoneId,

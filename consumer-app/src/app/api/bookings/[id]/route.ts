@@ -15,10 +15,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { id } = await params;
   const bookingId = parseInt(id, 10);
-  const { status, acceptSuggested } = await request.json() as {
+  if (isNaN(bookingId)) return NextResponse.json({ error: 'Invalid booking id' }, { status: 400 });
+  const { status, acceptSuggested } = await request.json().catch(() => ({})) as {
     status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'suggested';
     acceptSuggested?: boolean;
   };
+  const ALL_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed', 'suggested'] as const;
+  if (!ALL_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
+  }
 
   // Load booking + listing owner; enforce that the caller is a party to it.
   const [row] = await db
@@ -41,6 +46,15 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
   const isRenter = row.bookingUserId === userId;
   const isOwner  = row.ownerUserId === userId;
   if (!isRenter && !isOwner) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  // Role-scoped transitions: owners manage approval/completion; renters may only
+  // cancel, or confirm by accepting the owner's suggested time.
+  const ownerAllowed  = ['confirmed', 'cancelled', 'completed', 'suggested'];
+  const renterAllowed = acceptSuggested ? ['confirmed', 'cancelled'] : ['cancelled'];
+  const allowed = isOwner ? ownerAllowed : renterAllowed;
+  if (!allowed.includes(status)) {
+    return NextResponse.json({ error: 'Not allowed to set this status' }, { status: 403 });
+  }
 
   const set: Partial<typeof bookings.$inferInsert> = { status };
   if (acceptSuggested && row.suggestedDate && row.suggestedTime) {

@@ -8,6 +8,7 @@ import HeartIcon from '@/components/HeartIcon';
 import BecomeOwnerSheet from '@/components/BecomeOwnerSheet';
 
 const ACCENT = '#1E3A5C';
+const AMBER  = '#C9863A';
 
 interface SessionUser { name: string; email: string; role: string; avatarUrl?: string | null }
 
@@ -64,7 +65,8 @@ export default function NavRight() {
     };
 
     load();
-    const t = setInterval(load, 15000);
+    // SSE (below) + visibility-regain drive real-time updates; this is just a slow safety net.
+    const t = setInterval(load, 60000);
     const onVisible = () => { if (document.visibilityState === 'visible') load(); };
     document.addEventListener('visibilitychange', onVisible);
 
@@ -104,16 +106,19 @@ export default function NavRight() {
     : '';
 
   const [open, setOpen] = useState(false);
+  const [bellOpen, setBellOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
+  const bellRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !bellOpen) return;
     function handleClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (open && wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+      if (bellOpen && bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
+  }, [open, bellOpen]);
 
   async function handleSignOut() {
     setOpen(false);
@@ -128,28 +133,104 @@ export default function NavRight() {
 
       {user && (
         <>
-          {/* Notifications */}
-          <Link
-            href="/notifications"
-            title="Notifications"
-            style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', border: '1px solid #E7EAEE', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path fill="none" d="M0 0h24v24H0z"/>
-              <path fill="#41495A" d="M12 2c4.97 0 9 4.043 9 9.031V20H3v-8.969C3 6.043 7.03 2 12 2zM9.5 21h5a2.5 2.5 0 1 1-5 0z"/>
-            </svg>
-            {unread.bell > 0 && (
-              <span style={{
-                position: 'absolute', top: -3, right: -3,
-                minWidth: 17, height: 17, padding: '0 5px', borderRadius: 999,
-                background: '#C7553B', color: '#fff', border: '1.5px solid #fff',
-                fontSize: 10, fontWeight: 800,
-                display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
-              }}>
-                {unread.bell > 99 ? '99+' : unread.bell}
-              </span>
-            )}
-          </Link>
+          {/* Notifications bell — inline split panel */}
+          <div ref={bellRef} style={{ position: 'relative' }}>
+            <button
+              onClick={() => setBellOpen(v => !v)}
+              title="Notifications"
+              style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', border: '1px solid #E7EAEE', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path fill="none" d="M0 0h24v24H0z"/>
+                <path fill="#41495A" d="M12 2c4.97 0 9 4.043 9 9.031V20H3v-8.969C3 6.043 7.03 2 12 2zM9.5 21h5a2.5 2.5 0 1 1-5 0z"/>
+              </svg>
+              {unread.bell > 0 && (
+                <span style={{
+                  position: 'absolute', top: -3, right: -3,
+                  minWidth: 17, height: 17, padding: '0 5px', borderRadius: 999,
+                  background: '#C7553B', color: '#fff', border: '1.5px solid #fff',
+                  fontSize: 10, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1,
+                }}>
+                  {unread.bell > 99 ? '99+' : unread.bell}
+                </span>
+              )}
+            </button>
+
+            {/* Bell dropdown panel */}
+            <div style={{
+              position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+              width: 320, background: '#fff',
+              border: '1px solid #E7EAEE', borderRadius: 18,
+              boxShadow: '0 8px 32px rgba(20,40,80,.13)',
+              overflow: 'hidden',
+              opacity: bellOpen ? 1 : 0,
+              transform: bellOpen ? 'scale(1) translateY(0)' : 'scale(0.94) translateY(-6px)',
+              transition: 'opacity 0.25s cubic-bezier(0.22,1,0.36,1), transform 0.25s cubic-bezier(0.22,1,0.36,1)',
+              pointerEvents: bellOpen ? 'all' : 'none',
+              zIndex: 50,
+            }}>
+              {/* Header */}
+              <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid #F2F4F7', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 14, fontWeight: 800, color: '#15243B' }}>Notifications</span>
+                <Link href="/notifications" onClick={() => setBellOpen(false)} style={{ fontSize: 12, fontWeight: 700, color: ACCENT, textDecoration: 'none' }}>See all</Link>
+              </div>
+
+              {/* Renter section */}
+              <div style={{ padding: '10px 16px 6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, color: '#8893A4', textTransform: 'uppercase' }}>Renter</span>
+                  {unread.bell > 0 && (
+                    <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 999, background: '#EEF3FB', color: ACCENT }}>
+                      {unread.bell}
+                    </span>
+                  )}
+                </div>
+                {unread.bell === 0 ? (
+                  <div style={{ fontSize: 13, color: '#B0BBC8', padding: '4px 0 8px', fontStyle: 'italic' }}>No new renter notifications</div>
+                ) : (
+                  <Link href="/notifications" onClick={() => setBellOpen(false)} style={{ textDecoration: 'none' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: 10, background: '#F7F8FA', fontSize: 13, color: '#41495A', cursor: 'pointer', marginBottom: 4 }}>
+                      You have <strong style={{ color: '#15243B' }}>{unread.bell}</strong> new notification{unread.bell > 1 ? 's' : ''}
+                    </div>
+                  </Link>
+                )}
+              </div>
+
+              {/* Owner section — only if user is owner */}
+              {user?.role === 'owner' && (
+                <>
+                  <div style={{ height: 1, background: '#F2F4F7', margin: '4px 0' }} />
+                  <div style={{ padding: '8px 16px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, color: '#8893A4', textTransform: 'uppercase' }}>Owner</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: '1px 6px', borderRadius: 999, background: '#FEF3E2', color: AMBER }}>
+                        {unread.messages}
+                      </span>
+                    </div>
+                    <div style={{ padding: '8px 10px', borderRadius: 10, background: '#FFFBF4', border: '1px solid #F5D99A', fontSize: 13, color: '#41495A', marginBottom: 8 }}>
+                      {unread.messages > 0
+                        ? <><strong style={{ color: '#15243B' }}>{unread.messages}</strong> new message{unread.messages > 1 ? 's' : ''} from renters</>
+                        : <span style={{ color: '#B0BBC8', fontStyle: 'italic' }}>No new owner notifications</span>
+                      }
+                    </div>
+                    <button
+                      onClick={() => { setBellOpen(false); router.push('/dashboard'); }}
+                      style={{
+                        width: '100%', height: 34, borderRadius: 9, border: `1px solid ${AMBER}`,
+                        background: '#FEF3E2', color: AMBER, fontSize: 12.5, fontWeight: 700,
+                        cursor: 'pointer', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      }}
+                    >
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: AMBER, display: 'inline-block' }} />
+                      Switch to Owner Mode
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Messages */}
           <Link
@@ -189,7 +270,7 @@ export default function NavRight() {
         List your property
       </button>
 
-      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} redirectTo="/dashboard/listings/new" />}
+      {listSheet && <BecomeOwnerSheet onClose={() => setListSheet(false)} />}
 
       {/* Auth area */}
       {user ? (
@@ -229,22 +310,25 @@ export default function NavRight() {
             {/* Links */}
             <div style={{ padding: '8px 0' }}>
               {user?.role === 'owner' && (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setOpen(false)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 18px', textDecoration: 'none', color: '#1E3A5C', fontSize: 13.5, fontWeight: 700, borderBottom: '1px solid #F2F4F7', marginBottom: 4 }}
+                <button
+                  onClick={() => { setOpen(false); router.push('/dashboard'); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 18px', textDecoration: 'none', color: ACCENT, fontSize: 13.5, fontWeight: 700, borderBottom: '1px solid #F2F4F7', marginBottom: 4, width: '100%', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', borderRadius: 0 }}
                   className="nav-dd-item"
                 >
                   <span style={{ width: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="3" width="7" height="7" rx="2" fill="#1E3A5C"/>
-                      <rect x="14" y="3" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
-                      <rect x="3" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.5"/>
-                      <rect x="14" y="14" width="7" height="7" rx="2" fill="#1E3A5C" opacity="0.3"/>
+                      <rect x="3" y="3" width="7" height="7" rx="2" fill={ACCENT}/>
+                      <rect x="14" y="3" width="7" height="7" rx="2" fill={ACCENT} opacity="0.5"/>
+                      <rect x="3" y="14" width="7" height="7" rx="2" fill={ACCENT} opacity="0.5"/>
+                      <rect x="14" y="14" width="7" height="7" rx="2" fill={ACCENT} opacity="0.3"/>
                     </svg>
                   </span>
-                  Provider Studio
-                </Link>
+                  <span style={{ flex: 1, textAlign: 'left' }}>Owner Dashboard</span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 999,
+                    background: '#FEF3E2', color: AMBER, border: '1px solid #F5D99A',
+                  }}>Owner</span>
+                </button>
               )}
               {[
                 {

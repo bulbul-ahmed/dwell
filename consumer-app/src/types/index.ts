@@ -3,6 +3,9 @@ export interface Owner {
   type: string;
   rating: number;
   rt: string;
+  listingCount?: number;
+  reviewCount?: number;
+  avatarUrl?: string | null;
 }
 
 export type ListingCat = 'rent' | 'buy' | 'sublet' | 'room' | 'student' | 'office';
@@ -63,4 +66,6 @@ export interface Listing {
   videos?: string[] | null;
   meta?: Record<string, unknown> | null;
   views?: number;
+  savesCount?: number;
+  priceContext?: { label: string; pctDiff: number } | null;
 }

@@ -54,7 +54,7 @@ function BoostContent() {
                 <span style={{ fontSize: 13, fontWeight: 700, color: active ? '#15243B' : '#9AA6B6', whiteSpace: 'nowrap' }}>{st.label}</span>
               </div>
               {i < 2 && (
-                <div style={{ flex: 1, height: 2, background: done ? '#1E3A5C' : '#E7EAEE', margin: '0 12px' }} />
+                <div style={{ flex: 1, height: 2, background: done ? '#1E3A5C' : '#ECEEF1', margin: '0 12px' }} />
               )}
             </div>
           );
@@ -80,7 +80,7 @@ function BoostContent() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: 15,
                       padding: '16px 18px', borderRadius: 14,
-                      border: `1.5px solid ${on ? '#1E3A5C' : '#E7EAEE'}`,
+                      border: `1.5px solid ${on ? '#1E3A5C' : '#ECEEF1'}`,
                       background: on ? 'rgba(30,58,92,0.04)' : '#fff',
                       cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', width: '100%',
                     }}
@@ -136,7 +136,7 @@ function BoostContent() {
                     className="bv-press"
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12, padding: 15, borderRadius: 13,
-                      border: `1.5px solid ${on ? '#1E3A5C' : '#E7EAEE'}`,
+                      border: `1.5px solid ${on ? '#1E3A5C' : '#ECEEF1'}`,
                       background: on ? 'rgba(30,58,92,0.04)' : '#fff',
                       cursor: 'pointer', fontFamily: 'inherit',
                     }}
@@ -150,7 +150,7 @@ function BoostContent() {
               })}
             </div>
             {/* Summary */}
-            <div style={{ background: '#F7F9FC', border: '1px solid #EDF1F6', borderRadius: 14, padding: 18, marginBottom: 20 }}>
+            <div style={{ background: '#F7F9FC', border: '1px solid #ECEEF1', borderRadius: 14, padding: 18, marginBottom: 20 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 9 }}>
                 <span style={{ fontSize: 13, color: '#8893A4' }}>Promotion</span>
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#15243B', whiteSpace: 'nowrap' }}>{plan.name}</span>
